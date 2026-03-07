@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadFile } from './uploadService';
 
 export const businessService = {
   async getAll({ category, search, rating, openNow, sort = 'relevance', page = 1, pageSize = 12 } = {}) {
@@ -193,12 +194,12 @@ export const businessService = {
 
   async uploadImage(file, businessId) {
     try {
-      const ext = file?.name?.split('.')?.pop();
-      const path = `${businessId}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase?.storage?.from('business-images')?.upload(path, file, { cacheControl: '3600', upsert: false });
+      const { url, path: storageKey, error: uploadError } = await uploadFile(file, {
+        entityType: 'business_image',
+        entityId: businessId,
+      });
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase?.storage?.from('business-images')?.getPublicUrl(path);
-      return { path, publicUrl, error: null };
+      return { path: storageKey, publicUrl: url, error: null };
     } catch (error) {
       return { path: null, publicUrl: null, error };
     }
@@ -206,12 +207,12 @@ export const businessService = {
 
   async uploadLogo(file, businessId) {
     try {
-      const ext = file?.name?.split('.')?.pop();
-      const path = `${businessId}/logo_${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase?.storage?.from('business-images')?.upload(path, file, { cacheControl: '3600', upsert: true });
+      const { url, path: storageKey, error: uploadError } = await uploadFile(file, {
+        entityType: 'business_logo',
+        entityId: businessId,
+      });
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase?.storage?.from('business-images')?.getPublicUrl(path);
-      return { path, publicUrl, error: null };
+      return { path: storageKey, publicUrl: url, error: null };
     } catch (error) {
       return { path: null, publicUrl: null, error };
     }
@@ -220,8 +221,7 @@ export const businessService = {
   getImageUrl(storagePath) {
     if (!storagePath) return null;
     if (storagePath?.startsWith('http')) return storagePath;
-    const { data: { publicUrl } } = supabase?.storage?.from('business-images')?.getPublicUrl(storagePath);
-    return publicUrl;
+    return `${import.meta.env?.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl'}/${storagePath}`;
   },
 
   /** Búsqueda para sugerencias: negocios por nombre/dirección y categorías por nombre/key. */

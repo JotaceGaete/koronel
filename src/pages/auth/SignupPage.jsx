@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import Logo from 'components/Logo';
 import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,14 +36,9 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/homepage" className="inline-flex items-center gap-2 mb-4">
-            <div className="flex items-center justify-center rounded-md w-10 h-10" style={{ background: 'var(--color-primary)' }}>
-              <Icon name="MapPin" size={22} color="white" strokeWidth={2.5} />
-            </div>
-            <span className="font-heading font-bold text-2xl" style={{ color: 'var(--color-primary)' }}>
-              Coronel<span style={{ color: 'var(--color-accent)' }}>Local</span>
-            </span>
-          </Link>
+          <div className="flex justify-center mb-4">
+            <Logo variant="auth" />
+          </div>
           <h1 className="font-heading font-bold text-2xl text-foreground">Crear Cuenta</h1>
           <p className="text-sm font-caption text-muted-foreground mt-1">Únete a la comunidad de CoronelLocal</p>
         </div>

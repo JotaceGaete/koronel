@@ -37,8 +37,8 @@ export const mapService = {
         ?.single();
       if (error || !data) return null;
       if (data?.storage_path?.startsWith('http')) return data?.storage_path;
-      const { data: { publicUrl } } = supabase?.storage?.from('business-images')?.getPublicUrl(data?.storage_path);
-      return publicUrl;
+      const base = import.meta.env?.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl';
+      return `${base}/${data?.storage_path}`;
     } catch {
       return null;
     }

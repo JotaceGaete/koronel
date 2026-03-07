@@ -4,6 +4,7 @@ import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import GoogleLoginButton from 'components/GoogleLoginButton';
+import Logo from 'components/Logo';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
@@ -49,14 +50,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/homepage" className="inline-flex items-center gap-2 mb-4">
-            <div className="flex items-center justify-center rounded-md w-10 h-10" style={{ background: 'var(--color-primary)' }}>
-              <Icon name="MapPin" size={22} color="white" strokeWidth={2.5} />
-            </div>
-            <span className="font-heading font-bold text-2xl" style={{ color: 'var(--color-primary)' }}>
-              Coronel<span style={{ color: 'var(--color-accent)' }}>Local</span>
-            </span>
-          </Link>
+          <div className="flex justify-center mb-4">
+            <Logo variant="auth" />
+          </div>
           <h1 className="font-heading font-bold text-2xl text-foreground">Iniciar Sesión</h1>
           <p className="text-sm font-caption text-muted-foreground mt-1">Accede a tu cuenta de CoronelLocal</p>
         </div>

@@ -1,4 +1,7 @@
 import { supabase } from '../lib/supabase';
+import { uploadFile } from './uploadService';
+
+const R2_PUBLIC = import.meta.env?.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl';
 
 // Helper: generate a simple verification token
 function generateToken() {
@@ -283,13 +286,12 @@ export const adService = {
 
   async uploadPhoto(file, userId) {
     try {
-      const ext = file?.name?.split('.')?.pop();
-      const folder = userId || 'guest';
-      const path = `${folder}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase?.storage?.from('ad-images')?.upload(path, file, { cacheControl: '3600', upsert: false });
+      const { url, path: storageKey, error: uploadError } = await uploadFile(file, {
+        entityType: 'ad_image',
+        entityId: null,
+      });
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase?.storage?.from('ad-images')?.getPublicUrl(path);
-      return { path, publicUrl, error: null };
+      return { path: storageKey, publicUrl: url, error: null };
     } catch (error) {
       return { path: null, publicUrl: null, error };
     }
@@ -298,14 +300,13 @@ export const adService = {
   getImageUrl(storagePath) {
     if (!storagePath) return null;
     if (storagePath?.startsWith('http')) return storagePath;
-    const { data: { publicUrl } } = supabase?.storage?.from('ad-images')?.getPublicUrl(storagePath);
-    return publicUrl;
+    return `${R2_PUBLIC}/${storagePath}`;
   },
 
   formatAd(ad) {
     const primaryImage = ad?.ad_images?.find(img => img?.is_primary) || ad?.ad_images?.[0];
     const imageUrl = primaryImage?.storage_path
-      ? (primaryImage?.storage_path?.startsWith('http') ? primaryImage?.storage_path : supabase?.storage?.from('ad-images')?.getPublicUrl(primaryImage?.storage_path)?.data?.publicUrl)
+      ? (primaryImage?.storage_path?.startsWith('http') ? primaryImage?.storage_path : `${R2_PUBLIC}/${primaryImage?.storage_path}`)
       : null;
     const now = Date.now();
     const createdAt = new Date(ad?.created_at);

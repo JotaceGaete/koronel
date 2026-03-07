@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
+import Logo from 'components/Logo';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
@@ -87,25 +88,8 @@ export default function Header() {
         style={{ height: '64px' }}
       >
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
-          {/* Logo: móvil = solo pin; escritorio = pin + CoronelLocal */}
-          <Link
-            to="/homepage"
-            className="flex items-center gap-2 shrink-0 min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
-            aria-label="Ir al inicio"
-          >
-            <div
-              className="flex items-center justify-center rounded-md shrink-0"
-              style={{ width: '40px', height: '40px', background: 'var(--color-primary)' }}
-            >
-              <Icon name="MapPin" size={22} color="white" strokeWidth={2.5} />
-            </div>
-            <span
-              className="font-heading font-700 text-lg leading-tight hidden sm:block"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              Coronel<span style={{ color: 'var(--color-accent)' }}>Local</span>
-            </span>
-          </Link>
+          {/* Logo Koronel.cl */}
+          <Logo variant="header" className="min-h-[44px] min-w-[44px]" />
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1" aria-label="Navegación principal">
@@ -289,21 +273,7 @@ export default function Header() {
             className="flex items-center justify-between px-4 border-b border-border bg-card shrink-0"
             style={{ height: '64px' }}
           >
-            <Link
-              to="/homepage"
-              className="flex items-center gap-2"
-              onClick={() => setMobileOpen(false)}
-            >
-              <div
-                className="flex items-center justify-center rounded-md"
-                style={{ width: '36px', height: '36px', background: 'var(--color-primary)' }}
-              >
-                <Icon name="MapPin" size={20} color="white" strokeWidth={2.5} />
-              </div>
-              <span className="font-heading font-bold text-lg" style={{ color: 'var(--color-primary)' }}>
-                Coronel<span style={{ color: 'var(--color-accent)' }}>Local</span>
-              </span>
-            </Link>
+            <Logo variant="headerMobile" onClick={() => setMobileOpen(false)} />
             <button
               onClick={() => setMobileOpen(false)}
               className="flex items-center justify-center w-10 h-10 rounded-md border border-border bg-muted transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

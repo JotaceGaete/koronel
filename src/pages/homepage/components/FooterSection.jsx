@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import Logo from 'components/Logo';
 
 export default function FooterSection() {
   const currentYear = new Date()?.getFullYear();
@@ -12,15 +13,7 @@ export default function FooterSection() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div
-                className="flex items-center justify-center rounded-md w-8 h-8"
-                style={{ background: 'var(--color-primary)' }}
-              >
-                <Icon name="MapPin" size={16} color="white" strokeWidth={2.5} />
-              </div>
-              <span className="font-heading font-bold text-base" style={{ color: 'var(--color-primary)' }}>
-                Coronel<span style={{ color: 'var(--color-accent)' }}>Local</span>
-              </span>
+              <Logo variant="footer" />
             </div>
             <p className="text-sm font-caption text-muted-foreground leading-relaxed">
               El directorio local de negocios y clasificados de Coronel, Chile.

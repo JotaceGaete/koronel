@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadFile } from './uploadService';
 
 export const eventService = {
   async getAll({ category, search, status = 'approved', upcoming = true, page = 1, pageSize = 12 } = {}) {
@@ -137,15 +138,12 @@ export const eventService = {
 
   async uploadImage(file, userId) {
     try {
-      const ext = file?.name?.split('.')?.pop();
-      const path = `events/${userId}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase
-        ?.storage
-        ?.from('ad-images')
-        ?.upload(path, file, { cacheControl: '3600', upsert: false });
+      const { url, path: storageKey, error: uploadError } = await uploadFile(file, {
+        entityType: 'event_image',
+        entityId: null,
+      });
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase?.storage?.from('ad-images')?.getPublicUrl(path);
-      return { path, publicUrl, error: null };
+      return { path: storageKey, publicUrl: url, error: null };
     } catch (error) {
       return { path: null, publicUrl: null, error };
     }

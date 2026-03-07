@@ -299,19 +299,20 @@ export const communityService = {
   // ─── IMAGES ──────────────────────────────────────────────────────────────
 
   async uploadQuestionImages(questionId, files) {
+    const { uploadFile } = await import('./uploadService');
     const results = [];
     for (const file of files) {
       try {
-        const ext = file?.name?.split('.')?.pop();
-        const storagePath = `${questionId}/${Date.now()}-${Math.random()?.toString(36)?.slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase?.storage?.from('community-images')?.upload(storagePath, file, { cacheControl: '3600', upsert: false });
+        const { url, error: uploadError } = await uploadFile(file, {
+          entityType: 'community_question_image',
+          entityId: questionId,
+        });
         if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase?.storage?.from('community-images')?.getPublicUrl(storagePath);
-
-        const publicUrl = urlData?.publicUrl;
-
-        const { data, error: dbError } = await supabase?.from('community_question_images')?.insert({ question_id: questionId, storage_path: storagePath, public_url: publicUrl })?.select()?.single();
+        const { data, error: dbError } = await supabase?.from('community_question_images')?.insert({
+          question_id: questionId,
+          storage_path: url,
+          public_url: url,
+        })?.select()?.single();
         if (dbError) throw dbError;
         results?.push({ data, error: null });
       } catch (error) {
@@ -333,7 +334,6 @@ export const communityService = {
 
   async deleteQuestionImage(imageId, storagePath) {
     try {
-      await supabase?.storage?.from('community-images')?.remove([storagePath]);
       const { error } = await supabase?.from('community_question_images')?.delete()?.eq('id', imageId);
       if (error) throw error;
       return { error: null };

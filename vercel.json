@@ -3,7 +3,7 @@
   "outputDirectory": "build",
   "framework": "vite",
   "rewrites": [
-    { "source": "/((?!assets/|favicon\\.ico|manifest\\.json).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|favicon\\.ico|manifest\\.json).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

@@ -168,14 +168,11 @@ export const adminBannerService = {
     if (error) throw error;
   },
 
-  /** Sube una imagen al bucket ad-images (ruta banners/) y devuelve la URL pública. */
+  /** Sube una imagen a R2 (banners) y devuelve la URL pública. */
   async uploadImage(file) {
-    const ext = file?.name?.split('.')?.pop()?.toLowerCase() || 'jpg';
-    const path = `banners/${crypto.randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase?.storage?.from('ad-images')?.upload(path, file, { cacheControl: '3600', upsert: false });
-    if (uploadError) throw uploadError;
-    const { data: { publicUrl } } = supabase?.storage?.from('ad-images')?.getPublicUrl(path);
-    return publicUrl;
+    const { uploadFile } = await import('./uploadService');
+    const { url } = await uploadFile(file, { entityType: 'banner', entityId: null });
+    return url;
   },
 };
 

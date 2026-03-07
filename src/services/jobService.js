@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadFile } from './uploadService';
 
 const CATEGORIES = ['Tecnología', 'Salud', 'Comercio', 'Construcción', 'Educación', 'Gastronomía', 'Administración', 'Otro'];
 const MODALITIES = ['Presencial', 'Remoto', 'Híbrido'];
@@ -139,12 +140,12 @@ export const jobService = {
 
   async uploadLogo(file, userId) {
     try {
-      const ext = file?.name?.split('.')?.pop();
-      const path = `${userId}/${Date.now()}.${ext}`;
-      const { error } = await supabase?.storage?.from('job-images')?.upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data: urlData } = supabase?.storage?.from('job-images')?.getPublicUrl(path);
-      return { url: urlData?.publicUrl, error: null };
+      const { url, error: uploadError } = await uploadFile(file, {
+        entityType: 'job_logo',
+        entityId: null,
+      });
+      if (uploadError) throw uploadError;
+      return { url, error: null };
     } catch (error) {
       return { url: null, error };
     }

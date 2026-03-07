@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Core Colors */
+  --color-primary: #2C5282;           /* blue-800 */
+  --color-primary-foreground: #FFFFFF; /* white */
+
+  --color-secondary: #4A5568;          /* gray-600 */
+  --color-secondary-foreground: #FFFFFF; /* white */
+
+  --color-accent: #D69E2E;             /* yellow-600 */
+  --color-accent-foreground: #1A202C;  /* gray-900 */
+
+  --color-background: #F7FAFC;         /* gray-50 */
+  --color-foreground: #1A202C;         /* gray-900 */
+
+  --color-card: #FFFFFF;               /* white */
+  --color-card-foreground: #2D3748;    /* gray-700 */
+
+  --color-popover: #FFFFFF;            /* white */
+  --color-popover-foreground: #2D3748; /* gray-700 */
+
+  --color-muted: #EDF2F7;              /* gray-100 */
+  --color-muted-foreground: #4A5568;   /* gray-600 */
+
+  --color-border: #E2E8F0;             /* gray-200 */
+  --color-input: #E2E8F0;              /* gray-200 */
+  --color-ring: #2C5282;               /* blue-800 */
+
+  --color-success: #38A169;            /* green-600 */
+  --color-success-foreground: #FFFFFF; /* white */
+
+  --color-warning: #D69E2E;            /* yellow-600 */
+  --color-warning-foreground: #1A202C; /* gray-900 */
+
+  --color-error: #E53E3E;              /* red-500 */
+  --color-error-foreground: #FFFFFF;   /* white */
+
+  --color-destructive: #E53E3E;        /* red-500 */
+  --color-destructive-foreground: #FFFFFF; /* white */
+
+  /* Typography */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Source Sans 3', sans-serif;
+  --font-caption: 'Inter', sans-serif;
+  --font-data: 'JetBrains Mono', monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(45, 55, 72, 0.1);
+  --shadow-md: 0 4px 6px rgba(45, 55, 72, 0.1);
+  --shadow-lg: 0 6px 12px rgba(45, 55, 72, 0.12);
+  --shadow-xl: 0 20px 25px -5px rgba(45, 55, 72, 0.15);
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* Spacing */
+  --spacing-base: 8px;
+
+  /* Scroll */
+  scroll-padding-top: 80px;
+}
+
+.dark {
+  --color-primary: #4A7FC1;            /* blue-500 adjusted */
+  --color-primary-foreground: #FFFFFF; /* white */
+
+  --color-secondary: #718096;          /* gray-500 */
+  --color-secondary-foreground: #FFFFFF; /* white */
+
+  --color-accent: #B7851F;             /* yellow-700 adjusted */
+  --color-accent-foreground: #F7FAFC;  /* gray-50 */
+
+  --color-background: #0F1419;         /* custom dark */
+  --color-foreground: #E2E8F0;         /* gray-200 */
+
+  --color-card: #1A202C;               /* gray-900 */
+  --color-card-foreground: #CBD5E0;    /* gray-300 */
+
+  --color-popover: #1A202C;            /* gray-900 */
+  --color-popover-foreground: #CBD5E0; /* gray-300 */
+
+  --color-muted: #2D3748;              /* gray-700 */
+  --color-muted-foreground: #718096;   /* gray-500 */
+
+  --color-border: #2D3748;             /* gray-700 */
+  --color-input: #2D3748;              /* gray-700 */
+  --color-ring: #4A7FC1;               /* blue-500 adjusted */
+
+  --color-success: #48BB78;            /* green-400 */
+  --color-success-foreground: #1A202C; /* gray-900 */
+
+  --color-warning: #ECC94B;            /* yellow-400 */
+  --color-warning-foreground: #1A202C; /* gray-900 */
+
+  --color-error: #FC8181;              /* red-300 */
+  --color-error-foreground: #1A202C;   /* gray-900 */
+
+  --color-destructive: #FC8181;        /* red-300 */
+  --color-destructive-foreground: #1A202C; /* gray-900 */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+}
+
+/* Menú móvil abierto: bloqueo de scroll compatible con iOS Safari.
+   Se usa position: fixed + top (por JS) en lugar de overflow: hidden
+   para que al cerrar el menú el scroll se restaure correctamente. */
+body.menu-open {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+.font-data {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.font-caption {
+  font-family: var(--font-caption);
+  letter-spacing: 0.025em;
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 3px;
+}
+
+/* Skeleton loading */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background-color: var(--color-muted);
+  border-radius: var(--radius-sm);
+}
+
+/* Micro-interactions */
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+.btn-hover:hover {
+  transform: translateY(-1px);
+}
+
+/* Staggered list reveals */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 250ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}

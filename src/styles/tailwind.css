@@ -122,6 +122,7 @@ body {
   background-color: var(--color-background);
 }
 
+<<<<<<< HEAD
 /* Menú móvil abierto: bloqueo de scroll compatible con iOS Safari.
    Se usa position: fixed + top (por JS) en lugar de overflow: hidden
    para que al cerrar el menú el scroll se restaure correctamente. */
@@ -133,6 +134,8 @@ body.menu-open {
   overflow: hidden;
 }
 
+=======
+>>>>>>> 02d0de0a023eedee6d7e10408c5f910dc66f604b
 @media (max-width: 640px) {
   body {
     font-size: 15px;

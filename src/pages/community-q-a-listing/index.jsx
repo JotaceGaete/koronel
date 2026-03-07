@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
@@ -159,9 +160,11 @@ export default function CommunityQAListing() {
   };
 
   const hasMore = posts?.length < totalCount;
+  const location = useLocation();
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
+      <PageMeta title="Comunidad" description="Preguntas, recomendaciones y conversaciones de la comunidad en Coronel." path={location.pathname + (location.search || '')} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}

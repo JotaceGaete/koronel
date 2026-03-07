@@ -1,4 +1,6 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
+import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import HeroSection from './components/HeroSection';
 import RecentContentSection from './components/RecentContentSection';
@@ -11,8 +13,10 @@ import WelcomePopup from './components/WelcomePopup';
 import LatestJobs from './components/LatestJobs';
 
 export default function Homepage() {
+  const location = useLocation();
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-background)' }}>
+      <PageMeta title="Inicio" description="Descubre negocios, clasificados, eventos, empleos y comunidad en Coronel y la región." path={location.pathname} />
       <Header />
       <WelcomePopup />
 

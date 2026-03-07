@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import CategoryFilter from 'components/ui/CategoryFilter';
 import Icon from 'components/AppIcon';
@@ -96,8 +97,10 @@ export default function ClassifiedAdsListing() {
 
   const hasMore = ads?.length < totalCount;
 
+  const listingPath = location.pathname + (location.search || '');
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
+      <PageMeta title="Clasificados" description="Avisos clasificados en Coronel. Compra, vende y encuentra lo que buscas." path={listingPath} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}

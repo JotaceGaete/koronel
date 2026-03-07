@@ -275,18 +275,18 @@ export default function Header() {
           </div>
         </div>
       </header>
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay: cabecera fija + panel con scroll propio (iOS Safari). */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-[150] bg-background md:hidden"
+          className="fixed inset-0 z-[150] flex flex-col bg-background md:hidden overflow-hidden"
           ref={mobileMenuRef}
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación móvil"
         >
-          {/* Mobile Menu Header */}
+          {/* Cabecera fija (no hace scroll). */}
           <div
-            className="flex items-center justify-between px-4 border-b border-border bg-card"
+            className="flex items-center justify-between px-4 border-b border-border bg-card shrink-0"
             style={{ height: '64px' }}
           >
             <Link
@@ -313,8 +313,10 @@ export default function Header() {
             </button>
           </div>
 
+          {/* Panel con scroll interno real; en iOS requiere -webkit-overflow-scrolling: touch. */}
+          <div className="mobile-menu-scroll flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden">
           {/* Mobile Nav Items */}
-          <nav className="px-4 py-4 flex flex-col gap-1" aria-label="Navegación móvil">
+          <nav className="px-4 py-4 flex flex-col gap-1 shrink-0" aria-label="Navegación móvil">
             {navItems?.map((item, index) => (
               <Link
                 key={item?.path}
@@ -444,6 +446,7 @@ export default function Header() {
                 </Link>
               </>
             )}
+          </div>
           </div>
         </div>
       )}

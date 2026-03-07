@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
@@ -59,8 +60,10 @@ export default function JobsListing() {
     }
   };
 
+  const location = useLocation();
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-background)' }}>
+      <PageMeta title="Empleos" description="Ofertas de empleo en Coronel. Encuentra trabajo en la región." path={location.pathname + (location.search || '')} />
       <Header />
       <main className="flex-1" style={{ paddingTop: '64px' }}>
         {/* Page Header */}

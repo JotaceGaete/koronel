@@ -122,15 +122,24 @@ body {
   background-color: var(--color-background);
 }
 
-/* Menú móvil abierto: bloqueo de scroll compatible con iOS Safari.
-   Se usa position: fixed + top (por JS) en lugar de overflow: hidden
-   para que al cerrar el menú el scroll se restaure correctamente. */
+/* Menú móvil abierto: solo bloquea el scroll del body (página de fondo).
+   No tocar html ni overflow del overlay; el panel del menú tiene scroll propio. */
 body.menu-open {
   position: fixed;
   left: 0;
   right: 0;
   width: 100%;
   overflow: hidden;
+}
+
+/* Panel del menú móvil: scroll interno real para iOS Safari.
+   -webkit-overflow-scrolling: touch habilita el scroll táctil suave.
+   touch-action: pan-y permite deslizar verticalmente sin bloquear. */
+.mobile-menu-scroll {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @media (max-width: 640px) {

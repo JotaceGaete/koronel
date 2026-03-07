@@ -3,6 +3,7 @@ import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import FloatingActionButton from "components/ui/FloatingActionButton";
+import AnalyticsTracker from "components/AnalyticsTracker";
 import NotFound from "pages/NotFound";
 import ProtectedRoute from "components/ProtectedRoute";
 import BusinessProfilePage from './pages/business-profile-page';
@@ -36,6 +37,7 @@ const Routes = () => {
   return (
     <BrowserRouter>
       <ErrorBoundary>
+        <AnalyticsTracker />
         <ScrollToTop />
         <FloatingActionButton />
         <RouterRoutes>

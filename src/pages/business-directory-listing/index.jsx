@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import SmartSearchInput from 'components/ui/SmartSearchInput';
 import Icon from 'components/AppIcon';
@@ -20,6 +21,8 @@ export default function BusinessDirectoryListing() {
   const params = new URLSearchParams(location.search);
   const initialQuery = params?.get('q') || '';
   const initialCategoryKey = params?.get('category') || '';
+
+  const listingPath = location.pathname + (location.search || '');
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedParent, setSelectedParent] = useState('all');
@@ -177,6 +180,7 @@ export default function BusinessDirectoryListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
+      <PageMeta title="Directorio de Negocios" description="Busca y descubre negocios en Coronel. Filtros por categoría, valoración y más." path={listingPath} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}

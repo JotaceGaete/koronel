@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
@@ -109,6 +110,7 @@ function EventCard({ event }) {
 }
 
 export default function EventsListing() {
+  const location = useLocation();
   const [events, setEvents] = useState(FALLBACK_EVENTS);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -139,6 +141,7 @@ export default function EventsListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
+      <PageMeta title="Eventos" description="Eventos en Coronel: ferias, talleres, cultos y encuentros comunitarios." path={location.pathname + (location.search || '')} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}

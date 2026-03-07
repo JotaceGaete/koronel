@@ -14,6 +14,7 @@ import BusinessDirectoryListing from './pages/business-directory-listing';
 import Homepage from './pages/homepage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
+import AuthCallbackPage from './pages/auth/AuthCallbackPage';
 import AdminDashboard from './pages/admin-dashboard';
 import AdminQuickBusinessEntry from './pages/admin-dashboard/AdminQuickBusinessEntry';
 import EventsListing from './pages/events-listing';
@@ -49,6 +50,7 @@ const Routes = () => {
           <Route path="/classified-ads-listing" element={<ClassifiedAdsListing />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/post-classified-ad" element={<PostClassifiedAd />} />
           <Route path="/dashboard" element={
             <ProtectedRoute><UserAccountDashboard /></ProtectedRoute>

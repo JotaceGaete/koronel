@@ -18,6 +18,11 @@ export default function LoginPage() {
     if (user) navigate('/dashboard', { replace: true });
   }, [user, navigate]);
 
+  useEffect(() => {
+    const msg = location?.state?.error;
+    if (msg) setError(msg);
+  }, [location?.state?.error]);
+
   const from = (typeof location?.state?.from === 'string'
     ? location.state.from
     : (location?.state?.from?.pathname && (location.state.from.pathname + (location.state.from.search || '')))) || '/homepage';

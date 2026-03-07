@@ -8,7 +8,7 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { createClient } = require('@supabase/supabase-js');
 
-const BUCKET = process.env.R2_BUCKET_NAME || 'koronel-media';
+const BUCKET = process.env.R2_BUCKET_NAME || 'multimedia-koronel';
 const PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://multimedia.koronel.cl';
 const ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const ACCESS_KEY = process.env.R2_ACCESS_KEY_ID;

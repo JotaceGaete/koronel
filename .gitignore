@@ -1,0 +1,13 @@
+.DS_Store
+node_modules
+.idea
+package-lock.json
+/build
+.vscode/
+.idea/
+vite.config.*s.*
+
+# Variables de entorno (no subir claves)
+.env
+.env.local
+.env.*.local

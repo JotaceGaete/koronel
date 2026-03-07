@@ -50,6 +50,9 @@ const Routes = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/post-classified-ad" element={<PostClassifiedAd />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute><UserAccountDashboard /></ProtectedRoute>
+          } />
           <Route path="/user-account-dashboard" element={
             <ProtectedRoute><UserAccountDashboard /></ProtectedRoute>
           } />

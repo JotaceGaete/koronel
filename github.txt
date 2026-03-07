@@ -1,0 +1,11 @@
+cambios para git
+
+git add .
+git commit -m "fix menu scroll iphone"
+git push origin main
+
+Cómo forzar un deploy si quieres probar rápido
+
+Puedes hacer esto:
+git commit --allow-empty -m "trigger vercel deploy"
+git push origin main

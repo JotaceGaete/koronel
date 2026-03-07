@@ -82,6 +82,21 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const signInWithGoogle = async () => {
+    try {
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : ''
+      const { data, error } = await supabase?.auth?.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      })
+      if (error) return { error }
+      if (data?.url) window.location.href = data.url
+      return { data, error }
+    } catch (error) {
+      return { error: { message: 'Error de red. Por favor intenta de nuevo.' } }
+    }
+  }
+
   const signOut = async () => {
     try {
       const { error } = await supabase?.auth?.signOut()
@@ -113,6 +128,7 @@ export const AuthProvider = ({ children }) => {
     profileLoading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     updateProfile,
     isAuthenticated: !!user

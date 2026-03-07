@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
+import GoogleLoginButton from 'components/GoogleLoginButton';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) navigate('/dashboard', { replace: true });
+  }, [user, navigate]);
 
   const from = (typeof location?.state?.from === 'string'
     ? location.state.from
@@ -89,6 +94,16 @@ export default function LoginPage() {
             <Button type="submit" variant="default" fullWidth loading={loading} size="lg">
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs font-caption">
+                <span className="px-2 bg-card text-muted-foreground">o</span>
+              </div>
+            </div>
+            <GoogleLoginButton />
           </form>
 
           <div className="mt-4 text-center">

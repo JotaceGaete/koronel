@@ -29,10 +29,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
   const mobileMenuRef = useRef(null);
-<<<<<<< HEAD
   const scrollPositionRef = useRef(0);
-=======
->>>>>>> 02d0de0a023eedee6d7e10408c5f910dc66f604b
 
   const isActive = (path) => location?.pathname === path;
 
@@ -61,7 +58,6 @@ export default function Header() {
     setUserMenuOpen(false);
   }, [location?.pathname]);
 
-<<<<<<< HEAD
   /* Bloqueo de scroll con técnica iOS: position fixed + guardar/restaurar scroll.
      Evita que en iOS Safari la página quede bloqueada al cerrar el menú. */
   useEffect(() => {
@@ -79,15 +75,6 @@ export default function Header() {
       document.body.style.top = '';
       window.scrollTo(0, scrollPositionRef.current);
     };
-=======
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
->>>>>>> 02d0de0a023eedee6d7e10408c5f910dc66f604b
   }, [mobileOpen]);
 
   const displayName = userProfile?.full_name || user?.email?.split('@')?.[0] || 'Usuario';

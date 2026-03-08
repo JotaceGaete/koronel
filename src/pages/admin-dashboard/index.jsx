@@ -43,15 +43,17 @@ const SECTION_MAP = {
   empleos: AdminEmpleos,
 };
 
-function isAdminUser(user) {
+function isAdminUser(user, userProfile) {
   if (!user) return false;
   const meta = user?.user_metadata || {};
   const appMeta = user?.app_metadata || {};
-  return meta?.role === 'admin' || appMeta?.role === 'admin';
+  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
+  const profileAdmin = userProfile?.role === 'admin';
+  return authAdmin || profileAdmin;
 }
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const [activeSection, setActiveSection] = useState('businesses');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -76,7 +78,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!user || !isAdminUser(user)) {
+  if (!user || !isAdminUser(user, userProfile)) {
     return <Navigate to="/login" replace />;
   }
 

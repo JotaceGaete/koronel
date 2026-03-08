@@ -248,7 +248,7 @@ export default function AdminNotificationsPanel({ onNavigate }) {
       {/* Dropdown Panel */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-xl z-[200] overflow-hidden"
+          className="absolute right-0 top-full mt-2 w-full max-w-[320px] bg-card border border-border rounded-xl shadow-xl z-[200] overflow-hidden"
           style={{ maxHeight: '480px' }}
         >
           {/* Header */}

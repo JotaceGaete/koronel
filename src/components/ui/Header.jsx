@@ -89,7 +89,7 @@ export default function Header() {
         className="fixed top-0 left-0 right-0 z-[100] bg-card border-b border-border shadow-sm"
         style={{ height: '64px' }}
       >
-        <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
+        <div className="w-full max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
           {/* Logo Koronel.cl */}
           <Logo variant="header" className="min-h-[44px] min-w-[44px]" />
 

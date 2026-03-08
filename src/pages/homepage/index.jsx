@@ -15,7 +15,7 @@ import LatestJobs from './components/LatestJobs';
 export default function Homepage() {
   const location = useLocation();
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-background)' }}>
+    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden" style={{ background: 'var(--color-background)' }}>
       <PageMeta title="Inicio" description="Descubre negocios, clasificados, eventos, empleos y comunidad en Coronel y la región." path={location.pathname} />
       <Header />
       <WelcomePopup />

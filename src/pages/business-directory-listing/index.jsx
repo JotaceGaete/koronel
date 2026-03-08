@@ -324,7 +324,7 @@ export default function BusinessDirectoryListing() {
       {/* Mobile Filter Panel */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-[200] bg-black bg-opacity-50 lg:hidden" onClick={() => setMobileFiltersOpen(false)}>
-          <div className="absolute right-0 top-0 bottom-0 w-80 bg-card p-4 overflow-y-auto" onClick={e => e?.stopPropagation()}>
+          <div className="absolute right-0 top-0 bottom-0 w-full max-w-[320px] bg-card p-4 overflow-y-auto overflow-x-hidden" onClick={e => e?.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading font-semibold text-foreground">Filtros</h2>
               <button onClick={() => setMobileFiltersOpen(false)} className="p-2 rounded-md hover:bg-muted">

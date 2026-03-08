@@ -6,6 +6,7 @@ import Button from 'components/ui/Button';
 export default function PhotoUpload({ photos, onChange }) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const handleFiles = useCallback((files) => {
     const validFiles = Array.from(files)?.filter(f => f?.type?.startsWith('image/'));
@@ -65,14 +66,23 @@ export default function PhotoUpload({ photos, onChange }) {
         tabIndex={0}
         onKeyDown={(e) => e?.key === 'Enter' && fileInputRef?.current?.click()}
       >
+        {/* Sin capture: en móvil permite elegir galería/archivos o cámara */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => handleFiles(e?.target?.files)}
+          onChange={(e) => { handleFiles(e?.target?.files); e.target.value = ''; }}
+        />
+        {/* Con capture: solo para el botón "Tomar foto" (abre cámara directo en móvil) */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
           capture="environment"
+          className="hidden"
+          onChange={(e) => { handleFiles(e?.target?.files); e.target.value = ''; }}
         />
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--color-muted)' }}>
@@ -87,10 +97,13 @@ export default function PhotoUpload({ photos, onChange }) {
             </p>
           </div>
           <Button variant="outline" size="sm" iconName="Camera" iconPosition="left" iconSize={15}
-            onClick={(e) => { e?.stopPropagation(); fileInputRef?.current?.click(); }}>
+            onClick={(e) => { e?.stopPropagation(); cameraInputRef?.current?.click(); }}>
             Tomar foto
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          En móvil: toca el área de arriba para elegir desde galería o archivos; usa &quot;Tomar foto&quot; para abrir la cámara.
+        </p>
       </div>
       {/* Thumbnails */}
       {photos?.length > 0 && (

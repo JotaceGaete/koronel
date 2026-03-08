@@ -46,30 +46,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--color-background)' }}>
-      <div className="w-full max-w-md">
-        {/* Logo */}
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-8"
+      style={{
+        background: 'linear-gradient(160deg, var(--color-background) 0%, var(--color-muted) 100%)',
+      }}
+    >
+      <div className="w-full max-w-[400px]">
+        {/* Logo + título */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-5">
             <Logo variant="auth" />
           </div>
-          <h1 className="font-heading font-bold text-2xl text-foreground">Iniciar Sesión</h1>
-          <p className="text-sm font-caption text-muted-foreground mt-1">Accede a tu cuenta de CoronelLocal</p>
-        </div>
-
-        {/* Demo credentials */}
-        <div className="mb-4 p-3 rounded-md border text-sm font-caption" style={{ background: 'rgba(44,82,130,0.06)', borderColor: 'rgba(44,82,130,0.2)' }}>
-          <p className="font-semibold text-foreground mb-1 flex items-center gap-1.5">
-            <Icon name="Info" size={14} color="var(--color-primary)" />
-            Credenciales de prueba:
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-foreground tracking-tight">
+            Iniciar sesión
+          </h1>
+          <p className="text-sm font-caption text-muted-foreground mt-2">
+            Accede a tu cuenta de Koronel
           </p>
-          <p className="text-muted-foreground">Email: <span className="font-medium text-foreground">carlos@coronellocal.cl</span></p>
-          <p className="text-muted-foreground">Contraseña: <span className="font-medium text-foreground">coronel2026</span></p>
         </div>
 
-        {/* Form */}
-        <div className="bg-card border border-border rounded-md p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {/* Card del formulario */}
+        <div
+          className="rounded-2xl p-6 sm:p-8 shadow-lg border border-border/80"
+          style={{
+            background: 'var(--color-card)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02)',
+          }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
               label="Correo electrónico"
               type="email"
@@ -77,6 +82,7 @@ export default function LoginPage() {
               value={form?.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e?.target?.value }))}
               required
+              autoComplete="email"
             />
             <Input
               label="Contraseña"
@@ -85,41 +91,55 @@ export default function LoginPage() {
               value={form?.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e?.target?.value }))}
               required
+              autoComplete="current-password"
             />
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-md text-sm font-caption" style={{ background: '#E53E3E18', color: 'var(--color-error)' }}>
-                <Icon name="AlertCircle" size={15} color="currentColor" />
+              <div
+                className="flex items-center gap-2 p-3 rounded-xl text-sm font-caption"
+                style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--color-error)' }}
+              >
+                <Icon name="AlertCircle" size={16} color="currentColor" />
                 {error}
               </div>
             )}
-            <Button type="submit" variant="default" fullWidth loading={loading} size="lg">
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            <Button type="submit" variant="default" fullWidth loading={loading} size="lg" className="rounded-xl">
+              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>
 
-            <div className="relative my-4">
+            <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
               </div>
-              <div className="relative flex justify-center text-xs font-caption">
-                <span className="px-2 bg-card text-muted-foreground">o</span>
+              <div className="relative flex justify-center">
+                <span className="px-3 text-xs font-caption text-muted-foreground bg-[var(--color-card)]">
+                  o continúa con
+                </span>
               </div>
             </div>
             <GoogleLoginButton />
           </form>
 
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <p className="text-sm font-caption text-muted-foreground">
               ¿No tienes cuenta?{' '}
-              <Link to="/signup" className="font-medium hover:underline" style={{ color: 'var(--color-primary)' }}>
+              <Link
+                to="/signup"
+                className="font-semibold hover:underline transition-colors"
+                style={{ color: 'var(--color-primary)' }}
+              >
                 Regístrate gratis
               </Link>
             </p>
           </div>
         </div>
 
-        <div className="mt-4 text-center">
-          <Link to="/homepage" className="text-sm font-caption text-muted-foreground hover:text-foreground transition-colors">
-            ← Volver al inicio
+        <div className="mt-6 text-center">
+          <Link
+            to="/homepage"
+            className="inline-flex items-center gap-1.5 text-sm font-caption text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Icon name="ArrowLeft" size={14} color="currentColor" />
+            Volver al inicio
           </Link>
         </div>
       </div>

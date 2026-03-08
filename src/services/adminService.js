@@ -15,7 +15,8 @@ export const adminBusinessService = {
   },
 
   async create(payload) {
-    const { data, error } = await supabase?.from('businesses')?.insert(payload)?.select()?.single();
+    const safePayload = { ...payload, claimed: payload.claimed ?? false };
+    const { data, error } = await supabase?.from('businesses')?.insert(safePayload)?.select()?.single();
     if (error) throw error;
     return data;
   },

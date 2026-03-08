@@ -29,6 +29,12 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    return res.status(503).json({
+      error: 'Server misconfiguration: missing Supabase URL or anon key. Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel environment.',
+    });
+  }
+
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;

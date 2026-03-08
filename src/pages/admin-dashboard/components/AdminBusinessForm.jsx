@@ -560,6 +560,8 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         status: form?.status,
         opening_hours: buildOpeningHours(),
         social_links: socialLinks?.filter(s => s?.url?.trim()),
+        claimed: form?.owner_id ? true : false,
+        owner_id: form?.owner_id ?? null,
       };
 
       let savedId = editItem?.id;

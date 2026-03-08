@@ -45,9 +45,18 @@ async function getClientIP() {
   }
 }
 
+function isAdminUser(user, userProfile) {
+  if (!user) return false;
+  const meta = user?.user_metadata || {};
+  const appMeta = user?.app_metadata || {};
+  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
+  const profileAdmin = userProfile?.role === 'admin';
+  return authAdmin || profileAdmin;
+}
+
 export default function PostClassifiedAd() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
@@ -103,11 +112,14 @@ export default function PostClassifiedAd() {
       return;
     }
 
-    // Authenticated user: check rate limit (pass userId so DB can check premium/claimed status)
-    const withinLimit = await adService?.checkDailyLimit(user?.id, 'user_id', user?.id);
-    if (!withinLimit) {
-      setSubmitError('Has alcanzado el límite de 20 avisos por día. Intenta mañana.');
-      return;
+    // Administradores sin límite por usuario
+    const isAdmin = isAdminUser(user, userProfile);
+    if (!isAdmin) {
+      const withinLimit = await adService?.checkDailyLimit(user?.id, 'user_id', user?.id);
+      if (!withinLimit) {
+        setSubmitError('Has alcanzado el límite de 20 avisos por día. Intenta mañana.');
+        return;
+      }
     }
 
     await doSubmit(null);
@@ -130,15 +142,17 @@ export default function PostClassifiedAd() {
     setShowGuestModal(false);
 
     try {
-      // Get IP for spam tracking
       const ipAddress = await getClientIP();
 
-      // Check IP rate limit
-      const ipLimit = await adService?.checkDailyLimit(ipAddress, 'ip');
-      if (!ipLimit) {
-        setSubmitError('Se ha alcanzado el límite de publicaciones desde esta dirección IP. Intenta mañana.');
-        setIsSubmitting(false);
-        return;
+      // Administradores sin límite por IP (comprobar también userProfile por si el rol está solo ahí)
+      const isAdmin = isAdminUser(user, userProfile);
+      if (!isAdmin) {
+        const ipLimit = await adService?.checkDailyLimit(ipAddress, 'ip');
+        if (!ipLimit) {
+          setSubmitError('Se ha alcanzado el límite de publicaciones desde esta dirección IP. Intenta mañana.');
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       const photoPaths = [];
@@ -167,13 +181,16 @@ export default function PostClassifiedAd() {
       if (createError) {
         setSubmitError('Error al publicar el aviso. Por favor intenta de nuevo.');
       } else {
-        // Increment daily counters
-        if (user?.id) {
-          await adService?.incrementDailyCount(user?.id, 'user_id');
-        } else if (guestInfo?.email) {
-          await adService?.incrementDailyCount(guestInfo?.email, 'email');
+        // Increment daily counters (administradores no suman a los límites)
+        const isAdmin = isAdminUser(user, userProfile);
+        if (!isAdmin) {
+          if (user?.id) {
+            await adService?.incrementDailyCount(user?.id, 'user_id');
+          } else if (guestInfo?.email) {
+            await adService?.incrementDailyCount(guestInfo?.email, 'email');
+          }
+          await adService?.incrementDailyCount(ipAddress, 'ip');
         }
-        await adService?.incrementDailyCount(ipAddress, 'ip');
 
         setSuccessIsGuest(isGuest);
         setSuccessGuestEmail(guestInfo?.email || '');

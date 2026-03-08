@@ -238,7 +238,8 @@ export const adService = {
           is_primary: index === 0,
           sort_order: index
         }));
-        await supabase?.from('ad_images')?.insert(imageInserts);
+        const { error: imagesError } = await supabase?.from('ad_images')?.insert(imageInserts)?.select();
+        if (imagesError) throw imagesError;
       }
 
       return { data: ad, error: null, verificationToken, isGuest };

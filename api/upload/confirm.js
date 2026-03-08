@@ -37,9 +37,11 @@ module.exports = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { storageKey, mimeType, size, entityType, entityId } = req.body || {};
+    const rawBody = req.body;
+    const body = typeof rawBody === 'string' ? (() => { try { return JSON.parse(rawBody); } catch { return {}; } })() : (rawBody || {});
+    const { storageKey, mimeType, size, entityType, entityId } = body;
     if (!storageKey) {
-      return res.status(400).json({ error: 'storageKey required' });
+      return res.status(400).json({ error: 'storageKey required', receivedKeys: Object.keys(body) });
     }
 
     const url = `${PUBLIC_URL.replace(/\/$/, '')}/${storageKey}`;
@@ -63,7 +65,12 @@ module.exports = async (req, res) => {
 
     if (error) {
       console.error('confirm media_files insert:', error);
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
     }
 
     return res.status(200).json({ data });

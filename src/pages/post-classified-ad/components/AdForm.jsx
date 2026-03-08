@@ -2,12 +2,6 @@ import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
 
-const DURATIONS = [
-  { value: '30', label: '30 días' },
-  { value: '60', label: '60 días' },
-  { value: '90', label: '90 días' },
-];
-
 const LOCATIONS = [
   { value: '', label: 'Selecciona un sector' },
   { value: 'Centro', label: 'Centro' },
@@ -218,29 +212,10 @@ export default function AdForm({ formData, errors, onChange, categories = [], ca
           </div>
         </div>
       </div>
-      {/* Duration */}
-      <div>
-        <label className="block text-sm font-caption font-semibold text-foreground mb-2">
-          Duración del aviso
-        </label>
-        <div className="flex gap-3">
-          {DURATIONS?.map(d => (
-            <button
-              key={d?.value}
-              type="button"
-              onClick={() => handleChange('duration', d?.value)}
-              className={`flex-1 py-2.5 rounded-md text-sm font-caption font-medium border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-                ${formData?.duration === d?.value
-                  ? 'border-primary text-primary-foreground'
-                  : 'border-border text-foreground hover:border-primary hover:bg-muted'
-                }`}
-              style={formData?.duration === d?.value ? { background: 'var(--color-primary)' } : {}}
-            >
-              {d?.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Duración fija: 30 días */}
+      <p className="text-sm font-caption text-muted-foreground">
+        Tu aviso se publicará por 30 días.
+      </p>
     </div>
   );
 }

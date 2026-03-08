@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
 import AdminBusinessForm from './AdminBusinessForm';
@@ -64,14 +65,14 @@ export default function AdminIncompleteBusinesses({ onOpenEdit }) {
         title="Negocios incompletos"
         subtitle="Fichas creadas con ingreso rápido. Completa la ficha para publicar con todos los datos."
         actions={
-          <a
-            href="/admin/ingreso-rapido"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors"
+          <Link
+            to="/admin/ingreso-rapido"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors min-h-[44px] items-center"
             style={{ background: 'var(--color-primary)' }}
           >
             <Icon name="Plus" size={16} color="white" />
             Nuevo ingreso rápido
-          </a>
+          </Link>
         }
       />
       {error && (
@@ -90,14 +91,14 @@ export default function AdminIncompleteBusinesses({ onOpenEdit }) {
           <Icon name="FileText" size={48} color="currentColor" className="mx-auto mb-4 opacity-40" />
           <p className="font-medium text-foreground">No hay negocios incompletos</p>
           <p className="text-sm mt-1">Los creados con &quot;Ingreso rápido&quot; aparecerán aquí hasta que completes la ficha.</p>
-          <a
-            href="/admin/ingreso-rapido"
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-md text-sm font-medium text-white"
+          <Link
+            to="/admin/ingreso-rapido"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-md text-sm font-medium text-white min-h-[44px] items-center"
             style={{ background: 'var(--color-primary)' }}
           >
             <Icon name="Camera" size={16} color="white" />
             Crear uno ahora
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="mt-4 space-y-3">

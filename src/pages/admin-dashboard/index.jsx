@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminBusinesses from './components/AdminBusinesses';
@@ -105,10 +105,10 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/admin/ingreso-rapido" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+          <Link to="/admin/ingreso-rapido" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors min-h-[44px] items-center justify-center">
             <Icon name="Camera" size={14} color="currentColor" />
             Ingreso rápido
-          </a>
+          </Link>
           <AdminNotificationsPanel onNavigate={(section) => setActiveSection(section)} />
           <a href="/homepage" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
             <Icon name="ArrowLeft" size={14} color="currentColor" />

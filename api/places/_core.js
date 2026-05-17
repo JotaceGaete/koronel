@@ -5,6 +5,7 @@ const GOOGLE_KEY = process.env.GOOGLE_PLACES_API_KEY
   || process.env.VITE_GOOGLE_MAPS_API_KEY;
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_ANON = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const BUSINESS_INSERT_COLUMNS = new Set([
   'owner_id',
@@ -37,6 +38,7 @@ const BUSINESS_INSERT_COLUMNS = new Set([
   'social_links',
   'category_id',
   'claimed',
+  'google_place_id',
 ]);
 
 function sanitizeBusinessPayload(payload) {
@@ -56,6 +58,20 @@ function getSupabase(token) {
   return createClient(SUPABASE_URL, SUPABASE_ANON, token ? {
     global: { headers: { Authorization: `Bearer ${token}` } },
   } : undefined);
+}
+
+function getServiceSupabase() {
+  if (!SUPABASE_SERVICE_ROLE) {
+    const error = new Error('Missing SUPABASE_SERVICE_ROLE_KEY');
+    error.statusCode = 503;
+    throw error;
+  }
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
 
 function getToken(req) {
@@ -106,9 +122,10 @@ async function googleFetch(url) {
 }
 
 function mapPlaceForClient(place, duplicate) {
+  const placeId = place.place_id || place.id || null;
   return {
-    id: place.place_id,
-    place_id: place.place_id,
+    id: placeId,
+    place_id: placeId,
     name: place.name || '',
     formatted_address: place.formatted_address || '',
     address: place.formatted_address || '',
@@ -142,6 +159,7 @@ function mapPlaceToPayload(place) {
     featured: false,
     claimed: false,
     is_open: true,
+    google_place_id: place.place_id || place.id || null,
   });
 }
 
@@ -169,6 +187,16 @@ async function fetchPlaceDetails(placeId) {
 
 async function checkDuplicate(supabase, place) {
   const placeId = place.place_id || place.id;
+  if (placeId) {
+    const { data: byPlaceId, error } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('google_place_id', placeId)
+      .limit(1);
+    if (error) throw error;
+    return !!byPlaceId?.length;
+  }
+
   if (!place.name) return false;
   const safeName = place.name.replace(/%/g, '\\%').replace(/_/g, '\\_');
   let query = supabase
@@ -205,9 +233,13 @@ async function importPlace({ supabase, placeId, place }) {
   const details = placeId ? await fetchPlaceDetails(placeId) : place;
   if (!details?.name) throw new Error('Place details not found');
   if (await checkDuplicate(supabase, details)) {
-    const error = new Error('El negocio ya existe');
-    error.statusCode = 409;
-    throw error;
+    return {
+      business: null,
+      imported: 0,
+      skippedDuplicates: 1,
+      duplicate: true,
+      googlePlaceId: details.place_id || details.id || placeId || null,
+    };
   }
 
   const { data, error } = await supabase
@@ -215,11 +247,27 @@ async function importPlace({ supabase, placeId, place }) {
     .insert(mapPlaceToPayload(details))
     .select()
     .single();
+  if (error?.code === '23505') {
+    return {
+      business: null,
+      imported: 0,
+      skippedDuplicates: 1,
+      duplicate: true,
+      googlePlaceId: details.place_id || details.id || placeId || null,
+    };
+  }
   if (error) throw error;
-  return data;
+  return {
+    business: data,
+    imported: 1,
+    skippedDuplicates: 0,
+    duplicate: false,
+    googlePlaceId: details.place_id || details.id || placeId || null,
+  };
 }
 
 module.exports = {
+  getServiceSupabase,
   requireAdmin,
   searchPlaces,
   importPlace,

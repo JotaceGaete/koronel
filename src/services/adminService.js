@@ -31,6 +31,7 @@ const BUSINESS_COLUMNS = new Set([
   'social_links',
   'category_id',
   'claimed',
+  'google_place_id',
 ]);
 
 function withoutBusinessOnlyFields(payload = {}) {

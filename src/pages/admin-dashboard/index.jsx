@@ -13,7 +13,6 @@ import AdminEvents from './components/AdminEvents';
 import AdminCommunity from './components/AdminCommunity';
 import AdminEmpleos from './components/AdminEmpleos';
 import AdminIncompleteBusinesses from './components/AdminIncompleteBusinesses';
-import AdminImportPlaces from './components/AdminImportPlaces';
 import AdminNotificationsPanel from 'components/admin/AdminNotificationsPanel';
 
 const NAV_ITEMS = [
@@ -28,7 +27,8 @@ const NAV_ITEMS = [
   { id: 'events', label: 'Eventos', icon: 'CalendarDays' },
   { id: 'community', label: 'Comunidad', icon: 'MessageCircle' },
   { id: 'empleos', label: 'Empleos', icon: 'Briefcase' },
-  { id: 'import-places', label: 'Importar Google Places', icon: 'Download' },
+  // El id 'import-places' es especial: navega a la página standalone en lugar de renderizar un tab
+  { id: 'import-places', label: 'Importar Google Places', icon: 'Download', href: '/admin/importar-negocios' },
 ];
 
 const SECTION_MAP = {
@@ -43,7 +43,6 @@ const SECTION_MAP = {
   events: AdminEvents,
   community: AdminCommunity,
   empleos: AdminEmpleos,
-  'import-places': AdminImportPlaces,
 };
 
 function isAdminUser(user, userProfile) {
@@ -139,22 +138,40 @@ export default function AdminDashboard() {
         >
           <nav className="flex-1 py-4 overflow-y-auto">
             <p className="px-4 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Gestión</p>
-            {NAV_ITEMS?.map(item => (
-              <button
-                key={item?.id}
-                onClick={() => setActiveSection(item?.id)}
-                className={`
-                  w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all duration-150
-                  ${activeSection === item?.id
-                    ? 'text-white' :'text-secondary hover:bg-muted hover:text-foreground'
-                  }
-                `}
-                style={activeSection === item?.id ? { background: 'var(--color-primary)' } : {}}
-              >
-                <Icon name={item?.icon} size={17} color="currentColor" />
-                {item?.label}
-              </button>
-            ))}
+            {NAV_ITEMS?.map(item => {
+              const isActive = activeSection === item?.id && !item?.href;
+              const sharedClass = `
+                w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all duration-150
+                ${isActive ? 'text-white' : 'text-secondary hover:bg-muted hover:text-foreground'}
+              `;
+              const sharedStyle = isActive ? { background: 'var(--color-primary)' } : {};
+
+              if (item?.href) {
+                return (
+                  <Link
+                    key={item?.id}
+                    to={item.href}
+                    className={sharedClass}
+                    style={sharedStyle}
+                  >
+                    <Icon name={item?.icon} size={17} color="currentColor" />
+                    {item?.label}
+                  </Link>
+                );
+              }
+
+              return (
+                <button
+                  key={item?.id}
+                  onClick={() => setActiveSection(item?.id)}
+                  className={sharedClass}
+                  style={sharedStyle}
+                >
+                  <Icon name={item?.icon} size={17} color="currentColor" />
+                  {item?.label}
+                </button>
+              );
+            })}
           </nav>
         </aside>
 

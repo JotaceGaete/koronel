@@ -17,6 +17,7 @@ import SignupPage from './pages/auth/SignupPage';
 import AuthCallbackPage from './pages/auth/AuthCallbackPage';
 import AdminDashboard from './pages/admin-dashboard';
 import AdminQuickBusinessEntry from './pages/admin-dashboard/AdminQuickBusinessEntry';
+import AdminImportPlaces from './pages/admin-import-places';
 import EventsListing from './pages/events-listing';
 import EventDetailPage from './pages/event-detail-page';
 import PostEventForm from './pages/post-event-form';
@@ -61,6 +62,9 @@ const Routes = () => {
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin/ingreso-rapido" element={
             <ProtectedRoute><AdminQuickBusinessEntry /></ProtectedRoute>
+          } />
+          <Route path="/admin/importar-negocios" element={
+            <ProtectedRoute><AdminImportPlaces /></ProtectedRoute>
           } />
           <Route path="/eventos" element={<EventsListing />} />
           <Route path="/post-event-form" element={

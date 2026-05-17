@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
  * Importación masiva de negocios desde Google Places API.
+ * Toda la lógica de Places/Supabase/R2 está en api/places/_core.js (compartida con el panel web).
  *
  * Uso:
  *   node scripts/import-places.js --tipo="restaurante" --ciudad="Coronel" --limite=50
- *   node scripts/import-places.js --tipo="farmacia" --ciudad="Coronel" --limite=20 --publish
+ *   node scripts/import-places.js --tipo="farmacia"    --ciudad="Coronel" --limite=20 --publish
  *
  * Variables de entorno requeridas (en .env):
  *   GOOGLE_PLACES_API_KEY
- *   VITE_SUPABASE_URL (o SUPABASE_URL)
- *   VITE_SUPABASE_ANON_KEY (o SUPABASE_SERVICE_KEY para bypass RLS)
+ *   VITE_SUPABASE_URL  (o SUPABASE_URL)
+ *   VITE_SUPABASE_ANON_KEY  (o SUPABASE_SERVICE_KEY para bypass de RLS)
  *
- * Variables opcionales para subir fotos a R2:
+ * Opcionales para subir fotos a R2:
  *   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
  *   R2_BUCKET_NAME, R2_PUBLIC_URL
  */
@@ -20,18 +21,25 @@
 require('dotenv').config();
 
 const { createClient } = require('@supabase/supabase-js');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const readline = require('readline');
+const { S3Client }     = require('@aws-sdk/client-s3');
+const readline         = require('readline');
+const {
+  searchAndFetchDetails,
+  checkDuplicate,
+  importPlace,
+  sleep,
+  RATE_MS,
+} = require('../api/places/_core');
 
 // ---------------------------------------------------------------------------
-// Parse CLI args: --key=value or --flag
+// Argumentos CLI
 // ---------------------------------------------------------------------------
 const args = {};
 for (const arg of process.argv.slice(2)) {
   if (!arg.startsWith('--')) continue;
   const eq = arg.indexOf('=');
   if (eq === -1) args[arg.slice(2)] = true;
-  else args[arg.slice(2, eq)] = arg.slice(eq + 1);
+  else           args[arg.slice(2, eq)] = arg.slice(eq + 1);
 }
 
 const tipo    = (args.tipo   || args.type   || '').trim();
@@ -41,14 +49,14 @@ const publish = args.publish === true || args.publish === 'true';
 
 if (!tipo || !ciudad) {
   console.error('\nUso: node scripts/import-places.js --tipo="restaurante" --ciudad="Coronel" --limite=50\n');
-  console.error('Flags opcionales:');
-  console.error('  --publish     Publicar inmediatamente (sin pasar por revisión admin)');
-  console.error('  --limite=N    Máximo de resultados (default 20, máx 120)\n');
+  console.error('Opciones:');
+  console.error('  --publish   Publicar inmediatamente (sin revisión admin)');
+  console.error('  --limite=N  Máximo de resultados (default 20, máx 120)\n');
   process.exit(1);
 }
 
 // ---------------------------------------------------------------------------
-// Config
+// Credenciales
 // ---------------------------------------------------------------------------
 const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 const SUPABASE_URL   = process.env.VITE_SUPABASE_URL   || process.env.SUPABASE_URL   || '';
@@ -60,7 +68,7 @@ const R2_BUCKET      = process.env.R2_BUCKET_NAME || 'multimedia-koronel';
 const R2_PUBLIC_URL  = (process.env.R2_PUBLIC_URL || 'https://multimedia.koronel.cl').replace(/\/$/, '');
 
 if (!GOOGLE_API_KEY) {
-  console.error('\n❌  Falta GOOGLE_PLACES_API_KEY en el archivo .env\n');
+  console.error('\n❌  Falta GOOGLE_PLACES_API_KEY en .env\n');
   process.exit(1);
 }
 if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -70,84 +78,21 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------------------------------------------------------------------------
-// R2 client (optional — photos are skipped if credentials are missing)
-// ---------------------------------------------------------------------------
-function getR2() {
+function buildR2() {
   if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY || !R2_SECRET_KEY) return null;
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId: R2_ACCESS_KEY, secretAccessKey: R2_SECRET_KEY },
-  });
+  return {
+    client: new S3Client({
+      region:      'auto',
+      endpoint:    `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId: R2_ACCESS_KEY, secretAccessKey: R2_SECRET_KEY },
+    }),
+    bucket:    R2_BUCKET,
+    publicUrl: R2_PUBLIC_URL,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Rate limiting — 120 ms between requests ≈ 8 req/sec (under Google's 10/sec)
-// ---------------------------------------------------------------------------
-const RATE_MS = 120;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// ---------------------------------------------------------------------------
-// Google Places API helpers
-// ---------------------------------------------------------------------------
-const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place';
-
-async function gFetch(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-async function textSearch(query, pageToken) {
-  let url = `${PLACES_BASE}/textsearch/json?query=${encodeURIComponent(query)}&language=es&key=${GOOGLE_API_KEY}`;
-  if (pageToken) url += `&pagetoken=${encodeURIComponent(pageToken)}`;
-  return gFetch(url);
-}
-
-async function placeDetails(placeId) {
-  const fields = [
-    'place_id', 'name', 'formatted_phone_number', 'international_phone_number',
-    'formatted_address', 'geometry', 'website', 'photos',
-    'opening_hours', 'rating', 'user_ratings_total', 'types',
-  ].join(',');
-  const url = `${PLACES_BASE}/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&language=es&key=${GOOGLE_API_KEY}`;
-  return gFetch(url);
-}
-
-async function downloadPhoto(photoRef) {
-  const url = `${PLACES_BASE}/photo?maxwidth=800&photo_reference=${encodeURIComponent(photoRef)}&key=${GOOGLE_API_KEY}`;
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) throw new Error(`Photo HTTP ${res.status}`);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  const contentType = res.headers.get('content-type') || 'image/jpeg';
-  return { buffer, contentType };
-}
-
-async function uploadToR2(r2Client, buffer, contentType, key) {
-  await r2Client.send(new PutObjectCommand({
-    Bucket: R2_BUCKET,
-    Key: key,
-    Body: buffer,
-    ContentType: contentType,
-  }));
-  return `${R2_PUBLIC_URL}/${key}`;
-}
-
-// ---------------------------------------------------------------------------
-// Duplicate check (case-insensitive name match)
-// ---------------------------------------------------------------------------
-async function isDuplicate(name) {
-  const { data } = await supabase
-    .from('businesses')
-    .select('id')
-    .ilike('name', name.trim())
-    .limit(1);
-  return Array.isArray(data) && data.length > 0;
-}
-
-// ---------------------------------------------------------------------------
-// Terminal table renderer
+// Renderizado de tabla ASCII para la terminal
 // ---------------------------------------------------------------------------
 function col(val, width) {
   const s = String(val ?? '');
@@ -181,76 +126,11 @@ function printTable(places) {
 }
 
 // ---------------------------------------------------------------------------
-// Interactive prompt
+// Prompt interactivo de readline
 // ---------------------------------------------------------------------------
 function ask(question) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => rl.question(question, (a) => { rl.close(); resolve(a.trim()); }));
-}
-
-// ---------------------------------------------------------------------------
-// Insert one business + its photos into Supabase / R2
-// ---------------------------------------------------------------------------
-async function insertBusiness(place, r2) {
-  const phone = place.formatted_phone_number || place.international_phone_number || null;
-  const openingHours = place.opening_hours
-    ? { periods: place.opening_hours.periods, weekday_text: place.opening_hours.weekday_text }
-    : null;
-
-  const { data: biz, error } = await supabase
-    .from('businesses')
-    .insert({
-      name:          place.name,
-      address:       place.formatted_address || null,
-      phone,
-      whatsapp:      phone,
-      website:       place.website || null,
-      latitude:      place.geometry?.location?.lat ?? null,
-      longitude:     place.geometry?.location?.lng ?? null,
-      opening_hours: openingHours,
-      source:        'google_places_import',
-      status:        publish ? 'published' : 'pending',
-      verified:      false,
-      featured:      false,
-      category:      tipo,
-      admin_notes:   `Importado desde Google Places · place_id: ${place.place_id}`,
-    })
-    .select('id')
-    .single();
-
-  if (error) throw error;
-
-  const businessId = biz.id;
-
-  // Upload up to 5 photos to R2
-  if (r2 && place.photos?.length) {
-    const refs = place.photos.slice(0, 5);
-    for (let i = 0; i < refs.length; i++) {
-      try {
-        const { buffer, contentType } = await downloadPhoto(refs[i].photo_reference);
-        const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
-        const key = `businesses/${businessId}/${Date.now()}-${i}.${ext}`;
-        const url = await uploadToR2(r2, buffer, contentType, key);
-
-        await supabase.from('business_images').insert({
-          business_id: businessId,
-          storage_path: url,
-          alt_text:    place.name,
-          is_primary:  i === 0,
-          sort_order:  i,
-        });
-
-        if (i === 0) {
-          await supabase.from('businesses').update({ logo_url: url }).eq('id', businessId);
-        }
-      } catch {
-        // Photo errors are non-fatal — business still gets imported
-      }
-      await sleep(RATE_MS);
-    }
-  }
-
-  return businessId;
 }
 
 // ---------------------------------------------------------------------------
@@ -259,58 +139,32 @@ async function insertBusiness(place, r2) {
 async function main() {
   console.log(`\n🔍  Buscando "${tipo}" en "${ciudad}"  (máx: ${limite})\n`);
 
-  // --- Text Search (paginated) ---
-  const places = [];
-  let pageToken = null;
+  // Búsqueda paginada + detalles (toda la lógica en _core.js)
+  let currentStep = 0, totalSteps = 0;
+  const detailed = await searchAndFetchDetails(
+    tipo, ciudad, limite, GOOGLE_API_KEY,
+    (current, total, name) => {
+      currentStep = current;
+      totalSteps  = total;
+      const pct = String(Math.round((current / total) * 100)).padStart(3);
+      process.stdout.write(`\r   [${String(current).padStart(2)}/${total}] ${pct}%  ${name.slice(0, 50).padEnd(50)}`);
+    },
+  );
 
-  do {
-    if (pageToken) await sleep(2200); // Google enforces a delay between page_token requests
-    const result = await textSearch(`${tipo} en ${ciudad}`, pageToken);
+  if (currentStep > 0) process.stdout.write('\n\n');
 
-    if (result.status === 'REQUEST_DENIED') {
-      console.error(`\n❌  API key rechazada: ${result.error_message}`);
-      console.error('   Verifica que GOOGLE_PLACES_API_KEY tenga acceso a Places API.\n');
-      process.exit(1);
-    }
-    if (result.status !== 'OK' && result.status !== 'ZERO_RESULTS') {
-      console.error(`\n❌  Google Places status: ${result.status}\n`);
-      process.exit(1);
-    }
-
-    for (const r of result.results || []) {
-      if (places.length >= limite) break;
-      places.push(r);
-    }
-    pageToken = result.next_page_token;
-  } while (pageToken && places.length < limite);
-
-  if (places.length === 0) {
+  if (detailed.length === 0) {
     console.log('⚠   No se encontraron resultados.\n');
     process.exit(0);
   }
 
-  // --- Place Details (one per result) ---
-  console.log(`📋  Obteniendo detalles de ${places.length} lugares...\n`);
-
-  const detailed = [];
-  for (let i = 0; i < places.length; i++) {
-    const pct = String(Math.round(((i + 1) / places.length) * 100)).padStart(3);
-    process.stdout.write(`\r   [${String(i + 1).padStart(2)}/${places.length}] ${pct}%  ${places[i].name.slice(0, 50).padEnd(50)}`);
+  // Detección de duplicados (nombre + place_id via _core.js)
+  console.log('🔎  Verificando duplicados en la base de datos...\n');
+  for (const p of detailed) {
+    p.isDuplicate = await checkDuplicate(p.name, p.place_id, supabase);
     await sleep(RATE_MS);
-
-    try {
-      const { result, status } = await placeDetails(places[i].place_id);
-      if (status === 'OK' && result) {
-        const dup = await isDuplicate(result.name);
-        detailed.push({ ...result, isDuplicate: dup });
-      }
-    } catch {
-      // Skip places that fail detail lookup
-    }
   }
-  process.stdout.write('\n\n');
 
-  // --- Summary + table ---
   const newOnes = detailed.filter((p) => !p.isDuplicate);
   const dups    = detailed.filter((p) =>  p.isDuplicate);
 
@@ -322,9 +176,9 @@ async function main() {
     process.exit(0);
   }
 
-  // --- Interactive selection ---
+  // Selección interactiva
   const answer = await ask(
-    `\n¿Importar? [Enter = todos los ${newOnes.length} nuevos | n = cancelar | 1,3,5 = índices de la tabla]: `,
+    `\n¿Importar? [Enter = todos los ${newOnes.length} nuevos | n = cancelar | 1,3,5 = índices]: `,
   );
 
   let toImport = [];
@@ -343,8 +197,7 @@ async function main() {
     process.exit(0);
   }
 
-  // --- Import ---
-  const r2 = getR2();
+  const r2 = buildR2();
   if (!r2) console.log('\n⚠   Sin credenciales R2 — las fotos no se subirán\n');
 
   const statusLabel = publish ? 'publicado' : 'pendiente de revisión';
@@ -355,7 +208,8 @@ async function main() {
   for (const place of toImport) {
     process.stdout.write(`   → ${place.name.slice(0, 52).padEnd(52)}`);
     try {
-      await insertBusiness(place, r2);
+      // importPlace viene de _core.js — misma lógica que usa el panel web
+      await importPlace(place, tipo, { publish, apiKey: GOOGLE_API_KEY, r2 }, supabase);
       console.log(' ✓');
       ok++;
     } catch (e) {

@@ -1,5 +1,10 @@
 import { supabase } from '../lib/supabase';
 
+function withoutBusinessOnlyFields(payload = {}) {
+  const { admin_notes, ...safePayload } = payload;
+  return safePayload;
+}
+
 // ── Businesses ──────────────────────────────────────────────
 export const adminBusinessService = {
   async getAll({ search = '', category = '', status = '' } = {}) {
@@ -15,14 +20,14 @@ export const adminBusinessService = {
   },
 
   async create(payload) {
-    const safePayload = { ...payload, claimed: payload.claimed ?? false };
+    const safePayload = { ...withoutBusinessOnlyFields(payload), claimed: payload.claimed ?? false };
     const { data, error } = await supabase?.from('businesses')?.insert(safePayload)?.select()?.single();
     if (error) throw error;
     return data;
   },
 
   async update(id, payload) {
-    const { data, error } = await supabase?.from('businesses')?.update({ ...payload, updated_at: new Date()?.toISOString() })?.eq('id', id)?.select()?.single();
+    const { data, error } = await supabase?.from('businesses')?.update({ ...withoutBusinessOnlyFields(payload), updated_at: new Date()?.toISOString() })?.eq('id', id)?.select()?.single();
     if (error) throw error;
     return data;
   },

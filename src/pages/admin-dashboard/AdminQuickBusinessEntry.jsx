@@ -34,7 +34,6 @@ const INITIAL = {
   address: '',
   lat: null,
   lng: null,
-  admin_notes: '',
 };
 
 export default function AdminQuickBusinessEntry() {
@@ -138,7 +137,6 @@ export default function AdminQuickBusinessEntry() {
         claimed: false,
         source: 'quick_admin',
         created_by: user?.id,
-        admin_notes: form.admin_notes?.trim() || null,
         status,
         verified: false,
         featured: false,
@@ -387,21 +385,6 @@ export default function AdminQuickBusinessEntry() {
               Coordenadas: {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
             </p>
           )}
-        </section>
-
-        {/* Nota privada admin */}
-        <section className="bg-card border border-border rounded-xl p-4">
-          <h2 className="font-heading font-semibold text-foreground mb-2 flex items-center gap-2">
-            <Icon name="Lock" size={16} color="var(--color-muted-foreground)" />
-            Nota privada (solo admin)
-          </h2>
-          <textarea
-            value={form.admin_notes}
-            onChange={(e) => handleChange('admin_notes', e.target.value)}
-            placeholder="Ej. Revisar horarios con el dueño la próxima semana"
-            className="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-background text-foreground min-h-[80px]"
-            rows={3}
-          />
         </section>
 
         <div className="pt-4 text-center pb-2">

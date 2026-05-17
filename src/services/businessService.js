@@ -1,6 +1,47 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
 
+const BUSINESS_COLUMNS = new Set([
+  'owner_id',
+  'name',
+  'category',
+  'category_key',
+  'description',
+  'address',
+  'phone',
+  'email',
+  'website',
+  'rating',
+  'review_count',
+  'is_open',
+  'featured',
+  'verified',
+  'latitude',
+  'longitude',
+  'lat',
+  'lng',
+  'opening_hours',
+  'profile_visits',
+  'contacts_count',
+  'status',
+  'premium_until',
+  'rejection_reason',
+  'whatsapp',
+  'redes_sociales',
+  'logo_url',
+  'social_links',
+  'category_id',
+  'claimed',
+]);
+
+function sanitizeBusinessPayload(payload = {}) {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([key, value]) => (
+      BUSINESS_COLUMNS.has(key) && value !== undefined
+    ))
+  );
+}
+
 export const businessService = {
   async getAll({ category, search, rating, openNow, sort = 'relevance', page = 1, pageSize = 12 } = {}) {
     try {
@@ -92,7 +133,7 @@ export const businessService = {
 
   async create(payload) {
     try {
-      const safePayload = { ...payload, claimed: payload.claimed ?? false };
+      const safePayload = { ...sanitizeBusinessPayload(payload), claimed: payload.claimed ?? false };
       const { data, error } = await supabase?.from('businesses')?.insert(safePayload)?.select()?.single();
       if (error) throw error;
       return { data, error: null };
@@ -103,7 +144,7 @@ export const businessService = {
 
   async update(id, payload) {
     try {
-      const { data, error } = await supabase?.from('businesses')?.update({ ...payload, updated_at: new Date()?.toISOString() })?.eq('id', id)?.select()?.single();
+      const { data, error } = await supabase?.from('businesses')?.update({ ...sanitizeBusinessPayload(payload), updated_at: new Date()?.toISOString() })?.eq('id', id)?.select()?.single();
       if (error) throw error;
       return { data, error: null };
     } catch (error) {

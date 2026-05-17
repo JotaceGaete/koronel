@@ -1,8 +1,44 @@
 import { supabase } from '../lib/supabase';
 
+const BUSINESS_COLUMNS = new Set([
+  'owner_id',
+  'name',
+  'category',
+  'category_key',
+  'description',
+  'address',
+  'phone',
+  'email',
+  'website',
+  'rating',
+  'review_count',
+  'is_open',
+  'featured',
+  'verified',
+  'latitude',
+  'longitude',
+  'lat',
+  'lng',
+  'opening_hours',
+  'profile_visits',
+  'contacts_count',
+  'status',
+  'premium_until',
+  'rejection_reason',
+  'whatsapp',
+  'redes_sociales',
+  'logo_url',
+  'social_links',
+  'category_id',
+  'claimed',
+]);
+
 function withoutBusinessOnlyFields(payload = {}) {
-  const { admin_notes, ...safePayload } = payload;
-  return safePayload;
+  return Object.fromEntries(
+    Object.entries(payload).filter(([key, value]) => (
+      BUSINESS_COLUMNS.has(key) && value !== undefined
+    ))
+  );
 }
 
 // ── Businesses ──────────────────────────────────────────────
@@ -41,7 +77,7 @@ export const adminBusinessService = {
     const { data, error } = await supabase
       ?.from('businesses')
       ?.select('*')
-      ?.eq('source', 'quick_admin')
+      ?.eq('status', 'pending')
       ?.order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];

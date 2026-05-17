@@ -13,6 +13,7 @@ import AdminEvents from './components/AdminEvents';
 import AdminCommunity from './components/AdminCommunity';
 import AdminEmpleos from './components/AdminEmpleos';
 import AdminIncompleteBusinesses from './components/AdminIncompleteBusinesses';
+import AdminImportPlaces from './components/AdminImportPlaces';
 import AdminNotificationsPanel from 'components/admin/AdminNotificationsPanel';
 
 const NAV_ITEMS = [
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { id: 'events', label: 'Eventos', icon: 'CalendarDays' },
   { id: 'community', label: 'Comunidad', icon: 'MessageCircle' },
   { id: 'empleos', label: 'Empleos', icon: 'Briefcase' },
+  { id: 'import-places', label: 'Importar Google Places', icon: 'Download' },
 ];
 
 const SECTION_MAP = {
@@ -41,6 +43,7 @@ const SECTION_MAP = {
   events: AdminEvents,
   community: AdminCommunity,
   empleos: AdminEmpleos,
+  'import-places': AdminImportPlaces,
 };
 
 function isAdminUser(user, userProfile) {

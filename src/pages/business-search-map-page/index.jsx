@@ -54,13 +54,10 @@ export default function BusinessSearchMapPage() {
 
   const fetchBusinesses = useCallback(async () => {
     setLoading(true);
-    let categoryFilter = 'all';
-    if (selectedParent !== 'all') {
-      const parent = categoryTree?.find((p) => p?.id === selectedParent);
-      if (parent) categoryFilter = parent?.name_key;
-    }
+    const isUUID = selectedParent && selectedParent !== 'all' && /^[0-9a-f-]{36}$/i.test(selectedParent);
     const { data, error } = await businessService?.getAll({
-      category: categoryFilter,
+      categoryId: isUUID ? selectedParent : undefined,
+      category: !isUUID && selectedParent !== 'all' ? selectedParent : undefined,
       search: searchQuery,
       page: 1,
       pageSize: LIMIT,

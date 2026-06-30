@@ -45,15 +45,19 @@ function sanitizeBusinessPayload(payload = {}) {
 }
 
 export const businessService = {
-  async getAll({ category, search, rating, openNow, sort = 'relevance', page = 1, pageSize = 12 } = {}) {
+  async getAll({ category, categoryId, search, rating, openNow, sort = 'relevance', page = 1, pageSize = 12 } = {}) {
     try {
       // Check premium expiry before fetching
       await businessService?.checkPremiumExpiry();
 
       let query = supabase?.from('businesses')?.select('*, business_images(storage_path, alt_text, is_primary)', { count: 'exact' })?.in('status', ['published', 'premium']);
 
-      if (category && category !== 'all') {
-        query = query?.eq('category_key', category);
+      if (categoryId && categoryId !== 'all') {
+        // UUID filter: covers new businesses (category_id) and old ones (parent_category_id)
+        query = query?.or(`category_id.eq.${categoryId},parent_category_id.eq.${categoryId}`);
+      } else if (category && category !== 'all') {
+        // name_key / text fallback: covers old businesses (category text) and new (category_key)
+        query = query?.or(`category_key.eq.${category},category.ilike.%${category}%`);
       }
       if (search?.trim()) {
         query = query?.ilike('name', `%${search}%`);

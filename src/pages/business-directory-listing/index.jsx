@@ -76,17 +76,19 @@ export default function BusinessDirectoryListing() {
     setLoading(true);
     const currentPage = resetPage ? 1 : page;
 
-    // Build category filter: prioridad a categoría desde URL (permite subcategorías), sino por padre seleccionado
+    // Build category filter: UUID → categoryId param; name_key → category param
     let categoryFilter = 'all';
+    let categoryIdFilter = undefined;
     if (selectedCategoryKey && selectedCategoryKey !== 'all') {
       categoryFilter = selectedCategoryKey;
     } else if (selectedParent !== 'all') {
-      const parent = categoryTree?.find(p => p?.id === selectedParent);
-      if (parent) categoryFilter = parent?.name_key;
+      // selectedParent is always a UUID from categoryTree
+      categoryIdFilter = selectedParent;
     }
 
     const { data, count, error } = await businessService?.getAll({
-      category: categoryFilter,
+      categoryId: categoryIdFilter,
+      category: categoryIdFilter ? undefined : categoryFilter,
       search: searchQuery,
       rating: filters?.rating,
       openNow: filters?.openNow,

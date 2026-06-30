@@ -139,11 +139,16 @@ export default function PostOficioForm() {
         }
       }
 
-      // Upload photos: profile first, then portfolio
-      const allPhotoFiles = [profilePhoto, ...portfolioPhotos].filter(Boolean);
+      // Upload profile photo and portfolio separately — explicit image_type, not position-based
+      let profilePhotoPath = null;
+      if (profilePhoto?.file) {
+        const { path, error } = await adService.uploadPhoto(profilePhoto.file, user?.id || null);
+        if (!error && path) profilePhotoPath = path;
+      }
+
       const photoPaths = [];
-      for (const photo of allPhotoFiles) {
-        if (photo.file) {
+      for (const photo of portfolioPhotos) {
+        if (photo?.file) {
           const { path, error } = await adService.uploadPhoto(photo.file, user?.id || null);
           if (!error && path) photoPaths.push(path);
         }
@@ -180,6 +185,7 @@ export default function PostOficioForm() {
       const { data: ad, error: createError, isGuest, verificationToken } = await adService.create({
         userId: user?.id || null,
         formData,
+        profilePhotoPath,
         photoPaths,
         guestInfo,
         ipAddress,

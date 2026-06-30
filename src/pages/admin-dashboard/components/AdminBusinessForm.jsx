@@ -81,6 +81,21 @@ const EMPTY_FORM = {
   opening_hours: null,
 };
 
+function normalizeBusinessForForm(business) {
+  if (!business) return business;
+  const cat = business.category;
+  const categoryStr =
+    typeof cat === 'object' && cat !== null
+      ? cat.name || cat.name_key || ''
+      : cat || '';
+  const categoryId =
+    business.category_id ||
+    (typeof cat === 'object' && cat !== null ? cat.id : null) ||
+    business.parent_category_id ||
+    null;
+  return { ...business, category: categoryStr, category_id: categoryId };
+}
+
 export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
@@ -135,38 +150,38 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
 
   useEffect(() => {
     if (editItem) {
-      // Detect parent/sub category
-      const catId = editItem?.category_id || '';
+      const item = normalizeBusinessForForm(editItem);
+      const catId = item?.category_id || '';
       setForm({
-        name: editItem?.name || '',
+        name: item?.name || '',
         parent_category_id: '',
-        parent_category_name: editItem?.category || '',
+        parent_category_name: item?.category || '',
         category_id: catId,
-        category: editItem?.category || '',
-        category_key: editItem?.category_key || '',
-        description: editItem?.description || '',
-        address: editItem?.address || '',
-        address_text: editItem?.address_text || editItem?.address || '',
-        lat: editItem?.lat ?? null,
-        lng: editItem?.lng ?? null,
-        phone: editItem?.phone || '',
-        whatsapp: editItem?.whatsapp || '',
-        email: editItem?.email || '',
-        website: editItem?.website || '',
-        verified: editItem?.verified || false,
-        featured: editItem?.featured || false,
-        status: editItem?.status || 'published',
-        logo_url: editItem?.logo_url || '',
-        social_links: Array.isArray(editItem?.social_links) ? editItem?.social_links : [],
-        opening_hours: editItem?.opening_hours || null,
+        category: item?.category || '',
+        category_key: item?.category_key || '',
+        description: item?.description || '',
+        address: item?.address || '',
+        address_text: item?.address_text || item?.address || '',
+        lat: item?.lat ?? null,
+        lng: item?.lng ?? null,
+        phone: item?.phone || '',
+        whatsapp: item?.whatsapp || '',
+        email: item?.email || '',
+        website: item?.website || '',
+        verified: item?.verified || false,
+        featured: item?.featured || false,
+        status: item?.status || 'published',
+        logo_url: item?.logo_url || '',
+        social_links: Array.isArray(item?.social_links) ? item?.social_links : [],
+        opening_hours: item?.opening_hours || null,
       });
-      setLogoPreview(editItem?.logo_url || null);
+      setLogoPreview(item?.logo_url || null);
       setLogoFile(null);
-      setSocialLinks(Array.isArray(editItem?.social_links) ? editItem?.social_links : []);
-      setHoursMode(detectHoursMode(editItem?.opening_hours));
-      setPerDayHours(parseHoursToState(editItem?.opening_hours));
+      setSocialLinks(Array.isArray(item?.social_links) ? item?.social_links : []);
+      setHoursMode(detectHoursMode(item?.opening_hours));
+      setPerDayHours(parseHoursToState(item?.opening_hours));
       // Load existing images
-      const imgs = (editItem?.business_images || [])?.map(img => ({
+      const imgs = (item?.business_images || [])?.map(img => ({
         ...img,
         publicUrl: businessService?.getImageUrl(img?.storage_path),
       }))?.sort((a, b) => (a?.sort_order || 0) - (b?.sort_order || 0));
@@ -194,7 +209,8 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
   // Once categories load, resolve parent/sub for edit
   useEffect(() => {
     if (!editItem || !categoryTree?.length) return;
-    const catId = editItem?.category_id || '';
+    const normalized = normalizeBusinessForForm(editItem);
+    const catId = normalized?.category_id || '';
     if (!catId) return;
     // Find if it's a parent or sub
     const parent = categoryTree?.find(p => p?.id === catId);

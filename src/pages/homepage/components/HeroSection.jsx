@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import Icon from 'components/AppIcon';
 import SmartSearchInput from 'components/ui/SmartSearchInput';
+import { cityConfig } from 'config/cityConfig';
 
 const QUICK_CATEGORIES = [
   { label: 'Dentistas', term: 'Dentistas' },
@@ -9,6 +9,7 @@ const QUICK_CATEGORIES = [
   { label: 'Veterinarias', term: 'Veterinarias' },
   { label: 'Restaurantes', term: 'Restaurantes' },
   { label: 'Farmacias', term: 'Farmacias' },
+  { label: 'Emprendimientos', term: 'Emprendimientos' },
 ];
 
 export default function HeroSection() {
@@ -18,17 +19,17 @@ export default function HeroSection() {
       style={{ background: 'var(--color-muted)' }}
     >
       <div className="relative max-w-3xl mx-auto">
-        {/* 1. Buscador inteligente: sugerencias en tiempo real */}
+        {/* Buscador inteligente */}
         <div className="w-full mb-3 sm:mb-4">
-          <SmartSearchInput placeholder="Buscar en Coronel: negocios, categorías o dirección..." />
+          <SmartSearchInput placeholder={cityConfig.searchPlaceholder} />
         </div>
 
-        {/* 2. Título corto, discreto */}
+        {/* Título */}
         <h1 className="font-heading font-semibold text-sm sm:text-base text-muted-foreground text-center mb-3 sm:mb-4">
-          Negocios y servicios en Coronel
+          {cityConfig.heroTitle}
         </h1>
 
-        {/* 3. Categorías rápidas: 4 visibles en móvil, scroll horizontal */}
+        {/* Categorías rápidas */}
         <div
           className="flex gap-2 overflow-x-auto overflow-y-hidden pb-0.5 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:justify-center scrollbar-hide snap-x snap-mandatory"
           style={{ WebkitOverflowScrolling: 'touch' }}
@@ -45,9 +46,9 @@ export default function HeroSection() {
           ))}
         </div>
 
-        {/* Escritorio: subtítulo opcional */}
+        {/* Escritorio: subtítulo */}
         <p className="hidden md:block text-center text-xs text-muted-foreground mt-3">
-          Directorio local en un solo lugar
+          {cityConfig.heroSubtitle}
         </p>
       </div>
     </section>

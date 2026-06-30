@@ -293,14 +293,9 @@ export default function PublishBusinessForm() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form?.nombre?.trim()) newErrors.nombre = 'El nombre del negocio es obligatorio.';
+    if (!form?.nombre?.trim()) newErrors.nombre = 'El nombre del negocio o emprendimiento es obligatorio.';
     if (!form?.parent_category_id) newErrors.parent_category_id = 'Debes seleccionar una categoría principal.';
-    if (form?.parent_category_id && subcategories?.length > 0 && !form?.categoria_id) {
-      newErrors.categoria_id = 'Debes seleccionar una subcategoría.';
-    }
     if (!form?.telefono?.trim()) newErrors.telefono = 'El teléfono es obligatorio.';
-    if (!form?.direccion?.trim()) newErrors.direccion = 'La dirección es obligatoria.';
-    if (!form?.descripcion?.trim()) newErrors.descripcion = 'La descripción es obligatoria.';
     if (form?.website_url?.trim()) {
       try { new URL(form.website_url.trim()); } catch { newErrors.website_url = 'URL del sitio web no válida.'; }
     }
@@ -467,7 +462,7 @@ export default function PublishBusinessForm() {
               </Link>
               <h1 className="font-heading font-bold text-xl text-white">Publicar mi negocio</h1>
             </div>
-            <p className="text-white/80 text-sm font-caption ml-8">Completa el formulario para agregar tu negocio al directorio de Coronel</p>
+            <p className="text-white/80 text-sm font-caption ml-8">Solo necesitas nombre, categoría y teléfono para aparecer en el directorio</p>
           </div>
         </div>
 

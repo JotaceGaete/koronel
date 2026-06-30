@@ -8,9 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const navItems = [
   { label: 'Inicio', path: '/homepage', icon: 'Home' },
   { label: 'Negocios', path: '/business-directory-listing', icon: 'Building2' },
-  { label: 'Clasificados', path: '/classified-ads-listing', icon: 'Tag' },
   { label: 'Eventos', path: '/eventos', icon: 'CalendarDays' },
-  { label: 'Empleos', path: '/empleos', icon: 'Briefcase' },
   { label: 'Comunidad', path: '/comunidad', icon: 'MessageCircle' },
   { label: 'Mapa', path: '/mapa', icon: 'Map' },
 ];
@@ -135,8 +133,8 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Post Ad CTA */}
-            <Link to="/post-classified-ad" className="hidden sm:block">
+            {/* Business CTA */}
+            <Link to="/publicar-negocio" className="hidden sm:block">
               <Button
                 variant="default"
                 size="sm"
@@ -145,7 +143,7 @@ export default function Header() {
                 iconSize={16}
                 className="btn-hover transition-all duration-250"
               >
-                Publicar Aviso
+                Publicar negocio
               </Button>
             </Link>
 
@@ -330,9 +328,9 @@ export default function Header() {
             )}
           </nav>
 
-          {/* Mobile Post Ad CTA */}
+          {/* Mobile Business CTA */}
           <div className="px-4 pt-2">
-            <Link to="/post-classified-ad" onClick={() => setMobileOpen(false)}>
+            <Link to="/publicar-negocio" onClick={() => setMobileOpen(false)}>
               <Button
                 variant="default"
                 fullWidth
@@ -341,7 +339,7 @@ export default function Header() {
                 iconSize={18}
                 className="min-h-[48px]"
               >
-                Publicar Aviso
+                Publicar negocio
               </Button>
             </Link>
           </div>

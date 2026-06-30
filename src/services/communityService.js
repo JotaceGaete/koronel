@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ export const communityService = {
 
       return { data: enriched, count: count || 0, error: null };
     } catch (error) {
-      console.error('communityService.getPosts error:', error);
+      logger.error('communityService.getPosts error:', error);
       return { data: [], count: 0, error };
     }
   },

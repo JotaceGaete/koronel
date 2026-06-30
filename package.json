@@ -62,7 +62,8 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build --sourcemap",
+    "build": "vite build",
+    "build:debug": "vite build --sourcemap",
     "serve": "vite preview",
     "test": "vitest",
     "test:run": "vitest run"

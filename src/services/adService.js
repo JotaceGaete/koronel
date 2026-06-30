@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { logger } from '../lib/logger';
 
 const R2_PUBLIC = import.meta.env?.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl';
 
@@ -15,7 +16,7 @@ export const adService = {
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {
-      console.error('adService.getAdCategories error:', error);
+      logger.error('adService.getAdCategories error:', error);
       return { data: [], error };
     }
   },
@@ -72,7 +73,7 @@ export const adService = {
       if (error) throw error;
       return { data: data || [], count: count || 0, error: null };
     } catch (error) {
-      console.error('adService.getAll error:', error);
+      logger.error('adService.getAll error:', error);
       return { data: [], count: 0, error };
     }
   },
@@ -119,7 +120,7 @@ export const adService = {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('adService.getById error:', error);
+      logger.error('adService.getById error:', error);
       return { data: null, error };
     }
   },

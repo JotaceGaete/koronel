@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { logger } from '../lib/logger';
 
 const CATEGORIES = ['Tecnología', 'Salud', 'Comercio', 'Construcción', 'Educación', 'Gastronomía', 'Administración', 'Otro'];
 const MODALITIES = ['Presencial', 'Remoto', 'Híbrido'];
@@ -20,7 +21,7 @@ export const jobService = {
     try {
       await supabase?.rpc('check_job_expiry');
     } catch (e) {
-      console.warn('checkExpiry error:', e);
+      logger.warn('checkExpiry error:', e);
     }
   },
 
@@ -55,7 +56,7 @@ export const jobService = {
       if (error) throw error;
       return { data: data || [], count: count || 0, error: null };
     } catch (error) {
-      console.error('jobService.getPublished error:', error);
+      logger.error('jobService.getPublished error:', error);
       return { data: [], count: 0, error };
     }
   },
@@ -133,7 +134,7 @@ export const jobService = {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('jobService.create error:', error);
+      logger.error('jobService.create error:', error);
       return { data: null, error };
     }
   },
@@ -166,7 +167,7 @@ export const jobService = {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('jobService.submitApplication error:', error);
+      logger.error('jobService.submitApplication error:', error);
       return { data: null, error };
     }
   },

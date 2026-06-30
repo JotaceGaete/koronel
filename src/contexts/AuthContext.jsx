@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 
 const AuthContext = createContext({})
 
@@ -25,7 +26,7 @@ export const AuthProvider = ({ children }) => {
         const { data, error } = await supabase?.from('user_profiles')?.select('*')?.eq('id', userId)?.single()
         if (!error) setUserProfile(data)
       } catch (error) {
-        console.error('Profile load error:', error)
+        logger.error('Profile load error:', error)
       } finally {
         setProfileLoading(false)
       }

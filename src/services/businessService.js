@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { logger } from '../lib/logger';
 
 const BUSINESS_COLUMNS = new Set([
   'owner_id',
@@ -81,7 +82,7 @@ export const businessService = {
       if (error) throw error;
       return { data: data || [], count: count || 0, error: null };
     } catch (error) {
-      console.error('businessService.getAll error:', error);
+      logger.error('businessService.getAll error:', error);
       return { data: [], count: 0, error };
     }
   },
@@ -299,7 +300,7 @@ export const businessService = {
       const categories = categoryRes?.data || [];
       return { businesses, categories, error: businessRes?.error || categoryRes?.error };
     } catch (err) {
-      console.error('businessService.searchSuggestions error:', err);
+      logger.error('businessService.searchSuggestions error:', err);
       return { businesses: [], categories: [], error: err };
     }
   },

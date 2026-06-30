@@ -51,14 +51,18 @@ const Routes = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
-          <Route path="/post-classified-ad" element={<PostClassifiedAd />} />
+          <Route path="/post-classified-ad" element={
+            <ProtectedRoute><PostClassifiedAd /></ProtectedRoute>
+          } />
           <Route path="/dashboard" element={
             <ProtectedRoute><UserAccountDashboard /></ProtectedRoute>
           } />
           <Route path="/user-account-dashboard" element={
             <ProtectedRoute><UserAccountDashboard /></ProtectedRoute>
           } />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-dashboard" element={
+            <ProtectedRoute><AdminDashboard /></ProtectedRoute>
+          } />
           <Route path="/admin/ingreso-rapido" element={
             <ProtectedRoute><AdminQuickBusinessEntry /></ProtectedRoute>
           } />

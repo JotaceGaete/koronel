@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { logger } from '../lib/logger';
 
 export const messageService = {
   // Send a message to an ad owner (or reply to a thread)
@@ -19,7 +20,7 @@ export const messageService = {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('messageService.sendMessage error:', error);
+      logger.error('messageService.sendMessage error:', error);
       return { data: null, error };
     }
   },
@@ -76,7 +77,7 @@ export const messageService = {
 
       return { data: Object.values(conversationMap), error: null };
     } catch (error) {
-      console.error('messageService.getConversations error:', error);
+      logger.error('messageService.getConversations error:', error);
       return { data: [], error };
     }
   },
@@ -104,7 +105,7 @@ export const messageService = {
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {
-      console.error('messageService.getThread error:', error);
+      logger.error('messageService.getThread error:', error);
       return { data: [], error };
     }
   },

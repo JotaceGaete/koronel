@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { logger } from '../lib/logger';
 
 export const eventService = {
   async getAll({ category, search, status = 'approved', upcoming = true, page = 1, pageSize = 12 } = {}) {
@@ -31,7 +32,7 @@ export const eventService = {
       if (error) throw error;
       return { data: data || [], count: count || 0, error: null };
     } catch (error) {
-      console.error('eventService.getAll error:', error);
+      logger.error('eventService.getAll error:', error);
       return { data: [], count: 0, error };
     }
   },

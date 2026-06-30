@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import CategoryFilter from 'components/ui/CategoryFilter';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
-import AdCard from '../classified-ads-listing/components/AdCard';
 import AdCardSkeleton from '../classified-ads-listing/components/AdCardSkeleton';
 import EmptyState from '../classified-ads-listing/components/EmptyState';
 import SortBar from '../classified-ads-listing/components/SortBar';
+import OficioCard from './components/OficioCard';
 import { adService } from '../../services/adService';
 
 const PAGE_SIZE = 8;
@@ -152,6 +152,7 @@ export default function OficiosListing() {
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                 {ads?.map((ad) => (
                   <OficioCard key={ad?.id} ad={ad} />
+
                 ))}
                 {loading && Array.from({ length: 3 })?.map((_, i) => <AdCardSkeleton key={`sk-${i}`} />)}
               </div>
@@ -167,123 +168,6 @@ export default function OficiosListing() {
               )}
             </>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function OficioCard({ ad }) {
-  const navigate = useNavigate();
-  const phone = ad?.phone;
-  const whatsapp = ad?.whatsapp ? phone : null;
-
-  return (
-    <div
-      className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md hover:border-primary/40 transition-all duration-200 cursor-pointer flex flex-col"
-      onClick={() => navigate(`/clasificados/${ad?.id}`)}
-    >
-      {ad?.image && (
-        <div className="w-full h-36 overflow-hidden bg-muted shrink-0">
-          <img src={ad.image} alt={ad.imageAlt || ad.title} className="w-full h-full object-cover" />
-        </div>
-      )}
-      <div className="p-3 flex-1 flex flex-col gap-2">
-        <div>
-          {ad?.providerLabel && (
-            <div className="flex items-center gap-1">
-              <h3 className="font-heading font-semibold text-sm text-card-foreground line-clamp-1">{ad.providerLabel}</h3>
-              {ad?.provider_verified && (
-                <Icon name="BadgeCheck" size={14} color="var(--color-success)" className="shrink-0" />
-              )}
-            </div>
-          )}
-          <p className={`font-caption text-muted-foreground line-clamp-1 ${ad?.providerLabel ? 'text-xs' : 'font-heading font-semibold text-sm text-card-foreground'}`}>
-            {ad?.title}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-1 my-1">
-            {ad?.category && (
-              <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                {ad.category}
-              </span>
-            )}
-            {ad?.isNew && (
-              <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                🆕 Nuevo
-              </span>
-            )}
-            {ad?.ratings_enabled && (
-              <span className="inline-flex items-center gap-1 text-xs font-caption px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(56,161,105,0.12)', color: 'var(--color-success)' }}>
-                <Icon name="ThumbsUp" size={10} color="currentColor" />
-                Recomendaciones
-              </span>
-            )}
-          </div>
-
-          {ad?.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{ad.description}</p>
-          )}
-        </div>
-
-        {(ad?.available_urgency || ad?.weekend_service || ad?.issues_invoice) && (
-          <div className="flex flex-wrap gap-x-3 gap-y-1">
-            {ad?.available_urgency && (
-              <span className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
-                <Icon name="Check" size={11} color="var(--color-success)" /> Urgencias
-              </span>
-            )}
-            {ad?.weekend_service && (
-              <span className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
-                <Icon name="Check" size={11} color="var(--color-success)" /> Fines de semana
-              </span>
-            )}
-            {ad?.issues_invoice && (
-              <span className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
-                <Icon name="Check" size={11} color="var(--color-success)" /> Boleta
-              </span>
-            )}
-          </div>
-        )}
-
-        {ad?.location && (
-          <div className="flex items-center gap-1">
-            <Icon name="MapPin" size={11} color="var(--color-secondary)" />
-            <span className="text-xs font-caption text-muted-foreground">{ad.location}</span>
-          </div>
-        )}
-
-        {/* WhatsApp CTA — prominent for services */}
-        <div className="mt-auto flex gap-2 pt-1">
-          {whatsapp ? (
-            <a
-              href={`https://wa.me/${String(phone).replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e?.stopPropagation()}
-              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-caption font-semibold text-white transition-all"
-              style={{ background: '#25d366' }}
-            >
-              <Icon name="MessageCircle" size={14} color="white" />
-              Contactar por WhatsApp
-            </a>
-          ) : phone ? (
-            <a
-              href={`tel:${phone}`}
-              onClick={e => e?.stopPropagation()}
-              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-caption font-semibold border border-border bg-muted hover:bg-primary hover:text-primary-foreground transition-all"
-            >
-              <Icon name="Phone" size={14} color="currentColor" />
-              Llamar
-            </a>
-          ) : null}
-          <button
-            onClick={e => { e?.stopPropagation(); navigate(`/clasificados/${ad?.id}`); }}
-            className="px-3 py-2 rounded-md text-xs font-caption font-medium border border-border bg-card hover:bg-muted transition-colors shrink-0"
-          >
-            Ver
-          </button>
         </div>
       </div>
     </div>

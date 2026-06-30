@@ -5,6 +5,12 @@ import AdminBusinessForm from './AdminBusinessForm';
 import { adminBusinessService, adminCategoryService } from '../../../services/adminService';
 import { businessService } from '../../../services/businessService';
 
+const getCategoryLabel = (category) => {
+  if (!category) return '—';
+  if (typeof category === 'string') return category;
+  return category.name || category.name_key || '—';
+};
+
 const STATUS_BADGE = {
   pending: { label: 'Pendiente', bg: '#fef3c7', color: '#92400e' },
   published: { label: 'Publicado', bg: '#dcfce7', color: '#166534' },
@@ -188,7 +194,7 @@ export default function AdminBusinesses() {
                       <h3 className="font-heading font-semibold text-foreground">{b?.name}</h3>
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#fef3c7', color: '#92400e' }}>Pendiente</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{b?.category} · {b?.address}</p>
+                    <p className="text-sm text-muted-foreground">{getCategoryLabel(b?.category)} · {b?.address}</p>
                     {b?.phone && <p className="text-xs text-muted-foreground mt-0.5">{b?.phone}</p>}
                     {b?.website && <p className="text-xs text-muted-foreground mt-0.5">{b?.website}</p>}
                     {b?.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{b?.description}</p>}
@@ -244,7 +250,7 @@ export default function AdminBusinesses() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{b?.category}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{getCategoryLabel(b?.category)}</td>
                     <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">{b?.owner?.full_name || '—'}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: sc?.bg, color: sc?.color }}>{sc?.label}</span>

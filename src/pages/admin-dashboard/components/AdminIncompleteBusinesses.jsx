@@ -6,6 +6,12 @@ import AdminBusinessForm from './AdminBusinessForm';
 import { adminBusinessService } from '../../../services/adminService';
 import { businessService } from '../../../services/businessService';
 
+const getCategoryLabel = (category) => {
+  if (!category) return '—';
+  if (typeof category === 'string') return category;
+  return category.name || category.name_key || '—';
+};
+
 export default function AdminIncompleteBusinesses({ onOpenEdit }) {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +115,7 @@ export default function AdminIncompleteBusinesses({ onOpenEdit }) {
             >
               <div className="min-w-0">
                 <p className="font-medium text-foreground truncate">{b?.name}</p>
-                <p className="text-sm text-muted-foreground">{b?.category} · {b?.address || 'Sin dirección'}</p>
+                <p className="text-sm text-muted-foreground">{getCategoryLabel(b?.category)} · {b?.address || 'Sin dirección'}</p>
                 <span
                   className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium"
                   style={{

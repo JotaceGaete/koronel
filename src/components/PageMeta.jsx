@@ -1,8 +1,9 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
+import { cityConfig } from 'config/cityConfig';
 
-const SITE_NAME = 'CoronelLocal';
-const DEFAULT_DESCRIPTION = 'Directorio de negocios, clasificados, eventos, empleos y comunidad en Coronel y la región.';
+const SITE_NAME = cityConfig.name;
+const DEFAULT_DESCRIPTION = `Directorio de negocios y emprendimientos en ${cityConfig.name}, ${cityConfig.region}. Encuentra todo lo local en un solo lugar.`;
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 /**

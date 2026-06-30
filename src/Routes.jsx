@@ -33,6 +33,8 @@ import JobsListing from './pages/jobs-listing';
 import JobDetailPage from './pages/job-detail-page';
 import PublishJobForm from './pages/publish-job-form';
 import JobApplicationForm from './pages/job-application-form';
+import OficiosListing from './pages/oficios-listing';
+import OfertasListing from './pages/ofertas-listing';
 
 const Routes = () => {
   return (
@@ -48,6 +50,9 @@ const Routes = () => {
           <Route path="/directorio-negocios" element={<BusinessDirectoryListing />} />
           <Route path="/business-profile-page" element={<BusinessProfilePage />} />
           <Route path="/classified-ads-listing" element={<ClassifiedAdsListing />} />
+          <Route path="/clasificados" element={<ClassifiedAdsListing />} />
+          <Route path="/oficios" element={<OficiosListing />} />
+          <Route path="/ofertas" element={<OfertasListing />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />

@@ -8,6 +8,9 @@ import { useAuth } from '../../contexts/AuthContext';
 const navItems = [
   { label: 'Inicio', path: '/homepage', icon: 'Home' },
   { label: 'Negocios', path: '/business-directory-listing', icon: 'Building2' },
+  { label: 'Oficios', path: '/oficios', icon: 'Wrench' },
+  { label: 'Ofertas', path: '/ofertas', icon: 'Tag' },
+  { label: 'Clasificados', path: '/clasificados', icon: 'ShoppingBag' },
   { label: 'Eventos', path: '/eventos', icon: 'CalendarDays' },
   { label: 'Comunidad', path: '/comunidad', icon: 'MessageCircle' },
   { label: 'Mapa', path: '/mapa', icon: 'Map' },

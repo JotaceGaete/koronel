@@ -36,6 +36,7 @@ export default function ClassifiedAdsListing() {
     setLoading(true);
     const currentPage = resetPage ? 1 : page;
     const { data, count, error } = await adService?.getAll({
+      listingType: 'venta',
       category: selectedCategory,
       search: searchQuery,
       priceRange: filters?.priceRange,
@@ -100,15 +101,16 @@ export default function ClassifiedAdsListing() {
   const listingPath = location.pathname + (location.search || '');
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Clasificados" description="Avisos clasificados en Coronel. Compra, vende y encuentra lo que buscas." path={listingPath} />
+      <PageMeta title="Clasificados" description="Compra y vende en Coronel. Artículos nuevos y usados publicados por vecinos." path={listingPath} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
         <div style={{ background: 'var(--color-primary)' }} className="px-4 md:px-6 lg:px-8 py-6 md:py-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="font-heading font-bold text-xl md:text-2xl lg:text-3xl text-white mb-4">
-              Clasificados en Coronel
+            <h1 className="font-heading font-bold text-xl md:text-2xl lg:text-3xl text-white mb-1">
+              Clasificados
             </h1>
+            <p className="text-white/80 text-sm mb-4">Compra y vende en Coronel. Artículos nuevos y usados de vecinos.</p>
             <form onSubmit={handleSearch} className="flex gap-2">
               <div className="flex-1 flex items-center bg-card rounded-md overflow-hidden border border-border shadow-sm h-11">
                 <div className="pl-3 shrink-0">
@@ -118,7 +120,7 @@ export default function ClassifiedAdsListing() {
                   type="search"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e?.target?.value)}
-                  placeholder="Buscar clasificados..."
+                  placeholder="Buscar artículos..."
                   className="flex-1 px-3 h-full text-sm font-caption bg-transparent text-foreground placeholder-muted-foreground focus:outline-none"
                 />
               </div>

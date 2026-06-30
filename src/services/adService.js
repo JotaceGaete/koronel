@@ -21,10 +21,13 @@ export const adService = {
     }
   },
 
-  async getAll({ category, search, priceRange, dateFilter, condition, sort = 'newest', page = 1, pageSize = 12 } = {}) {
+  async getAll({ listingType, category, search, priceRange, dateFilter, condition, sort = 'newest', page = 1, pageSize = 12 } = {}) {
     try {
       let query = supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary)', { count: 'exact' })?.eq('ad_status', 'active');
 
+      if (listingType) {
+        query = query?.eq('listing_type', listingType);
+      }
       if (category && category !== 'all') {
         query = query?.eq('category_key', category);
       }

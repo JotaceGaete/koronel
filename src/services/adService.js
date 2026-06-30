@@ -237,6 +237,10 @@ export const adService = {
         listing_type: formData?.listing_type || 'venta',
         price_type: formData?.price_type || null,
         schedule_note: formData?.schedule_note || null,
+        provider_name: formData?.provider_name || null,
+        provider_last_name: formData?.provider_last_name || null,
+        provider_display_name: formData?.provider_display_name || null,
+        ratings_enabled: formData?.ratings_enabled || false,
       };
 
       const { data: ad, error: adError } = await supabase?.from('classified_ads')?.insert(payload)?.select()?.single();
@@ -327,12 +331,16 @@ export const adService = {
     const diffH = Math.floor(diffMs / 3600000);
     const diffD = Math.floor(diffMs / 86400000);
     const timeAgo = diffH < 1 ? 'Hace menos de 1 hora' : diffH < 24 ? `Hace ${diffH} hora${diffH > 1 ? 's' : ''}` : diffD < 7 ? `Hace ${diffD} día${diffD > 1 ? 's' : ''}` : `Hace ${Math.floor(diffD / 7)} semana${Math.floor(diffD / 7) > 1 ? 's' : ''}`;
+    const providerLabel = ad?.provider_display_name
+      || [ad?.provider_name, ad?.provider_last_name]?.filter(Boolean)?.join(' ')
+      || null;
     return {
       ...ad,
       image: imageUrl,
       imageAlt: primaryImage?.alt_text || ad?.title,
       timeAgo,
-      datePosted: createdAt
+      datePosted: createdAt,
+      providerLabel,
     };
   }
 };

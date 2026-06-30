@@ -190,12 +190,23 @@ function OficioCard({ ad }) {
       )}
       <div className="p-3 flex-1 flex flex-col gap-2">
         <div>
+          {ad?.providerLabel && (
+            <h3 className="font-heading font-semibold text-sm text-card-foreground line-clamp-1">{ad.providerLabel}</h3>
+          )}
+          <p className={`font-caption text-muted-foreground line-clamp-1 ${ad?.providerLabel ? 'text-xs' : 'font-heading font-semibold text-sm text-card-foreground'}`}>
+            {ad?.title}
+          </p>
           {ad?.category && (
-            <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground mb-1 inline-block">
+            <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground my-1 inline-flex items-center gap-1">
               {ad.category}
+              {ad?.ratings_enabled && (
+                <>
+                  <span className="text-muted-foreground/50">·</span>
+                  <Icon name="ThumbsUp" size={10} color="currentColor" />
+                </>
+              )}
             </span>
           )}
-          <h3 className="font-heading font-semibold text-sm text-card-foreground line-clamp-2">{ad?.title}</h3>
           {ad?.description && (
             <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{ad.description}</p>
           )}

@@ -9,7 +9,10 @@ const PRICE_TYPE_LABELS = {
 };
 
 export default function OficioPreviewCard({ form, profilePhoto, portfolioPhotos }) {
-  const hasContent = form.title || form.category || form.description;
+  const hasContent = form.providerName || form.title || form.category || form.description;
+  const providerLabel = form.providerDisplayName?.trim()
+    || [form.providerName, form.providerLastName]?.filter(Boolean)?.join(' ')?.trim()
+    || null;
 
   if (!hasContent) {
     return (
@@ -45,13 +48,24 @@ export default function OficioPreviewCard({ form, profilePhoto, portfolioPhotos 
         </div>
         <div className="flex-1 min-w-0 pt-1">
           <h3 className="font-heading font-bold text-white text-lg leading-tight line-clamp-1">
-            {form.title || 'Tu oficio'}
+            {providerLabel || 'Tu nombre'}
           </h3>
-          {form.category && (
-            <span className="inline-block mt-1 text-xs font-caption font-medium px-2 py-0.5 rounded-full bg-white/20 text-white">
-              {form.category}
-            </span>
-          )}
+          <p className="text-white/90 text-sm font-caption mt-0.5 line-clamp-1">
+            {form.title || 'Tu oficio'}
+          </p>
+          <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
+            {form.category && (
+              <span className="inline-block text-xs font-caption font-medium px-2 py-0.5 rounded-full bg-white/20 text-white">
+                {form.category}
+              </span>
+            )}
+            {form.ratingsEnabled && (
+              <span className="inline-flex items-center gap-1 text-xs font-caption font-medium px-2 py-0.5 rounded-full bg-white/20 text-white">
+                <Icon name="ThumbsUp" size={11} color="white" />
+                Acepta recomendaciones
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

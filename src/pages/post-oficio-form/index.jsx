@@ -13,6 +13,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { adService } from '../../services/adService';
 
 const EMPTY_FORM = {
+  providerName: '',
+  providerLastName: '',
+  providerDisplayName: '',
   title: '',
   category: '',
   description: '',
@@ -23,10 +26,12 @@ const EMPTY_FORM = {
   scheduleNote: '',
   zones: [],
   otherZones: '',
+  ratingsEnabled: false,
 };
 
 function validate(form) {
   const errs = {};
+  if (!form.providerName?.trim()) errs.providerName = 'Contanos cómo te llamás';
   if (!form.title?.trim()) errs.title = 'Contale a la gente a qué te dedicás';
   else if (form.title.trim().length < 5) errs.title = 'Escribe al menos 5 caracteres';
   if (!form.category) errs.category = 'Seleccioná una categoría';
@@ -160,6 +165,10 @@ export default function PostOficioForm() {
         listing_type: 'oficio',
         price_type: form.priceType || null,
         schedule_note: form.scheduleNote?.trim() || null,
+        provider_name: form.providerName.trim(),
+        provider_last_name: form.providerLastName?.trim() || null,
+        provider_display_name: form.providerDisplayName?.trim() || null,
+        ratings_enabled: !!form.ratingsEnabled,
       };
 
       const { data: ad, error: createError, isGuest, verificationToken } = await adService.create({

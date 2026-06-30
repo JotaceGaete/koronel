@@ -54,12 +54,69 @@ export default function OficioForm({ form, errors, onChange }) {
   return (
     <div className="space-y-8">
 
-      {/* ── Bloque 1: ¿A qué te dedicas? ── */}
-      <div className="space-y-5">
+      {/* ── Bloque 1: ¿Cómo te llamas? ── */}
+      <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
             style={{ background: 'var(--color-primary)' }}>1</span>
-          <h3 className="font-heading font-semibold text-base text-foreground">Tu oficio</h3>
+          <h3 className="font-heading font-semibold text-base text-foreground">¿Cómo te llamás?</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-caption font-semibold text-foreground mb-1.5">
+              Nombre <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.providerName}
+              onChange={e => set('providerName', e.target.value)}
+              placeholder="Ej: Carlos"
+              maxLength={60}
+              className={`w-full h-11 px-4 text-sm font-caption rounded-md border bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all
+                ${errors.providerName ? 'border-error' : 'border-border'}`}
+            />
+            {errors.providerName && <p className="mt-1 text-xs font-caption text-error">{errors.providerName}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-caption font-semibold text-foreground mb-1.5">
+              Apellido (opcional)
+            </label>
+            <input
+              type="text"
+              value={form.providerLastName || ''}
+              onChange={e => set('providerLastName', e.target.value)}
+              placeholder="Ej: Soto"
+              maxLength={60}
+              className="w-full h-11 px-4 text-sm font-caption rounded-md border border-border bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-caption font-semibold text-foreground mb-1.5">
+            Nombre público (opcional)
+          </label>
+          <input
+            type="text"
+            value={form.providerDisplayName || ''}
+            onChange={e => set('providerDisplayName', e.target.value)}
+            placeholder="Ej: Don Luis, Peluquera Carolina"
+            maxLength={60}
+            className="w-full h-11 px-4 text-sm font-caption rounded-md border border-border bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+          />
+          <p className="mt-1 text-xs font-caption text-muted-foreground">
+            Si lo completás, este será el nombre que vean los vecinos en tu ficha.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Bloque 2: ¿A qué te dedicas? ── */}
+      <div className="space-y-5">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
+            style={{ background: 'var(--color-primary)' }}>2</span>
+          <h3 className="font-heading font-semibold text-base text-foreground">¿A qué te dedicás?</h3>
         </div>
 
         {/* Título */}
@@ -115,7 +172,7 @@ export default function OficioForm({ form, errors, onChange }) {
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
-            style={{ background: 'var(--color-primary)' }}>2</span>
+            style={{ background: 'var(--color-primary)' }}>3</span>
           <h3 className="font-heading font-semibold text-base text-foreground">Contale a la gente sobre vos</h3>
         </div>
 
@@ -155,7 +212,7 @@ export default function OficioForm({ form, errors, onChange }) {
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
-            style={{ background: 'var(--color-primary)' }}>3</span>
+            style={{ background: 'var(--color-primary)' }}>4</span>
           <h3 className="font-heading font-semibold text-base text-foreground">¿Cómo cobrás?</h3>
         </div>
 
@@ -210,7 +267,7 @@ export default function OficioForm({ form, errors, onChange }) {
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
-            style={{ background: 'var(--color-primary)' }}>4</span>
+            style={{ background: 'var(--color-primary)' }}>5</span>
           <h3 className="font-heading font-semibold text-base text-foreground">¿Dónde trabajás?</h3>
         </div>
 
@@ -261,7 +318,7 @@ export default function OficioForm({ form, errors, onChange }) {
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
-            style={{ background: 'var(--color-primary)' }}>5</span>
+            style={{ background: 'var(--color-primary)' }}>6</span>
           <h3 className="font-heading font-semibold text-base text-foreground">Contacto</h3>
         </div>
 
@@ -315,6 +372,26 @@ export default function OficioForm({ form, errors, onChange }) {
           <p className="mt-1 text-xs font-caption text-muted-foreground">
             Opcional. Ayuda a que te contacten en el momento correcto.
           </p>
+        </div>
+
+        {/* Valoraciones — opt-in, no implementado todavía */}
+        <div className="p-3 rounded-md border border-border bg-muted">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!form.ratingsEnabled}
+              onChange={e => set('ratingsEnabled', e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-primary shrink-0"
+            />
+            <div>
+              <p className="text-sm font-caption font-semibold text-foreground">
+                Quiero permitir que mis clientes me recomienden cuando esta función esté disponible.
+              </p>
+              <p className="text-xs font-caption text-muted-foreground mt-0.5">
+                Las valoraciones ayudan a generar confianza y conseguir más clientes.
+              </p>
+            </div>
+          </label>
         </div>
       </div>
     </div>

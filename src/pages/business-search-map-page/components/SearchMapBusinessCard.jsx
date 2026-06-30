@@ -69,6 +69,15 @@ export default function SearchMapBusinessCard({ business, isSelected, onClick, c
               <span className="text-xs font-caption text-muted-foreground line-clamp-1">{business?.address}</span>
             </div>
           )}
+          {Array.isArray(business?.tags) && business.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {business.tags.slice(0, 3).map(tag => (
+                <span key={tag} className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Actions */}

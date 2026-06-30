@@ -58,6 +58,7 @@ const INITIAL_FORM = {
   descripcion: '',
   whatsapp: '',
   website_url: '',
+  tags: [],
 };
 
 export default function PublishBusinessForm() {
@@ -92,6 +93,7 @@ export default function PublishBusinessForm() {
   // Geocoding state
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState(null);
+  const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -372,6 +374,7 @@ export default function PublishBusinessForm() {
         premium_until: premiumUntil,
         verified: false,
         featured: false,
+        tags: Array.isArray(form?.tags) ? form.tags : [],
       };
 
       const { data: business, error: bizError } = await businessService?.create(payload);
@@ -653,6 +656,57 @@ export default function PublishBusinessForm() {
                     className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none ${errors?.descripcion ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors?.descripcion && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.descripcion}</p>}
+                </div>
+
+                {/* ── Etiquetas / Tags ── */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Palabras para que te encuentren
+                  </label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Escribe una palabra y presiona Enter. Máximo 10. Ej: empanadas, leña, delivery, comida casera.
+                  </p>
+                  {form?.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {form.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-border bg-muted text-foreground"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))}
+                            className="text-muted-foreground hover:text-foreground transition-colors leading-none"
+                            aria-label={`Eliminar etiqueta ${tag}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {(form?.tags?.length || 0) < 10 && (
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={e => setTagInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          const val = tagInput.trim().toLowerCase().replace(/,/g, '');
+                          if (!val) return;
+                          if ((form?.tags?.length || 0) >= 10) return;
+                          if (form?.tags?.includes(val)) { setTagInput(''); return; }
+                          setForm(f => ({ ...f, tags: [...(f.tags || []), val] }));
+                          setTagInput('');
+                        }
+                      }}
+                      placeholder="Ej: empanadas, leña, delivery"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">{form?.tags?.length || 0}/10 etiquetas</p>
                 </div>
               </div>
             </div>

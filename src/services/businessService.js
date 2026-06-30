@@ -34,6 +34,8 @@ const BUSINESS_COLUMNS = new Set([
   'category_id',
   'claimed',
   'google_place_id',
+  'tags',
+  'address_text',
 ]);
 
 function sanitizeBusinessPayload(payload = {}) {
@@ -60,7 +62,8 @@ export const businessService = {
         query = query?.or(`category_key.eq.${category},category.ilike.%${category}%`);
       }
       if (search?.trim()) {
-        query = query?.ilike('name', `%${search}%`);
+        const s = search.trim();
+        query = query?.or(`name.ilike.%${s}%,category.ilike.%${s}%,description.ilike.%${s}%`);
       }
       if (rating && rating !== 'all') {
         query = query?.gte('rating', parseFloat(rating));

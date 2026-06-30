@@ -182,7 +182,8 @@ export default function BusinessProfilePage() {
     subCategoryName: subCatName,
     category: parentCatName || business?.category,
     reviewCount: business?.review_count ?? BUSINESS?.reviewCount,
-  } : { ...BUSINESS, logoUrl: null, socialLinks: [], websiteUrl: BUSINESS?.website };
+    tags: Array.isArray(business?.tags) ? business.tags : [],
+  } : { ...BUSINESS, logoUrl: null, socialLinks: [], websiteUrl: BUSINESS?.website, tags: [] };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -259,6 +260,23 @@ export default function BusinessProfilePage() {
                   )}
                 </div>
               </div>
+
+              {/* Tags */}
+              {Array.isArray(DISPLAY?.tags) && DISPLAY.tags.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Palabras clave</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DISPLAY.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 rounded-full text-xs border border-border bg-muted text-muted-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Opening Hours */}
               <OpeningHours hours={DISPLAY?.hours} />

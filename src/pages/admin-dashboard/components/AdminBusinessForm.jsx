@@ -79,6 +79,7 @@ const EMPTY_FORM = {
   logo_url: '',
   social_links: [],
   opening_hours: null,
+  tags: [],
 };
 
 function normalizeBusinessForForm(business) {
@@ -131,6 +132,14 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState(null);
 
+  // Manual coords input state (admin only)
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
+  const [manualCoordsError, setManualCoordsError] = useState('');
+
+  // Tags input state
+  const [tagInput, setTagInput] = useState('');
+
   // ── Add missing state variables for category/subcategory modals ──
   const [showNewCatModal, setShowNewCatModal] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -174,6 +183,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         logo_url: item?.logo_url || '',
         social_links: Array.isArray(item?.social_links) ? item?.social_links : [],
         opening_hours: item?.opening_hours || null,
+        tags: Array.isArray(item?.tags) ? item.tags : [],
       });
       setLogoPreview(item?.logo_url || null);
       setLogoFile(null);
@@ -236,6 +246,12 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
       }
     }
   }, [categoryTree, editItem]);
+
+  // Keep manual coord inputs in sync when lat/lng changes (geocode or map drag)
+  useEffect(() => {
+    if (form?.lat != null) setManualLat(String(parseFloat(form.lat).toFixed(6)));
+    if (form?.lng != null) setManualLng(String(parseFloat(form.lng).toFixed(6)));
+  }, [form?.lat, form?.lng]);
 
   const loadCategories = async () => {
     setCatsLoading(true);
@@ -578,6 +594,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         social_links: socialLinks?.filter(s => s?.url?.trim()),
         claimed: form?.owner_id ? true : false,
         owner_id: form?.owner_id ?? null,
+        tags: Array.isArray(form?.tags) ? form.tags : [],
       };
 
       let savedId = editItem?.id;
@@ -903,6 +920,53 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                     ? `📍 ${parseFloat(form?.lat)?.toFixed(5)}, ${parseFloat(form?.lng)?.toFixed(5)}`
                     : 'Sin coordenadas guardadas'}
                 </p>
+
+                {/* ── Manual coords (admin only) ── */}
+                <div className="border-t border-border pt-3 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Coordenadas manuales (admin)</p>
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1">
+                      <label className="block text-xs text-muted-foreground mb-1">Latitud</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={manualLat}
+                        onChange={e => { setManualLat(e.target.value); setManualCoordsError(''); }}
+                        placeholder="-37.025715"
+                        className="w-full px-2 py-1.5 text-xs border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-muted-foreground mb-1">Longitud</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={manualLng}
+                        onChange={e => { setManualLng(e.target.value); setManualCoordsError(''); }}
+                        placeholder="-73.147598"
+                        className="w-full px-2 py-1.5 text-xs border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                    </div>
+                    <div className="pt-5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const lat = parseFloat(manualLat);
+                          const lng = parseFloat(manualLng);
+                          if (isNaN(lat) || lat < -90 || lat > 90) { setManualCoordsError('Latitud inválida (−90 a 90).'); return; }
+                          if (isNaN(lng) || lng < -180 || lng > 180) { setManualCoordsError('Longitud inválida (−180 a 180).'); return; }
+                          setForm(f => ({ ...f, lat, lng }));
+                          setManualCoordsError('');
+                        }}
+                        className="px-3 py-1.5 text-xs text-white rounded transition-colors shrink-0"
+                        style={{ background: 'var(--color-primary)' }}
+                      >
+                        Usar coordenadas
+                      </button>
+                    </div>
+                  </div>
+                  {manualCoordsError && <p className="text-xs" style={{ color: 'var(--color-error)' }}>{manualCoordsError}</p>}
+                </div>
               </div>
 
               {/* Descripción */}
@@ -916,6 +980,58 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                   className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none ${errors?.description ? 'border-red-400' : 'border-border'}`}
                 />
                 {errors?.description && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.description}</p>}
+              </div>
+
+              {/* ── Etiquetas (tags) ── */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Palabras para que te encuentren
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Escribe una palabra y presiona Enter. Máximo 10. Ej: empanadas, leña, delivery, comida casera.
+                </p>
+                {/* Tag chips */}
+                {form?.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {form.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-border bg-muted text-foreground"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))}
+                          className="text-muted-foreground hover:text-foreground transition-colors leading-none"
+                          aria-label={`Eliminar etiqueta ${tag}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {(form?.tags?.length || 0) < 10 && (
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const val = tagInput.trim().toLowerCase().replace(/,/g, '');
+                        if (!val) return;
+                        if ((form?.tags?.length || 0) >= 10) return;
+                        if (form?.tags?.includes(val)) { setTagInput(''); return; }
+                        setForm(f => ({ ...f, tags: [...(f.tags || []), val] }));
+                        setTagInput('');
+                      }
+                    }}
+                    placeholder="Ej: empanadas, leña, delivery"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                )}
+                <p className="text-xs text-muted-foreground mt-1">{form?.tags?.length || 0}/10 etiquetas</p>
               </div>
             </div>
           </div>

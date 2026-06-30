@@ -16,7 +16,7 @@ export default function RecentClassifiedAds() {
 
   useEffect(() => {
     let mounted = true;
-    adService?.getRecent(6)?.then(({ data, error }) => {
+    adService?.getAll({ listingType: 'venta', sort: 'newest', page: 1, pageSize: 6 })?.then(({ data, error }) => {
       if (!mounted) return;
       if (!error && data?.length > 0) {
         setAds(data?.map(ad => adService?.formatAd(ad)));
@@ -33,7 +33,7 @@ export default function RecentClassifiedAds() {
           type="classified"
           title="Clasificados Recientes" />
         <div className="mt-6 text-center">
-          <Link to="/classified-ads-listing">
+          <Link to="/clasificados">
             <Button variant="outline" iconName="Tag" iconPosition="left" iconSize={16}>
               Ver todos los clasificados
             </Button>

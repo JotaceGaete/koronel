@@ -10,9 +10,12 @@ const navItems = [
   { label: 'Negocios', path: '/business-directory-listing', icon: 'Building2' },
   { label: 'Oficios', path: '/oficios', icon: 'Wrench' },
   { label: 'Ofertas', path: '/ofertas', icon: 'Tag' },
+  { label: 'Comunidad', path: '/comunidad', icon: 'MessageCircle' },
+];
+
+const moreItems = [
   { label: 'Clasificados', path: '/clasificados', icon: 'ShoppingBag' },
   { label: 'Eventos', path: '/eventos', icon: 'CalendarDays' },
-  { label: 'Comunidad', path: '/comunidad', icon: 'MessageCircle' },
   { label: 'Mapa', path: '/mapa', icon: 'Map' },
 ];
 
@@ -31,8 +34,10 @@ export default function Header() {
   const { user, userProfile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
   const mobileMenuRef = useRef(null);
+  const moreMenuRef = useRef(null);
   const scrollPositionRef = useRef(0);
 
   const isActive = (path) => location?.pathname === path;
@@ -52,6 +57,9 @@ export default function Header() {
       if (mobileMenuRef?.current && !mobileMenuRef?.current?.contains(e?.target)) {
         setMobileOpen(false);
       }
+      if (moreMenuRef?.current && !moreMenuRef?.current?.contains(e?.target)) {
+        setMoreMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -60,6 +68,7 @@ export default function Header() {
   useEffect(() => {
     setMobileOpen(false);
     setUserMenuOpen(false);
+    setMoreMenuOpen(false);
   }, [location?.pathname]);
 
   /* Bloqueo de scroll con técnica iOS: position fixed + guardar/restaurar scroll.
@@ -115,6 +124,46 @@ export default function Header() {
                 {item?.label}
               </Link>
             ))}
+
+            {/* "Más" dropdown */}
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                onClick={() => setMoreMenuOpen(v => !v)}
+                className={`
+                  flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-caption font-medium
+                  transition-all duration-250 ease-smooth
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                  ${moreItems.some(i => isActive(i.path))
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-secondary hover:bg-muted hover:text-foreground'
+                  }
+                `}
+                aria-expanded={moreMenuOpen}
+                aria-haspopup="true"
+              >
+                Más
+                <Icon name="ChevronDown" size={14} color="currentColor" />
+              </button>
+              {moreMenuOpen && (
+                <div className="absolute left-0 top-full mt-1 w-44 bg-popover border border-border rounded-md shadow-lg z-[150] py-1">
+                  {moreItems.map(item => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-caption transition-colors duration-150 ${
+                        isActive(item.path)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-card-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Icon name={item.icon} size={15} color="currentColor" />
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {isAdmin && (
               <Link
                 to="/admin-dashboard"
@@ -312,6 +361,30 @@ export default function Header() {
                 {item?.label}
               </Link>
             ))}
+            {/* Secondary nav items */}
+            <div className="mt-1 pt-1 border-t border-border/50">
+              {moreItems?.map((item, index) => (
+                <Link
+                  key={item?.path}
+                  to={item?.path}
+                  onClick={() => setMobileOpen(false)}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-md text-sm font-caption font-medium
+                    transition-all duration-250 ease-smooth min-h-[44px]
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                    ${isActive(item?.path)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }
+                  `}
+                  aria-current={isActive(item?.path) ? 'page' : undefined}
+                >
+                  <Icon name={item?.icon} size={18} color="currentColor" />
+                  {item?.label}
+                </Link>
+              ))}
+            </div>
+
             {isAdmin && (
               <Link
                 to="/admin-dashboard"

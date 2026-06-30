@@ -26,7 +26,12 @@ export const adService = {
       let query = supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary)', { count: 'exact' })?.eq('ad_status', 'active');
 
       if (listingType) {
-        query = query?.eq('listing_type', listingType);
+        if (listingType === 'venta') {
+          // Include legacy rows that predate the listing_type column
+          query = query?.or('listing_type.eq.venta,listing_type.is.null');
+        } else {
+          query = query?.eq('listing_type', listingType);
+        }
       }
       if (category && category !== 'all') {
         query = query?.eq('category_key', category);

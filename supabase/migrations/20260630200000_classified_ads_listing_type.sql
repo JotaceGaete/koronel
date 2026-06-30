@@ -10,6 +10,11 @@ ALTER TABLE public.classified_ads
   ADD COLUMN IF NOT EXISTS listing_type TEXT NOT NULL DEFAULT 'venta'
   CHECK (listing_type IN ('venta', 'oficio', 'oferta'));
 
+-- Backfill existing rows so /clasificados doesn't lose old ads
+UPDATE public.classified_ads
+  SET listing_type = 'venta'
+  WHERE listing_type IS NULL;
+
 -- Separate index for fast filtering per section
 CREATE INDEX IF NOT EXISTS idx_classified_ads_listing_type
   ON public.classified_ads(listing_type);

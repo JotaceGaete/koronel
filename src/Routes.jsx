@@ -35,6 +35,7 @@ import PublishJobForm from './pages/publish-job-form';
 import JobApplicationForm from './pages/job-application-form';
 import OficiosListing from './pages/oficios-listing';
 import OfertasListing from './pages/ofertas-listing';
+import PostOficioForm from './pages/post-oficio-form';
 
 const Routes = () => {
   return (
@@ -52,6 +53,9 @@ const Routes = () => {
           <Route path="/classified-ads-listing" element={<ClassifiedAdsListing />} />
           <Route path="/clasificados" element={<ClassifiedAdsListing />} />
           <Route path="/oficios" element={<OficiosListing />} />
+          <Route path="/oficios/publicar" element={
+            <ProtectedRoute><PostOficioForm /></ProtectedRoute>
+          } />
           <Route path="/ofertas" element={<OfertasListing />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

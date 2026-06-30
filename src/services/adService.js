@@ -234,6 +234,9 @@ export const adService = {
         ip_address: ipAddress || null,
         guest_email: isGuest ? guestInfo?.email : null,
         verification_token: verificationToken,
+        listing_type: formData?.listing_type || 'venta',
+        price_type: formData?.price_type || null,
+        schedule_note: formData?.schedule_note || null,
       };
 
       const { data: ad, error: adError } = await supabase?.from('classified_ads')?.insert(payload)?.select()?.single();

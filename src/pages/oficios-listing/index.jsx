@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import CategoryFilter from 'components/ui/CategoryFilter';
@@ -93,6 +93,14 @@ export default function OficiosListing() {
               </h1>
             </div>
             <p className="text-white/80 text-sm mb-4 ml-12">Personas que ofrecen servicios en Coronel — gasfíteres, electricistas, pintores y más.</p>
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <Link to="/oficios/publicar"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-caption font-semibold text-primary bg-white hover:bg-white/90 transition-all self-start"
+              >
+                <Icon name="Plus" size={15} color="currentColor" />
+                Publicar mi oficio
+              </Link>
+            </div>
             <form onSubmit={handleSearch} className="flex gap-2">
               <div className="flex-1 flex items-center bg-card rounded-md overflow-hidden border border-border shadow-sm h-11">
                 <div className="pl-3 shrink-0">

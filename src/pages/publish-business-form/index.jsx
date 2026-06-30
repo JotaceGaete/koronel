@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../services/geocodingService';
+import { supabase } from '../../lib/supabase';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -331,11 +332,18 @@ export default function PublishBusinessForm() {
     await doSubmit('premium');
   };
 
-  const doSubmit = async (status) => {
+  const doSubmit = async (requestedStatus) => {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const premiumUntil = status === 'premium'
+      // Obtener usuario real desde Supabase, no confiar en el contexto
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser?.id) {
+        navigate('/login', { state: { from: '/publicar-negocio' } });
+        return;
+      }
+
+      const premiumUntil = requestedStatus === 'premium'
         ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)?.toISOString()
         : null;
 
@@ -358,9 +366,9 @@ export default function PublishBusinessForm() {
         website: form?.website_url?.trim() || null,
         opening_hours: buildOpeningHours(),
         social_links: socialLinks?.filter(s => s?.url?.trim()),
-        owner_id: user?.id,
+        owner_id: authUser.id,
         claimed: true,
-        status,
+        status: 'pending',
         premium_until: premiumUntil,
         verified: false,
         featured: false,

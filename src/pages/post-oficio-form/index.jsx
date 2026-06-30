@@ -27,6 +27,9 @@ const EMPTY_FORM = {
   zones: [],
   otherZones: '',
   ratingsEnabled: false,
+  availableUrgency: false,
+  weekendService: false,
+  issuesInvoice: false,
 };
 
 function validate(form) {
@@ -160,7 +163,7 @@ export default function PostOficioForm() {
         phone: form.phone,
         whatsapp: form.whatsapp,
         location: allZones.join(', ') || 'Coronel',
-        price: form.priceType === 'from' || form.priceType === 'hourly' ? form.price?.replace(/\D/g, '') : '',
+        price: ['from', 'hourly', 'visit'].includes(form.priceType) ? form.price?.replace(/\D/g, '') : '',
         duration: '365',
         listing_type: 'oficio',
         price_type: form.priceType || null,
@@ -169,6 +172,9 @@ export default function PostOficioForm() {
         provider_last_name: form.providerLastName?.trim() || null,
         provider_display_name: form.providerDisplayName?.trim() || null,
         ratings_enabled: !!form.ratingsEnabled,
+        available_urgency: !!form.availableUrgency,
+        weekend_service: !!form.weekendService,
+        issues_invoice: !!form.issuesInvoice,
       };
 
       const { data: ad, error: createError, isGuest, verificationToken } = await adService.create({

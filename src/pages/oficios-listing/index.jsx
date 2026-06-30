@@ -191,26 +191,61 @@ function OficioCard({ ad }) {
       <div className="p-3 flex-1 flex flex-col gap-2">
         <div>
           {ad?.providerLabel && (
-            <h3 className="font-heading font-semibold text-sm text-card-foreground line-clamp-1">{ad.providerLabel}</h3>
+            <div className="flex items-center gap-1">
+              <h3 className="font-heading font-semibold text-sm text-card-foreground line-clamp-1">{ad.providerLabel}</h3>
+              {ad?.provider_verified && (
+                <Icon name="BadgeCheck" size={14} color="var(--color-success)" className="shrink-0" />
+              )}
+            </div>
           )}
           <p className={`font-caption text-muted-foreground line-clamp-1 ${ad?.providerLabel ? 'text-xs' : 'font-heading font-semibold text-sm text-card-foreground'}`}>
             {ad?.title}
           </p>
-          {ad?.category && (
-            <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground my-1 inline-flex items-center gap-1">
-              {ad.category}
-              {ad?.ratings_enabled && (
-                <>
-                  <span className="text-muted-foreground/50">·</span>
-                  <Icon name="ThumbsUp" size={10} color="currentColor" />
-                </>
-              )}
-            </span>
-          )}
+
+          <div className="flex flex-wrap items-center gap-1 my-1">
+            {ad?.category && (
+              <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                {ad.category}
+              </span>
+            )}
+            {ad?.isNew && (
+              <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                🆕 Nuevo
+              </span>
+            )}
+            {ad?.ratings_enabled && (
+              <span className="inline-flex items-center gap-1 text-xs font-caption px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(56,161,105,0.12)', color: 'var(--color-success)' }}>
+                <Icon name="ThumbsUp" size={10} color="currentColor" />
+                Recomendaciones
+              </span>
+            )}
+          </div>
+
           {ad?.description && (
             <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{ad.description}</p>
           )}
         </div>
+
+        {(ad?.available_urgency || ad?.weekend_service || ad?.issues_invoice) && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {ad?.available_urgency && (
+              <span className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
+                <Icon name="Check" size={11} color="var(--color-success)" /> Urgencias
+              </span>
+            )}
+            {ad?.weekend_service && (
+              <span className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
+                <Icon name="Check" size={11} color="var(--color-success)" /> Fines de semana
+              </span>
+            )}
+            {ad?.issues_invoice && (
+              <span className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
+                <Icon name="Check" size={11} color="var(--color-success)" /> Boleta
+              </span>
+            )}
+          </div>
+        )}
 
         {ad?.location && (
           <div className="flex items-center gap-1">

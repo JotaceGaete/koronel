@@ -15,6 +15,7 @@ const OFICIO_CATEGORIES = [
 
 const PRICE_TYPES = [
   { value: 'free_quote', label: 'Presupuesto gratis', description: 'Voy a ver el trabajo antes de cobrar' },
+  { value: 'visit', label: 'Visita desde $', description: 'Cobro por ir a ver el trabajo' },
   { value: 'from', label: 'Desde $', description: 'Precio mínimo de referencia' },
   { value: 'hourly', label: 'Por hora', description: 'Cobro por hora trabajada' },
   { value: 'negotiable', label: 'A convenir', description: 'Sin precio fijo publicado' },
@@ -49,7 +50,7 @@ export default function OficioForm({ form, errors, onChange }) {
     return Number(digits).toLocaleString('es-CL');
   };
 
-  const showPriceField = form.priceType === 'from' || form.priceType === 'hourly';
+  const showPriceField = form.priceType === 'from' || form.priceType === 'hourly' || form.priceType === 'visit';
 
   return (
     <div className="space-y-8">
@@ -179,7 +180,7 @@ export default function OficioForm({ form, errors, onChange }) {
         <div className="p-3 rounded-md text-sm font-caption space-y-1"
           style={{ background: 'rgba(44,82,130,0.06)', border: '1px solid rgba(44,82,130,0.15)' }}>
           <p className="font-medium text-foreground mb-1.5">¿Qué incluir?</p>
-          {['¿Qué servicios realizás exactamente?', '¿Cuánto tiempo llevás trabajando?', '¿Atendés urgencias?', '¿Tenés herramientas propias?', '¿Entregás boleta?', '¿Trabajás fines de semana?'].map(hint => (
+          {['¿Qué servicios realizás exactamente?', '¿Cuánto tiempo llevás trabajando?', '¿Tenés herramientas propias?'].map(hint => (
             <div key={hint} className="flex items-start gap-1.5">
               <Icon name="ChevronRight" size={13} color="var(--color-primary)" className="mt-0.5 shrink-0" />
               <span className="text-muted-foreground">{hint}</span>
@@ -245,7 +246,7 @@ export default function OficioForm({ form, errors, onChange }) {
         {showPriceField && (
           <div>
             <label className="block text-sm font-caption font-semibold text-foreground mb-1.5">
-              {form.priceType === 'hourly' ? 'Valor por hora ($)' : 'Precio desde ($)'}
+              {form.priceType === 'hourly' ? 'Valor por hora ($)' : form.priceType === 'visit' ? 'Valor de la visita ($)' : 'Precio desde ($)'}
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-data font-medium text-muted-foreground">$</span>
@@ -263,11 +264,42 @@ export default function OficioForm({ form, errors, onChange }) {
         )}
       </div>
 
-      {/* ── Bloque 4: ¿Dónde trabajás? ── */}
-      <div className="space-y-4">
+      {/* ── Bloque 5: Datos de confianza ── */}
+      <div className="space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
             style={{ background: 'var(--color-primary)' }}>5</span>
+          <h3 className="font-heading font-semibold text-base text-foreground">Datos que generan confianza</h3>
+        </div>
+        <p className="text-sm font-caption text-muted-foreground">
+          Esto se muestra como badges visibles en tu ficha, sin que nadie tenga que leer tu descripción para saberlo.
+        </p>
+
+        <div className="space-y-2">
+          {[
+            { field: 'availableUrgency', label: 'Atiendo urgencias', icon: 'Zap' },
+            { field: 'weekendService', label: 'Trabajo fines de semana', icon: 'CalendarDays' },
+            { field: 'issuesInvoice', label: 'Entrego boleta', icon: 'Receipt' },
+          ].map(({ field, label, icon }) => (
+            <label key={field} className="flex items-center gap-3 p-3 rounded-md border border-border bg-card cursor-pointer hover:border-primary/50 transition-all">
+              <input
+                type="checkbox"
+                checked={!!form[field]}
+                onChange={e => set(field, e.target.checked)}
+                className="w-4 h-4 accent-primary shrink-0"
+              />
+              <Icon name={icon} size={15} color="var(--color-secondary)" className="shrink-0" />
+              <span className="text-sm font-caption text-foreground">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Bloque 6: ¿Dónde trabajás? ── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
+            style={{ background: 'var(--color-primary)' }}>6</span>
           <h3 className="font-heading font-semibold text-base text-foreground">¿Dónde trabajás?</h3>
         </div>
 
@@ -314,11 +346,11 @@ export default function OficioForm({ form, errors, onChange }) {
         {errors.zones && <p className="text-xs font-caption text-error">{errors.zones}</p>}
       </div>
 
-      {/* ── Bloque 5: Contacto ── */}
+      {/* ── Bloque 7: Contacto ── */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
           <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
-            style={{ background: 'var(--color-primary)' }}>6</span>
+            style={{ background: 'var(--color-primary)' }}>7</span>
           <h3 className="font-heading font-semibold text-base text-foreground">Contacto</h3>
         </div>
 

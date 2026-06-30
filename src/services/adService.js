@@ -241,6 +241,9 @@ export const adService = {
         provider_last_name: formData?.provider_last_name || null,
         provider_display_name: formData?.provider_display_name || null,
         ratings_enabled: formData?.ratings_enabled || false,
+        available_urgency: formData?.available_urgency || false,
+        weekend_service: formData?.weekend_service || false,
+        issues_invoice: formData?.issues_invoice || false,
       };
 
       const { data: ad, error: adError } = await supabase?.from('classified_ads')?.insert(payload)?.select()?.single();
@@ -334,6 +337,7 @@ export const adService = {
     const providerLabel = ad?.provider_display_name
       || [ad?.provider_name, ad?.provider_last_name]?.filter(Boolean)?.join(' ')
       || null;
+    const isNew = diffD < 30;
     return {
       ...ad,
       image: imageUrl,
@@ -341,6 +345,7 @@ export const adService = {
       timeAgo,
       datePosted: createdAt,
       providerLabel,
+      isNew,
     };
   }
 };

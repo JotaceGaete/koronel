@@ -8,29 +8,29 @@ const CATEGORIES = [
   { value: 'classified-ads', label: 'Clasificados' },
 ];
 
-const SUGGESTIONS = {
-  businesses: ['Restaurantes', 'Ferreterías', 'Salud', 'Educación', 'Mecánica', 'Supermercados'],
-  'classified-ads': ['Vehículos', 'Inmuebles', 'Electrónica', 'Ropa', 'Empleos', 'Servicios'],
-  all: ['Restaurantes', 'Vehículos', 'Inmuebles', 'Ferreterías', 'Electrónica', 'Empleos'],
-};
+// Static hints shown when the input is empty — these navigate to real results
+const HINTS = [
+  'Veterinarias',
+  'Farmacias',
+  'Restaurantes',
+  'Ferreterías',
+  'Mecánica',
+  'Salud',
+];
 
 export default function SearchBar({ placeholder = 'Buscar negocios, servicios o clasificados...', className = '' }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [focused, setFocused] = useState(false);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
 
-  const filteredSuggestions = query?.length === 0
-    ? SUGGESTIONS?.[category]
-    : SUGGESTIONS?.[category]?.filter((s) => s?.toLowerCase()?.includes(query?.toLowerCase()));
-
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef?.current && !containerRef?.current?.contains(e?.target)) {
-        setShowSuggestions(false);
+        setShowDropdown(false);
         setFocused(false);
       }
     };
@@ -39,27 +39,28 @@ export default function SearchBar({ placeholder = 'Buscar negocios, servicios o 
   }, []);
 
   const handleSearch = (searchQuery = query) => {
-    if (!searchQuery?.trim()) return;
+    const q = searchQuery?.trim();
+    if (!q) return;
     const destination = category === 'classified-ads'
-      ? `/classified-ads-listing?q=${encodeURIComponent(searchQuery)}`
-      : `/business-directory-listing?q=${encodeURIComponent(searchQuery)}`;
+      ? `/classified-ads-listing?q=${encodeURIComponent(q)}`
+      : `/buscar?q=${encodeURIComponent(q)}`;
     navigate(destination);
-    setShowSuggestions(false);
+    setShowDropdown(false);
     inputRef?.current?.blur();
   };
 
   const handleKeyDown = (e) => {
     if (e?.key === 'Enter') handleSearch();
-    if (e?.key === 'Escape') {
-      setShowSuggestions(false);
-      inputRef?.current?.blur();
-    }
+    if (e?.key === 'Escape') { setShowDropdown(false); inputRef?.current?.blur(); }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    setQuery(suggestion);
-    handleSearch(suggestion);
+  const handleHintClick = (hint) => {
+    setQuery(hint);
+    handleSearch(hint);
   };
+
+  // Only show static hints when input is empty and focused
+  const showHints = showDropdown && !query?.trim();
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -67,10 +68,7 @@ export default function SearchBar({ placeholder = 'Buscar negocios, servicios o 
         className={`
           flex items-center bg-card border rounded-md overflow-hidden
           transition-all duration-250 ease-smooth
-          ${focused
-            ? 'border-primary shadow-md'
-            : 'border-border shadow-sm hover:border-secondary'
-          }
+          ${focused ? 'border-primary shadow-md' : 'border-border shadow-sm hover:border-secondary'}
         `}
         style={{ height: '52px' }}
       >
@@ -102,24 +100,15 @@ export default function SearchBar({ placeholder = 'Buscar negocios, servicios o 
           ref={inputRef}
           type="search"
           value={query}
-          onChange={(e) => {
-            setQuery(e?.target?.value);
-            setShowSuggestions(true);
-          }}
-          onFocus={() => {
-            setFocused(true);
-            setShowSuggestions(true);
-          }}
+          onChange={(e) => { setQuery(e?.target?.value); setShowDropdown(true); }}
+          onFocus={() => { setFocused(true); setShowDropdown(true); }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="flex-1 h-full px-3 text-base font-body text-foreground bg-transparent placeholder-muted-foreground focus:outline-none"
           aria-label="Campo de búsqueda"
-          aria-autoComplete="list"
-          aria-expanded={showSuggestions && filteredSuggestions?.length > 0}
           autoComplete="off"
         />
 
-        {/* Clear */}
         {query && (
           <button
             onClick={() => { setQuery(''); inputRef?.current?.focus(); }}
@@ -130,7 +119,6 @@ export default function SearchBar({ placeholder = 'Buscar negocios, servicios o 
           </button>
         )}
 
-        {/* Search Button */}
         <button
           onClick={() => handleSearch()}
           className="shrink-0 px-5 h-full font-caption font-medium text-sm text-primary-foreground transition-all duration-250 ease-smooth hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
@@ -140,25 +128,21 @@ export default function SearchBar({ placeholder = 'Buscar negocios, servicios o 
           Buscar
         </button>
       </div>
-      {/* Suggestions Dropdown */}
-      {showSuggestions && filteredSuggestions?.length > 0 && (
-        <div
-          className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[150] py-1 overflow-hidden"
-          role="listbox"
-          aria-label="Sugerencias de búsqueda"
-        >
+
+      {/* Hints dropdown — only when empty input */}
+      {showHints && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[150] py-1 overflow-hidden">
           <p className="px-4 py-1.5 text-xs font-caption text-muted-foreground uppercase tracking-wider">
-            Sugerencias
+            Búsquedas frecuentes
           </p>
-          {filteredSuggestions?.map((suggestion) => (
+          {HINTS.map((hint) => (
             <button
-              key={suggestion}
-              onClick={() => handleSuggestionClick(suggestion)}
+              key={hint}
+              onClick={() => handleHintClick(hint)}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-caption text-card-foreground hover:bg-muted transition-colors duration-150 text-left min-h-[44px]"
-              role="option"
             >
-              <Icon name="Search" size={14} color="var(--color-secondary)" />
-              {suggestion}
+              <Icon name="TrendingUp" size={14} color="var(--color-secondary)" />
+              {hint}
             </button>
           ))}
         </div>

@@ -6,8 +6,8 @@ import Logo from 'components/Logo';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
-  { label: 'Inicio', path: '/homepage', icon: 'Home' },
-  { label: 'Negocios', path: '/business-directory-listing', icon: 'Building2' },
+  { label: 'Inicio', path: '/', icon: 'Home' },
+  { label: 'Negocios', path: '/negocios', icon: 'Building2' },
   { label: 'Profesionales', path: '/profesionales', icon: 'UserCheck' },
   { label: 'Ofertas', path: '/ofertas', icon: 'Tag' },
   { label: 'Preguntas', path: '/comunidad', icon: 'HelpCircle' },
@@ -46,7 +46,7 @@ export default function Header() {
     setUserMenuOpen(false);
     setMobileOpen(false);
     await signOut();
-    navigate('/homepage');
+    navigate('/');
   };
 
   useEffect(() => {

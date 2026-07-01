@@ -28,7 +28,7 @@ export default function SignupPage() {
     if (signUpError) {
       setError(signUpError?.message || 'Error al crear la cuenta. Intenta de nuevo.');
     } else {
-      navigate('/homepage', { replace: true });
+      navigate('/', { replace: true });
     }
   };
 
@@ -101,7 +101,7 @@ export default function SignupPage() {
         </div>
 
         <div className="mt-4 text-center">
-          <Link to="/homepage" className="text-sm font-caption text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/" className="text-sm font-caption text-muted-foreground hover:text-foreground transition-colors">
             ← Volver al inicio
           </Link>
         </div>

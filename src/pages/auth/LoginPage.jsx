@@ -26,7 +26,7 @@ export default function LoginPage() {
 
   const from = (typeof location?.state?.from === 'string'
     ? location.state.from
-    : (location?.state?.from?.pathname && (location.state.from.pathname + (location.state.from.search || '')))) || '/homepage';
+    : (location?.state?.from?.pathname && (location.state.from.pathname + (location.state.from.search || '')))) || '/';
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -135,7 +135,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center">
           <Link
-            to="/homepage"
+            to="/"
             className="inline-flex items-center gap-1.5 text-sm font-caption text-muted-foreground hover:text-foreground transition-colors"
           >
             <Icon name="ArrowLeft" size={14} color="currentColor" />

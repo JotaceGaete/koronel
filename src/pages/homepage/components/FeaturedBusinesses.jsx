@@ -82,7 +82,7 @@ export default function FeaturedBusinesses() {
         )}
 
         <div className="mt-6 text-center">
-          <Link to="/business-directory-listing" className="inline-flex min-h-[44px] items-center justify-center">
+          <Link to="/negocios" className="inline-flex min-h-[44px] items-center justify-center">
             <Button variant="outline" size="lg" iconName="Building2" iconPosition="left" iconSize={16} className="min-h-[44px]">
               Ver todos los negocios
             </Button>

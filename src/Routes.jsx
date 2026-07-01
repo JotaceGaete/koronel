@@ -45,10 +45,12 @@ const Routes = () => {
         <ScrollToTop />
         <FloatingActionButton />
         <RouterRoutes>
-          <Route path="/" element={<BusinessDirectoryListing />} />
-          <Route path="/homepage" element={<Homepage />} />
-          <Route path="/business-directory-listing" element={<BusinessDirectoryListing />} />
-          <Route path="/directorio-negocios" element={<BusinessDirectoryListing />} />
+          <Route path="/" element={<Homepage />} />
+          <Route path="/homepage" element={<Navigate to="/" replace />} />
+          <Route path="/negocios" element={<BusinessDirectoryListing />} />
+          <Route path="/business-directory-listing" element={<Navigate to="/negocios" replace />} />
+          <Route path="/directorio-negocios" element={<Navigate to="/negocios" replace />} />
+          <Route path="/directorio" element={<Navigate to="/negocios" replace />} />
           <Route path="/business-profile-page" element={<BusinessProfilePage />} />
           <Route path="/classified-ads-listing" element={<ClassifiedAdsListing />} />
           <Route path="/clasificados" element={<ClassifiedAdsListing />} />

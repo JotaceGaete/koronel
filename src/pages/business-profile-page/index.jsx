@@ -207,9 +207,9 @@ export default function BusinessProfilePage() {
         {/* Breadcrumb */}
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
           <nav className="flex items-center gap-1.5 text-xs font-caption text-muted-foreground flex-wrap" aria-label="Breadcrumb">
-            <Link to="/homepage" className="hover:text-primary transition-colors duration-150">Inicio</Link>
+            <Link to="/" className="hover:text-primary transition-colors duration-150">Inicio</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
-            <Link to="/business-directory-listing" className="hover:text-primary transition-colors duration-150">Negocios</Link>
+            <Link to="/negocios" className="hover:text-primary transition-colors duration-150">Negocios</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
             <span className="text-foreground truncate max-w-[200px]">{DISPLAY?.name}</span>
           </nav>
@@ -449,7 +449,7 @@ export default function BusinessProfilePage() {
                 &copy; {new Date()?.getFullYear()} CoronelLocal. Todos los derechos reservados.
               </p>
               <div className="flex items-center gap-4">
-                <Link to="/business-directory-listing" className="text-xs font-caption text-muted-foreground hover:text-primary transition-colors duration-150">Negocios</Link>
+                <Link to="/negocios" className="text-xs font-caption text-muted-foreground hover:text-primary transition-colors duration-150">Negocios</Link>
                 <Link to="/classified-ads-listing" className="text-xs font-caption text-muted-foreground hover:text-primary transition-colors duration-150">Clasificados</Link>
                 <Link to="/post-classified-ad" className="text-xs font-caption text-muted-foreground hover:text-primary transition-colors duration-150">Publicar</Link>
               </div>

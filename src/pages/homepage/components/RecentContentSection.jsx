@@ -209,7 +209,7 @@ export default function RecentContentSection() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              to="/business-directory-listing"
+              to="/negocios"
               className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-sm font-caption font-semibold text-primary hover:underline py-2"
             >
               Negocios

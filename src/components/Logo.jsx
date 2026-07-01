@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
  * @param {'header'|'headerMobile'|'auth'|'footer'} [variant] - Tamaño según contexto
  * @param {function} [onClick] - Opcional (ej. cerrar menú móvil)
  */
-export default function Logo({ className = '', imgClassName = '', variant = 'header', to = '/homepage', onClick }) {
+export default function Logo({ className = '', imgClassName = '', variant = 'header', to = '/', onClick }) {
   const heights = {
     header: 'h-8',
     headerMobile: 'h-7',

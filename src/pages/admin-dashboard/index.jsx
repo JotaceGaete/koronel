@@ -113,7 +113,7 @@ export default function AdminDashboard() {
             Ingreso rápido
           </Link>
           <AdminNotificationsPanel onNavigate={(section) => setActiveSection(section)} />
-          <a href="/homepage" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
             <Icon name="ArrowLeft" size={14} color="currentColor" />
             Volver al sitio
           </a>

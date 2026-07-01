@@ -448,7 +448,7 @@ export default function PublishBusinessForm() {
                 Ver mis negocios
               </button>
               <button
-                onClick={() => navigate('/business-directory-listing')}
+                onClick={() => navigate('/negocios')}
                 className="w-full py-2.5 rounded-md text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
               >
                 Ir al directorio
@@ -468,7 +468,7 @@ export default function PublishBusinessForm() {
         <div style={{ background: 'var(--color-primary)' }} className="px-4 md:px-6 py-6">
           <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-3 mb-1">
-              <Link to="/business-directory-listing" className="text-white/70 hover:text-white transition-colors">
+              <Link to="/negocios" className="text-white/70 hover:text-white transition-colors">
                 <Icon name="ArrowLeft" size={20} color="currentColor" />
               </Link>
               <h1 className="font-heading font-bold text-xl text-white">Publicar mi negocio</h1>

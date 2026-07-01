@@ -231,7 +231,7 @@ export default function PostProfesionalForm() {
         <div className="border-b border-border bg-card">
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
             <nav className="flex items-center gap-2 text-sm font-caption text-muted-foreground" aria-label="Breadcrumb">
-              <Link to="/homepage" className="hover:text-primary transition-colors">Inicio</Link>
+              <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
               <Icon name="ChevronRight" size={14} color="currentColor" />
               <Link to="/profesionales" className="hover:text-primary transition-colors">Profesionales</Link>
               <Icon name="ChevronRight" size={14} color="currentColor" />

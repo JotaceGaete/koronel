@@ -135,7 +135,7 @@ export default function EventDetailPage() {
         {/* Breadcrumb */}
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-3">
           <nav className="flex items-center gap-1.5 text-xs font-caption text-muted-foreground flex-wrap">
-            <Link to="/homepage" className="hover:text-primary transition-colors">Inicio</Link>
+            <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
             <Link to="/eventos" className="hover:text-primary transition-colors">Eventos</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
@@ -190,7 +190,7 @@ export default function EventDetailPage() {
                     Organizado por{' '}
                     {event?.organizer_business_id ?
                   <Link
-                    to={`/directorio/${event?.organizer_business_id}`}
+                    to={`/business-profile-page?id=${event?.organizer_business_id}`}
                     className="font-medium hover:underline"
                     style={{ color: 'var(--color-primary)' }}>
                     

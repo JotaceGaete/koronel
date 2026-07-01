@@ -133,7 +133,7 @@ export default function CommunityQuestionDetailPage() {
         {/* Breadcrumb */}
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-3">
           <nav className="flex items-center gap-1.5 text-xs font-caption text-muted-foreground flex-wrap">
-            <Link to="/homepage" className="hover:text-primary transition-colors">Inicio</Link>
+            <Link to="/" className="hover:text-primary transition-colors">Inicio</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
             <Link to="/comunidad" className="hover:text-primary transition-colors">Preguntas</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />

@@ -1,57 +1,76 @@
 import React from 'react';
-import Icon from 'components/AppIcon';
-import { getSuggestionsForIntent, INTENT_OPTIONS, ACTION_TYPE_LABELS } from '../../../lib/intentToSuggestion';
+import { getSuggestionsForIntent } from '../../../lib/intentToSuggestion';
 
-const TYPE_ICONS = {
-  offer:       'Tag',
-  liquidation: 'Percent',
-  launch:      'Rocket',
-  event:       'Calendar',
-  happy_hour:  'Clock',
-  season:      'Sun',
-  anniversary: 'Star',
-  new_product: 'Sparkles',
+const SITUATION_RESPONSE = {
+  low_traffic:   'Entendido. Cuando bajan las visitas, lo que mejor funciona es generar urgencia ahora mismo.',
+  excess_stock:  'Claro. Para mover stock rápido, lo mejor es ofrecer un precio irresistible por tiempo limitado.',
+  new_customers: 'Perfecto. Para conseguir nuevos clientes, necesitas que te descubran y que tengan un motivo para venir.',
+  event:         'Excelente. Un evento bien comunicado puede llenar tu negocio. Vamos a correr la voz.',
+  idea:          'Cuéntame más. Elige el tipo de publicación que mejor describe lo que tienes en mente.',
 };
 
-export default function SuggestionStep({ intent, categoryKey, selectedType, onSelect }) {
-  const suggestions = getSuggestionsForIntent(intent, categoryKey);
-  const intentLabel = INTENT_OPTIONS.find(o => o.key === intent)?.label || '';
+// Map situation key → intent key used in intentToSuggestion
+const SITUATION_TO_INTENT = {
+  low_traffic:   'low_sales',
+  excess_stock:  'excess_stock',
+  new_customers: 'new_customers',
+  event:         'event',
+  idea:          'free_publish',
+};
+
+export default function SuggestionStep({ situation, categoryKey, lastActionType, onSelect }) {
+  const intentKey = SITUATION_TO_INTENT[situation] || 'free_publish';
+  const suggestions = getSuggestionsForIntent(intentKey, categoryKey);
+  const responseText = SITUATION_RESPONSE[situation] || '';
+
+  // If the merchant's last action matches a suggestion, surface it first
+  const sorted = lastActionType
+    ? [
+        ...suggestions.filter(s => s.type === lastActionType),
+        ...suggestions.filter(s => s.type !== lastActionType),
+      ]
+    : suggestions;
 
   return (
-    <div>
-      <p className="text-sm font-caption text-muted-foreground mb-1">Para "{intentLabel}", te sugerimos:</p>
-      <h2 className="font-heading font-bold text-xl text-foreground mb-5">¿Qué tipo de acción quieres crear?</h2>
-
-      <div className="space-y-3">
-        {suggestions.map((s, i) => (
-          <button
-            key={i}
-            onClick={() => onSelect(s.type, s, i === 0)}
-            className={`w-full flex items-start gap-4 p-4 rounded-xl border text-left transition-all ${
-              selectedType === s.type && i === suggestions.findIndex(x => x.type === s.type)
-                ? 'border-primary bg-primary/5 shadow-sm'
-                : 'border-border bg-card hover:border-primary/40 hover:shadow-sm'
-            }`}
-          >
-            <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-muted">
-              <Icon name={TYPE_ICONS[s.type] || 'Star'} size={20} color="var(--color-primary)" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold font-caption text-foreground">{s.label}</p>
-              <p className="text-xs font-caption text-muted-foreground mt-0.5">{s.tagline}</p>
-              {s.hint && (
-                <p className="text-xs font-caption mt-1 px-2 py-0.5 rounded-full inline-block" style={{ background: 'var(--color-primary)/8', color: 'var(--color-primary)' }}>
-                  {s.hint}
-                </p>
-              )}
-            </div>
-          </button>
-        ))}
+    <div className="flex flex-col min-h-[70vh]">
+      {/* System response */}
+      <div className="mb-8">
+        <p className="text-base font-caption text-foreground leading-relaxed mb-4">
+          {responseText}
+        </p>
+        <p className="text-base font-heading font-semibold text-foreground">
+          ¿Cuál prefieres?
+        </p>
       </div>
 
-      <p className="text-xs font-caption text-muted-foreground text-center mt-4">
-        ¿Tienes algo distinto en mente? Elige cualquier opción y la adaptas tú.
-      </p>
+      {/* Suggestions as conversation choices */}
+      <div className="flex flex-col gap-3 flex-1">
+        {sorted.map((s, i) => {
+          const isRepeat = s.type === lastActionType && i === 0;
+          return (
+            <button
+              key={`${s.type}-${i}`}
+              onClick={() => onSelect(s)}
+              className="group flex items-start gap-4 w-full text-left p-4 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-sm active:scale-[0.99] transition-all duration-150"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-base font-semibold font-caption text-foreground">{s.label}</p>
+                  {isRepeat && (
+                    <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold shrink-0">
+                      La usaste antes
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm font-caption text-muted-foreground mt-1 leading-snug">{s.tagline}</p>
+                {s.hint && (
+                  <p className="text-xs font-caption text-primary mt-1.5">{s.hint}</p>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

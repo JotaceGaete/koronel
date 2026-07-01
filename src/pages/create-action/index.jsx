@@ -1,4 +1,5 @@
-// Route: /crecer/nueva  — Asistente de creación de acciones (protected)
+// Route: /crecer/nueva  — Asistente conversacional (protected)
+// Flow: Conversación → Sugerencia → Edición rápida → Celebración
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from 'components/ui/Header';
@@ -9,27 +10,36 @@ import { supabase } from '../../lib/supabase';
 import { businessService } from '../../services/businessService';
 import { actionService } from '../../services/actionService';
 import { pulseService } from '../../services/pulseService';
-import IntentStep from './steps/IntentStep';
+import { loadPrefs, savePrefs, endsAtFromDays } from '../../lib/merchantPrefs';
+import ConversationStep from './steps/ConversationStep';
 import SuggestionStep from './steps/SuggestionStep';
-import ContentStep from './steps/ContentStep';
-import UrgencyStep from './steps/UrgencyStep';
-import DistributionStep from './steps/DistributionStep';
+import QuickEditStep from './steps/QuickEditStep';
+import SuccessScreen from './SuccessScreen';
 
-const STEPS = ['intent', 'suggestion', 'content', 'urgency', 'distribution'];
+// ── Steps ────────────────────────────────────────────────────────────────────
+const STEP = { CONVERSATION: 0, SUGGESTION: 1, EDIT: 2, SUCCESS: 3 };
 
-const STEP_LABELS = {
-  intent:       '¿Qué necesitas?',
-  suggestion:   'Tipo de acción',
-  content:      'El contenido',
-  urgency:      'Duración',
-  distribution: 'Distribución',
-};
-
-function defaultEndsAt(days = 7) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  d.setHours(23, 59, 0, 0);
-  return d.toISOString().slice(0, 16);
+function buildDefaultForm(suggestion, prefs) {
+  const durationDays = prefs?.duration_days || 7;
+  return {
+    action_type:    suggestion?.type || 'offer',
+    title:          '',
+    headline:       '',
+    description:    '',
+    discount_type:  prefs?.discount_type || null,
+    original_price: '',
+    promo_price:    '',
+    promo_code:     '',
+    starts_at:      new Date().toISOString(),
+    ends_at:        endsAtFromDays(durationDays),
+    max_redemptions:'',
+    show_countdown: true,
+    dist_koronel:   prefs?.dist_koronel ?? true,
+    dist_map:       prefs?.dist_map     ?? true,
+    dist_profile:   prefs?.dist_profile ?? true,
+    dist_followers: prefs?.dist_followers ?? true,
+    dist_walinka:   prefs?.dist_walinka ?? false,
+  };
 }
 
 export default function CreateAction() {
@@ -37,54 +47,32 @@ export default function CreateAction() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const initialIntent = searchParams.get('intent') || '';
-  const initialBusinessId = searchParams.get('bid') || '';
+  const initialIntent = searchParams.get('intent') || null;
 
-  const [step, setStep] = useState(initialIntent ? 1 : 0);
-  const [intent, setIntent] = useState(initialIntent);
-  const [suggestedType, setSuggestedType] = useState(null);
-  const [acceptedSuggestion, setAcceptedSuggestion] = useState(false);
+  const [step, setStep] = useState(STEP.CONVERSATION);
+  const [situation, setSituation] = useState(null);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(null);
 
   const [business, setBusiness] = useState(null);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [pulse, setPulse] = useState(null);
+  const [prefs, setPrefs] = useState(null);
   const [loadingBusiness, setLoadingBusiness] = useState(true);
 
-  const [form, setForm] = useState({
-    action_type:    '',
-    title:          '',
-    headline:       '',
-    description:    '',
-    discount_type:  null,
-    discount_pct:   '',
-    discount_amount:'',
-    discount_label: '',
-    original_price: '',
-    promo_price:    '',
-    promo_code:     '',
-    starts_at:      new Date().toISOString().slice(0, 16),
-    ends_at:        defaultEndsAt(7),
-    max_redemptions:'',
-    show_countdown: true,
-    dist_koronel:   true,
-    dist_map:       true,
-    dist_profile:   true,
-    dist_followers: true,
-    dist_walinka:   false,
-  });
-
+  const [form, setForm] = useState({});
   const [coverFile, setCoverFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [createdAction, setCreatedAction] = useState(null);
+  const [pulse, setPulse] = useState(null);
 
-  // Load business + pulse
+  // Load business + prefs
   useEffect(() => {
     if (!user) { navigate('/login', { state: { from: '/crecer/nueva' } }); return; }
     async function load() {
+      const bid = searchParams.get('bid');
       let biz = null;
-      if (initialBusinessId) {
-        const { data } = await businessService?.getById?.(initialBusinessId) || {};
+      if (bid) {
+        const { data } = await businessService?.getById?.(bid) || {};
         biz = data;
       }
       if (!biz) {
@@ -94,12 +82,24 @@ export default function CreateAction() {
       if (!biz) { navigate('/crecer'); return; }
       setBusiness(biz);
 
-      const [pulseRes, followersRes] = await Promise.all([
-        pulseService.getBusinessPulse(biz.id),
-        supabase?.from('business_followers')?.select('id', { count: 'exact', head: true })?.eq('business_id', biz.id),
-      ]);
-      setPulse(pulseRes);
-      setFollowersCount(followersRes?.count || 0);
+      const loadedPrefs = loadPrefs(biz.id);
+      setPrefs(loadedPrefs);
+
+      // If intent pre-selected (from growth center), skip to that situation
+      if (initialIntent) {
+        const mapping = {
+          low_sales:     'low_traffic',
+          new_customers: 'new_customers',
+          excess_stock:  'excess_stock',
+          event:         'event',
+          free_publish:  'idea',
+        };
+        const situation = mapping[initialIntent] || 'idea';
+        setSituation(situation);
+        setStep(STEP.SUGGESTION);
+      }
+
+      pulseService.getBusinessPulse(biz.id).then(p => setPulse(p));
       setLoadingBusiness(false);
     }
     load();
@@ -112,37 +112,38 @@ export default function CreateAction() {
   const handleImageChange = useCallback((file) => {
     if (!file) return;
     setCoverFile(file);
-    const url = URL.createObjectURL(file);
-    setImagePreview(url);
+    setImagePreview(URL.createObjectURL(file));
   }, []);
 
-  const canAdvance = () => {
-    if (step === 0) return !!intent;
-    if (step === 1) return !!form.action_type;
-    if (step === 2) return !!form.title?.trim();
-    if (step === 3) return !!form.ends_at;
-    return true;
+  // Step 1: merchant picks situation
+  const handleSituationSelect = (situationKey) => {
+    setSituation(situationKey);
+    setStep(STEP.SUGGESTION);
   };
 
-  const handleNext = () => {
-    if (!canAdvance()) return;
-    if (step < STEPS.length - 1) setStep(s => s + 1);
-    else handleSubmit();
+  // Step 2: merchant picks suggestion → build pre-filled form
+  const handleSuggestionSelect = (suggestion) => {
+    setSelectedSuggestion(suggestion);
+    setForm(buildDefaultForm(suggestion, prefs));
+    setStep(STEP.EDIT);
   };
 
   const handleBack = () => {
-    if (step > 0) setStep(s => s - 1);
+    if (step === STEP.SUGGESTION) { setStep(STEP.CONVERSATION); setSituation(null); }
+    else if (step === STEP.EDIT)  { setStep(STEP.SUGGESTION); }
     else navigate('/crecer');
   };
 
-  const handleSubmit = async () => {
+  // Step 3: publish
+  const handlePublish = async () => {
+    if (!form.title?.trim()) return;
     setSubmitting(true);
     setError(null);
     try {
       let coverImagePath = null;
       if (coverFile) {
         const { path, error: uploadErr } = await actionService.uploadCoverImage(coverFile);
-        if (uploadErr) throw new Error('Error al subir imagen');
+        if (uploadErr) throw new Error('No se pudo subir la imagen. Intenta de nuevo.');
         coverImagePath = path;
       }
 
@@ -151,27 +152,55 @@ export default function CreateAction() {
         businessId:             business.id,
         formData:               form,
         coverImagePath,
-        triggerIntent:          intent,
-        suggestedType,
-        acceptedSuggestion,
+        triggerIntent:          situation,
+        suggestedType:          selectedSuggestion?.type,
+        acceptedSuggestion:     true,
         pulseAtCreation:        pulse?.pulse,
         daysInactiveAtCreation: pulse?.daysSinceLastAction,
         aiContextSnapshot: {
-          category_key:            business?.category_key,
-          follower_count:          followersCount,
-          days_since_last_action:  pulse?.daysSinceLastAction,
-          pulse:                   pulse?.pulse,
+          category_key:           business?.category_key,
+          follower_count:         0,
+          days_since_last_action: pulse?.daysSinceLastAction,
+          pulse:                  pulse?.pulse,
+          publish_count:          prefs?.publish_count || 0,
         },
       });
 
       if (createErr) throw createErr;
-      navigate(`/acciones/${data.slug}?created=1`);
+
+      // Persist prefs so next time is pre-filled
+      const durationDays = Math.round((new Date(form.ends_at) - Date.now()) / 86400000);
+      savePrefs(business.id, {
+        action_type:   form.action_type,
+        duration_days: Math.max(1, durationDays),
+        discount_type: form.discount_type,
+        dist_map:      form.dist_map,
+        dist_profile:  form.dist_profile,
+        dist_followers:form.dist_followers,
+        dist_walinka:  form.dist_walinka,
+      });
+
+      setCreatedAction(data);
+      setStep(STEP.SUCCESS);
     } catch (err) {
-      setError(err?.message || 'Error al crear la acción. Intenta de nuevo.');
+      setError(err?.message || 'Algo salió mal. Intenta de nuevo.');
       setSubmitting(false);
     }
   };
 
+  const handleCreateAnother = () => {
+    setStep(STEP.CONVERSATION);
+    setSituation(null);
+    setSelectedSuggestion(null);
+    setForm({});
+    setCoverFile(null);
+    setImagePreview(null);
+    setCreatedAction(null);
+    setError(null);
+    setSubmitting(false);
+  };
+
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loadingBusiness) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-background)' }}>
@@ -180,131 +209,134 @@ export default function CreateAction() {
     );
   }
 
-  const currentStepKey = STEPS[step];
-  const isLastStep = step === STEPS.length - 1;
+  // ── Render ─────────────────────────────────────────────────────────────────
+  const showHeader = step !== STEP.SUCCESS;
+  const showBack   = step === STEP.SUGGESTION || step === STEP.EDIT;
+  const showPublishBar = step === STEP.EDIT;
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Crear acción" path="/crecer/nueva" />
-      <Header />
-      <div style={{ paddingTop: '64px' }}>
-        {/* Progress bar */}
-        <div className="h-1 bg-muted">
-          <div
-            className="h-full transition-all duration-300"
-            style={{ width: `${((step + 1) / STEPS.length) * 100}%`, background: 'var(--color-primary)' }}
-          />
-        </div>
+      <PageMeta title="Nueva promoción" path="/crecer/nueva" />
 
-        <div className="max-w-lg mx-auto px-4 py-6">
-          {/* Step header */}
-          <div className="flex items-center gap-3 mb-6">
+      {/* Header — only for conversation + suggestion + edit steps */}
+      {showHeader && (
+        <div
+          className="fixed top-0 left-0 right-0 z-40 flex items-center h-14 px-4 gap-3 border-b border-border"
+          style={{ background: 'var(--color-background)' }}
+        >
+          {showBack ? (
             <button
               onClick={handleBack}
-              className="w-9 h-9 rounded-full flex items-center justify-center border border-border bg-card hover:bg-muted transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
             >
-              <Icon name="ArrowLeft" size={16} color="var(--color-foreground)" />
+              <Icon name="ArrowLeft" size={18} color="var(--color-foreground)" />
             </button>
-            <div>
-              <p className="text-xs font-caption text-muted-foreground">
-                Paso {step + 1} de {STEPS.length}
-              </p>
-            </div>
-          </div>
+          ) : (
+            <button
+              onClick={() => navigate('/crecer')}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+            >
+              <Icon name="X" size={18} color="var(--color-foreground)" />
+            </button>
+          )}
 
-          {/* Step content */}
-          <div className="min-h-[60vh]">
-            {currentStepKey === 'intent' && (
-              <IntentStep
-                selected={intent}
-                onSelect={(key) => {
-                  setIntent(key);
-                  setStep(1);
-                }}
-              />
-            )}
-
-            {currentStepKey === 'suggestion' && (
-              <SuggestionStep
-                intent={intent}
-                categoryKey={business?.category_key}
-                selectedType={form.action_type}
-                onSelect={(type, suggestion, isFirst) => {
-                  onChange('action_type', type);
-                  setSuggestedType(suggestion.type);
-                  setAcceptedSuggestion(isFirst);
-                  setStep(2);
-                }}
-              />
-            )}
-
-            {currentStepKey === 'content' && (
-              <ContentStep
-                actionType={form.action_type}
-                form={form}
-                onChange={onChange}
-                onImageChange={handleImageChange}
-                imagePreview={imagePreview}
-              />
-            )}
-
-            {currentStepKey === 'urgency' && (
-              <UrgencyStep form={form} onChange={onChange} />
-            )}
-
-            {currentStepKey === 'distribution' && (
-              <DistributionStep
-                form={form}
-                onChange={onChange}
-                business={business}
-                followersCount={followersCount}
-              />
-            )}
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-100 text-sm font-caption text-red-600">
-              {error}
+          {/* Progress dots */}
+          {step !== STEP.SUCCESS && (
+            <div className="flex items-center gap-1.5 flex-1 justify-center">
+              {[STEP.CONVERSATION, STEP.SUGGESTION, STEP.EDIT].map(s => (
+                <div
+                  key={s}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: step === s ? 20 : 6,
+                    height: 6,
+                    background: step >= s ? 'var(--color-primary)' : 'var(--color-muted)',
+                  }}
+                />
+              ))}
             </div>
           )}
 
-          {/* Navigation — shown for content/urgency/distribution */}
-          {['content', 'urgency', 'distribution'].includes(currentStepKey) && (
-            <div className="mt-6 flex gap-3">
-              {isLastStep ? (
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting || !canAdvance()}
-                  className="flex-1 h-12 rounded-xl text-sm font-semibold font-caption text-primary-foreground transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                  style={{ background: 'var(--color-primary)' }}
-                >
-                  {submitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      Publicando...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="Send" size={16} color="white" />
-                      Publicar acción
-                    </>
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={handleNext}
-                  disabled={!canAdvance()}
-                  className="flex-1 h-12 rounded-xl text-sm font-semibold font-caption text-primary-foreground transition-opacity disabled:opacity-50"
-                  style={{ background: 'var(--color-primary)' }}
-                >
-                  Continuar
-                </button>
-              )}
-            </div>
+          {/* Business name */}
+          <p className="text-xs font-caption text-muted-foreground shrink-0 w-9 text-right truncate">
+            {business?.name?.split(' ')?.[0]}
+          </p>
+        </div>
+      )}
+
+      {/* Content */}
+      <div style={{ paddingTop: showHeader ? '56px' : 0, paddingBottom: showPublishBar ? '96px' : '24px' }} className="max-w-lg mx-auto px-4 py-6">
+
+        {step === STEP.CONVERSATION && (
+          <ConversationStep
+            businessName={business?.name}
+            onSelect={handleSituationSelect}
+          />
+        )}
+
+        {step === STEP.SUGGESTION && (
+          <SuggestionStep
+            situation={situation}
+            categoryKey={business?.category_key}
+            lastActionType={prefs?.action_type}
+            onSelect={handleSuggestionSelect}
+          />
+        )}
+
+        {step === STEP.EDIT && (
+          <QuickEditStep
+            suggestion={selectedSuggestion}
+            form={form}
+            onChange={onChange}
+            onImageChange={handleImageChange}
+            imagePreview={imagePreview}
+            prefs={prefs}
+          />
+        )}
+
+        {step === STEP.SUCCESS && (
+          <SuccessScreen
+            action={createdAction}
+            channels={form}
+            onCreateAnother={handleCreateAnother}
+          />
+        )}
+      </div>
+
+      {/* Publish bar — only on edit step */}
+      {showPublishBar && (
+        <div
+          className="fixed bottom-0 left-0 right-0 px-4 py-4 border-t border-border z-40"
+          style={{ background: 'var(--color-background)' }}
+        >
+          {error && (
+            <p className="text-xs font-caption text-red-600 mb-3 text-center">{error}</p>
+          )}
+          <button
+            onClick={handlePublish}
+            disabled={submitting || !form.title?.trim()}
+            className="w-full h-12 rounded-2xl text-sm font-semibold font-caption text-primary-foreground flex items-center justify-center gap-2 transition-opacity disabled:opacity-40"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            {submitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Publicando...
+              </>
+            ) : (
+              <>
+                <Icon name="Send" size={16} color="white" />
+                Publicar ahora
+              </>
+            )}
+          </button>
+          {!form.title?.trim() && (
+            <p className="text-xs font-caption text-muted-foreground text-center mt-2">
+              Escribe qué ofreces para continuar
+            </p>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -7,7 +7,6 @@ import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
 import SearchHero from './components/SearchHero';
-import SectorFilterPills from './components/SectorFilterPills';
 import TrendingBlock from './components/TrendingBlock';
 import QuestionRow from './components/QuestionRow';
 
@@ -25,7 +24,6 @@ export default function CommunityQAListing() {
   const location = useLocation();
 
   const [search, setSearch] = useState('');
-  const [sector, setSector] = useState('');
   const [sort, setSort] = useState('recent');
   const [posts, setPosts] = useState([]);
   const [coverImages, setCoverImages] = useState({});
@@ -42,7 +40,7 @@ export default function CommunityQAListing() {
     setLoading(true);
     try {
       const { data, count } = await communityService.getPosts({
-        sector,
+        sector: '',
         search,
         sort,
         page: pg,
@@ -67,7 +65,7 @@ export default function CommunityQAListing() {
     } finally {
       setLoading(false);
     }
-  }, [search, sector, sort]);
+  }, [search, sort]);
 
   useEffect(() => {
     setPage(1);
@@ -79,11 +77,6 @@ export default function CommunityQAListing() {
     const next = page + 1;
     setPage(next);
     load(next, true);
-  };
-
-  const handleSectorChange = (s) => {
-    setSector(s);
-    setPage(1);
   };
 
   const hasMore = posts.length < totalCount;
@@ -101,9 +94,7 @@ export default function CommunityQAListing() {
         <SearchHero value={search} onChange={setSearch} onAskQuestion={goToAsk} />
 
         <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 py-5 space-y-6">
-          <SectorFilterPills value={sector} onChange={handleSectorChange} />
-
-          {showTrending && <TrendingBlock sector={sector} />}
+          {showTrending && <TrendingBlock sector="" />}
 
           {/* All questions */}
           <div>

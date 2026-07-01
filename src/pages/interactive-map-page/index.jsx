@@ -88,12 +88,13 @@ export default function InteractiveMapPage() {
   const [events, setEvents] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showBusinesses, setShowBusinesses] = useState(true);
   const [showEvents, setShowEvents] = useState(true);
   const [showCommunity, setShowCommunity] = useState(true);
-  const [category, setCategory] = useState('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -101,12 +102,12 @@ export default function InteractiveMapPage() {
   const [upcomingPanelOpen, setUpcomingPanelOpen] = useState(true);
   const searchTimeout = useRef(null);
 
-  const loadData = useCallback(async (searchVal, catVal) => {
+  const loadData = useCallback(async (searchVal, categoryId) => {
     setLoading(true);
     try {
       const [bizResult, evResult, upResult, communityResult] = await Promise.all([
-        mapService?.getBusinessesForMap({ search: searchVal, category: catVal }),
-        mapService?.getEventsForMap({ search: searchVal, category: catVal }),
+        mapService?.getBusinessesForMap({ search: searchVal, categoryId }),
+        mapService?.getEventsForMap({ search: searchVal }),
         mapService?.getUpcomingEvents(5),
         communityService?.getCommunityPostsForMap(),
       ]);
@@ -122,20 +123,38 @@ export default function InteractiveMapPage() {
   }, []);
 
   useEffect(() => {
-    loadData('', 'all');
+    loadData('', null);
+    mapService?.getCategories().then(cats => setCategories(cats));
   }, [loadData]);
 
   const handleSearchChange = (val) => {
     setSearch(val);
     clearTimeout(searchTimeout?.current);
     searchTimeout.current = setTimeout(() => {
-      loadData(val, category);
-    }, 400);
+      loadData(val, selectedCategoryId);
+    }, 350);
   };
 
-  const handleCategoryChange = (cat) => {
-    setCategory(cat);
-    loadData(search, cat);
+  const handleSearchSubmit = (val) => {
+    clearTimeout(searchTimeout?.current);
+    loadData(val, selectedCategoryId);
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategoryId(categoryId);
+    loadData(search, categoryId);
+  };
+
+  // Client-side suggestions from already-loaded businesses
+  const suggestions = search.length >= 2
+    ? businesses
+        .filter(b => b?.name?.toLowerCase().includes(search.toLowerCase()))
+        .slice(0, 6)
+    : [];
+
+  const handleSuggestionClick = (business) => {
+    setSearch(business.name);
+    handleBusinessClick(business);
   };
 
   const handleBusinessClick = (business) => {
@@ -229,13 +248,17 @@ export default function InteractiveMapPage() {
         <MapSearchBar
           search={search}
           onSearchChange={handleSearchChange}
+          onSearchSubmit={handleSearchSubmit}
+          suggestions={suggestions}
+          onSuggestionClick={handleSuggestionClick}
           showBusinesses={showBusinesses}
           showEvents={showEvents}
           showCommunity={showCommunity}
           onToggleBusinesses={() => setShowBusinesses(v => !v)}
           onToggleEvents={() => setShowEvents(v => !v)}
           onToggleCommunity={() => setShowCommunity(v => !v)}
-          category={category}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
           onCategoryChange={handleCategoryChange}
         />
 

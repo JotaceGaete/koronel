@@ -1,29 +1,43 @@
 import { supabase } from '../lib/supabase';
 
 export const mapService = {
-  async getBusinessesForMap({ search = '', category = '' } = {}) {
+  async getBusinessesForMap({ search = '', categoryId = null } = {}) {
     try {
       let query = supabase
         ?.from('businesses')
-        ?.select('id, name, category, category_key, address, phone, lat, lng, featured, verified')
-        ?.not('lat', 'is', null);
+        ?.select('id, name, category, category_key, category_id, address, phone, lat, lng, featured, verified')
+        ?.not('lat', 'is', null)
+        ?.eq('status', 'published');
 
       if (search?.trim()) {
-        query = query?.ilike('name', `%${search}%`);
+        query = query?.or(`name.ilike.%${search}%,category.ilike.%${search}%`);
       }
-      if (category && category !== 'all') {
-        query = query?.eq('category_key', category);
+      if (categoryId) {
+        query = query?.eq('category_id', categoryId);
       }
 
       const { data, error } = await query;
       if (error) throw error;
 
-      const normalized = (data || [])?.filter(b => b?.lat && b?.lng);
-
-      return { data: normalized, error: null };
+      return { data: (data || [])?.filter(b => b?.lat && b?.lng), error: null };
     } catch (error) {
       console.error('mapService.getBusinessesForMap error:', error);
       return { data: [], error };
+    }
+  },
+
+  async getCategories() {
+    try {
+      const { data, error } = await supabase
+        ?.from('categories')
+        ?.select('id, name, icon')
+        ?.is('parent_id', null)
+        ?.order('sort_order', { ascending: true })
+        ?.order('name', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    } catch {
+      return [];
     }
   },
 
@@ -44,7 +58,7 @@ export const mapService = {
     }
   },
 
-  async getEventsForMap({ search = '', category = '' } = {}) {
+  async getEventsForMap({ search = '' } = {}) {
     try {
       let query = supabase
         ?.from('events')
@@ -53,9 +67,6 @@ export const mapService = {
 
       if (search?.trim()) {
         query = query?.ilike('title', `%${search}%`);
-      }
-      if (category && category !== 'all') {
-        query = query?.eq('category', category);
       }
 
       const { data, error } = await query;

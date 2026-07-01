@@ -190,7 +190,7 @@ export default function EventDetailPage() {
                     Organizado por{' '}
                     {event?.organizer_business_id ?
                   <Link
-                    to={`/negocios/${event?.organizer_business_id}`}
+                    to={`/directorio/${event?.organizer_business_id}`}
                     className="font-medium hover:underline"
                     style={{ color: 'var(--color-primary)' }}>
                     

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 
 function formatDateTime(dt) {
@@ -57,12 +56,9 @@ export default function EventInfo({ event }) {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Organizador</p>
-              <Link
-                to={`/business-profile-page?id=${event?.organizer?.id}`}
-                className="text-sm font-semibold text-primary hover:underline"
-              >
+              <span className="text-sm font-semibold text-foreground">
                 {event?.organizer?.name}
-              </Link>
+              </span>
             </div>
           </div>
         )}

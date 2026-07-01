@@ -7,6 +7,9 @@ import Button from 'components/ui/Button';
 import { adService } from '../../services/adService';
 import { messageService } from '../../services/messageService';
 import { useAuth } from '../../contexts/AuthContext';
+import { isValidWalinkaCatalogUrl } from '../../lib/walinka';
+import { trackEvent } from '../../lib/analytics';
+import { supabase } from '../../lib/supabase';
 
 export default function ClassifiedAdDetail() {
   const { id } = useParams();
@@ -447,6 +450,33 @@ export default function ClassifiedAdDetail() {
                   </div>
                 </div>
               </div>
+
+              {/* Walinka catalog CTA */}
+              {ad?.walinka_enabled && isValidWalinkaCatalogUrl(ad?.walinka_catalog_url) && (
+                <div className="bg-card border border-border rounded-lg p-4">
+                  <a
+                    href={ad.walinka_catalog_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={async () => {
+                      try {
+                        await supabase.from('walinka_catalog_clicks').insert({
+                          listing_id: id,
+                          listing_type: ad?.listing_type || 'clasificado',
+                          walinka_business_slug: ad?.walinka_business_slug || null,
+                          source: 'koronel_listing',
+                        });
+                      } catch {}
+                      trackEvent('walinka_catalog_click', { listing_id: id, listing_type: ad?.listing_type });
+                    }}
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-lg text-sm font-caption font-semibold text-white transition-opacity hover:opacity-90"
+                    style={{ background: 'var(--color-primary)' }}
+                  >
+                    <Icon name="ShoppingBag" size={16} color="white" />
+                    Ver catálogo online
+                  </a>
+                </div>
+              )}
 
               {/* Contact Card */}
               <div className="bg-card border border-border rounded-lg p-4 space-y-3">

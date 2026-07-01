@@ -32,6 +32,9 @@ const BUSINESS_COLUMNS = new Set([
   'category_id',
   'claimed',
   'google_place_id',
+  'walinka_catalog_url',
+  'walinka_business_slug',
+  'walinka_enabled',
 ]);
 
 function withoutBusinessOnlyFields(payload = {}) {

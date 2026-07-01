@@ -43,6 +43,18 @@ export function trackPage(path, title) {
 }
 
 /**
+ * Registra un evento personalizado.
+ * @param {string} eventName - Nombre del evento GA4
+ * @param {object} [params] - Parámetros adicionales
+ */
+export function trackEvent(eventName, params = {}) {
+  if (!isProd) return;
+  if (gaId && typeof window.gtag === 'function') {
+    window.gtag('event', eventName, params);
+  }
+}
+
+/**
  * Reporte de errores (opcional). En producción se puede conectar a Sentry:
  *   npm install @sentry/react
  *   En main: Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN })

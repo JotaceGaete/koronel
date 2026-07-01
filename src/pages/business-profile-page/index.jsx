@@ -311,6 +311,10 @@ export default function BusinessProfilePage() {
                 website={DISPLAY?.websiteUrl}
                 address={DISPLAY?.address}
                 socialLinks={DISPLAY?.socialLinks}
+                walinkaCatalogUrl={business?.walinka_catalog_url}
+                walinkaCatalogSlug={business?.walinka_business_slug}
+                listingId={businessId}
+                listingType="business"
               />
               
 

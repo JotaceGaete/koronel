@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Icon from 'components/AppIcon';
+import { normalizeWalinkaCatalogInput } from '../../../lib/walinka';
 import { adminBusinessService } from '../../../services/adminService';
 import { businessService } from '../../../services/businessService';
 import { supabase } from '../../../lib/supabase';
@@ -80,6 +81,8 @@ const EMPTY_FORM = {
   social_links: [],
   opening_hours: null,
   tags: [],
+  walinka_catalog_input: '',
+  walinka_enabled: false,
 };
 
 function normalizeBusinessForForm(business) {
@@ -184,6 +187,9 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         social_links: Array.isArray(item?.social_links) ? item?.social_links : [],
         opening_hours: item?.opening_hours || null,
         tags: Array.isArray(item?.tags) ? item.tags : [],
+        walinka_catalog_input: item?.walinka_catalog_url || item?.walinka_business_slug || '',
+        walinka_business_slug: item?.walinka_business_slug || '',
+        walinka_enabled: item?.walinka_enabled || false,
       });
       setLogoPreview(item?.logo_url || null);
       setLogoFile(null);
@@ -595,6 +601,9 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         claimed: form?.owner_id ? true : false,
         owner_id: form?.owner_id ?? null,
         tags: Array.isArray(form?.tags) ? form.tags : [],
+        walinka_catalog_url: normalizeWalinkaCatalogInput(form?.walinka_catalog_input) || null,
+        walinka_business_slug: form?.walinka_business_slug || null,
+        walinka_enabled: !!(form?.walinka_enabled && normalizeWalinkaCatalogInput(form?.walinka_catalog_input)),
       };
 
       let savedId = editItem?.id;
@@ -1475,6 +1484,35 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                     {label}
                   </label>
                 ))}
+              </div>
+
+              {/* Walinka */}
+              <div className="pt-4 border-t border-border space-y-3">
+                <div className="flex items-center gap-2">
+                  <Icon name="ShoppingBag" size={15} color="var(--color-primary)" />
+                  <span className="text-sm font-medium text-foreground">Catálogo Walinka</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    URL o slug del catálogo (ej. <code className="font-data">mi-tienda</code> o URL completa)
+                  </label>
+                  <input
+                    type="text"
+                    value={form?.walinka_catalog_input || ''}
+                    onChange={e => setForm(f => ({ ...f, walinka_catalog_input: e.target.value }))}
+                    placeholder="mi-tienda  o  https://miralatienda.de/catalogo/mi-tienda"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form?.walinka_enabled || false}
+                    onChange={e => setForm(f => ({ ...f, walinka_enabled: e.target.checked }))}
+                    className="rounded"
+                  />
+                  Mostrar botón "Ver catálogo" en la ficha pública
+                </label>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import { isValidWalinkaCatalogUrl } from '../../../lib/walinka';
 
 const PRICE_LABELS = {
   free_quote: 'Presupuesto gratuito',
@@ -95,11 +96,17 @@ export default function ProfesionalCard({ ad }) {
       <div className="px-3 pb-3 flex-1 flex flex-col gap-2.5">
 
         {/* Badges */}
-        {(ad?.isNew || ad?.ratings_enabled || ad?.category) && (
+        {(ad?.isNew || ad?.ratings_enabled || ad?.category || (ad?.walinka_enabled && isValidWalinkaCatalogUrl(ad?.walinka_catalog_url))) && (
           <div className="flex flex-wrap justify-center gap-1">
             {ad?.category && (
               <span className="text-xs font-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                 {ad.category}
+              </span>
+            )}
+            {ad?.walinka_enabled && isValidWalinkaCatalogUrl(ad?.walinka_catalog_url) && (
+              <span className="inline-flex items-center gap-1 text-xs font-caption px-2 py-0.5 rounded-full text-white" style={{ background: 'var(--color-primary)' }}>
+                <Icon name="ShoppingBag" size={10} color="white" />
+                Catálogo online
               </span>
             )}
             {ad?.isNew && (

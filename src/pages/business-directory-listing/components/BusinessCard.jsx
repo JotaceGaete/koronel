@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { isValidWalinkaCatalogUrl } from '../../../lib/walinka';
 
 export default function BusinessCard({ business }) {
   const category = business?.parentCategoryName || business?.subCategoryName || business?.category || '';
@@ -27,7 +28,15 @@ export default function BusinessCard({ business }) {
         )}
       </div>
       <div className="p-3 flex flex-col flex-1 min-w-0">
-        <h3 className="font-heading font-semibold text-base text-card-foreground line-clamp-1 mb-0.5">{business?.name}</h3>
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+          <h3 className="font-heading font-semibold text-base text-card-foreground line-clamp-1">{business?.name}</h3>
+          {business?.walinka_enabled && isValidWalinkaCatalogUrl(business?.walinka_catalog_url) && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-caption font-semibold text-white shrink-0" style={{ background: 'var(--color-primary)' }}>
+              <Icon name="ShoppingBag" size={9} color="white" />
+              Catálogo
+            </span>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground mb-3">Coronel</p>
         <div className="mt-auto flex flex-col gap-2">
           <Link

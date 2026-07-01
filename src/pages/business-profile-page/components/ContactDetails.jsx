@@ -1,5 +1,8 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
+import { isValidWalinkaCatalogUrl } from '../../../lib/walinka';
+import { trackEvent } from '../../../lib/analytics';
+import { supabase } from '../../../lib/supabase';
 
 const SOCIAL_ICON_MAP = {
   Facebook: 'Facebook',
@@ -11,7 +14,21 @@ const SOCIAL_ICON_MAP = {
   Otra: 'Link',
 };
 
-export default function ContactDetails({ phone, whatsapp, email, website, address, socialLinks }) {
+async function recordWalinkaClick({ listingId, listingType, slug }) {
+  try {
+    await supabase.from('walinka_catalog_clicks').insert({
+      listing_id: listingId,
+      listing_type: listingType,
+      walinka_business_slug: slug || null,
+      source: 'koronel_listing',
+    });
+  } catch {
+    // non-blocking
+  }
+  trackEvent('walinka_catalog_click', { listing_id: listingId, listing_type: listingType });
+}
+
+export default function ContactDetails({ phone, whatsapp, email, website, address, socialLinks, walinkaCatalogUrl, walinkaCatalogSlug, listingId, listingType = 'business' }) {
   const items = [
     phone && { icon: 'Phone', label: 'Teléfono', value: phone, href: `tel:${phone}` },
     whatsapp && { icon: 'MessageCircle', label: 'WhatsApp', value: whatsapp, href: `https://wa.me/${whatsapp?.replace(/\D/g, '')}` },
@@ -48,6 +65,23 @@ export default function ContactDetails({ phone, whatsapp, email, website, addres
             </div>
           </div>
         ))}
+
+        {/* Walinka catalog CTA */}
+        {walinkaCatalogUrl && isValidWalinkaCatalogUrl(walinkaCatalogUrl) && (
+          <div className="pt-3 border-t border-border">
+            <a
+              href={walinkaCatalogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => recordWalinkaClick({ listingId, listingType, slug: walinkaCatalogSlug })}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-caption font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              <Icon name="ShoppingBag" size={16} color="white" />
+              Ver catálogo online
+            </a>
+          </div>
+        )}
 
         {/* Social links */}
         {validSocials?.length > 0 && (

@@ -229,37 +229,6 @@ export default function BusinessDirectoryListing() {
           </div>
         </div>
 
-        {/* Parent Category Filter Pills */}
-        <div className="border-b border-border bg-card">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
-              <button
-                onClick={() => { setSelectedParent('all'); setSelectedCategoryKey(null); setPage(1); }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-caption font-medium whitespace-nowrap shrink-0 transition-all min-h-[44px] ${
-                  selectedParent === 'all' ?'bg-primary text-primary-foreground shadow-sm' :'bg-card border border-border text-secondary hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <Icon name="LayoutGrid" size={14} color="currentColor" />
-                Todos
-              </button>
-              {categoryTree?.map(cat => (
-                <button
-                  key={cat?.id}
-                  onClick={() => { setSelectedParent(cat?.id); setSelectedCategoryKey(null); setPage(1); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-caption font-medium whitespace-nowrap shrink-0 transition-all min-h-[44px] ${
-                    selectedParent === cat?.id
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-card border border-border text-secondary hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <Icon name={cat?.icon || 'Tag'} size={14} color="currentColor" />
-                  {cat?.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6">
           <div className="flex gap-6">

@@ -62,7 +62,7 @@ export const mapService = {
     try {
       let query = supabase
         ?.from('events')
-        ?.select('id, title, category, start_datetime, end_datetime, venue_name, address, address_text, lat, lng, image_url, contact_whatsapp, organizer_business_id, status, organizer:businesses(id, name, lat, lng)')
+        ?.select('id, title, category, start_datetime, end_datetime, venue_name, address, address_text, lat, lng, image_url, contact_whatsapp, organizer_id, organizer_business_id, status, organizer:event_organizers(id, name, logo_url, business:businesses(lat, lng))')
         ?.in('status', ['approved', 'active']);
 
       if (search?.trim()) {
@@ -73,8 +73,8 @@ export const mapService = {
       if (error) throw error;
 
       const normalized = (data || [])?.map(ev => {
-        const orgLat = ev?.organizer?.lat;
-        const orgLng = ev?.organizer?.lng;
+        const orgLat = ev?.organizer?.business?.lat;
+        const orgLng = ev?.organizer?.business?.lng;
         const resolvedLat = orgLat || ev?.lat;
         const resolvedLng = orgLng || ev?.lng;
         return {
@@ -96,7 +96,7 @@ export const mapService = {
     try {
       const { data, error } = await supabase
         ?.from('events')
-        ?.select('id, title, category, start_datetime, venue_name, address_text, address, lat, lng, organizer_business_id, organizer:businesses(id, name, lat, lng)')
+        ?.select('id, title, category, start_datetime, venue_name, address_text, address, lat, lng, organizer_id, organizer_business_id, organizer:event_organizers(id, name, logo_url, business:businesses(lat, lng))')
         ?.in('status', ['approved', 'active'])
         ?.gte('start_datetime', new Date()?.toISOString())
         ?.order('start_datetime', { ascending: true })
@@ -105,8 +105,8 @@ export const mapService = {
 
       const normalized = (data || [])?.map(ev => ({
         ...ev,
-        resolvedLat: ev?.organizer?.lat || ev?.lat,
-        resolvedLng: ev?.organizer?.lng || ev?.lng,
+        resolvedLat: ev?.organizer?.business?.lat || ev?.lat,
+        resolvedLng: ev?.organizer?.business?.lng || ev?.lng,
         displayAddress: ev?.address_text || ev?.address || '',
       }));
 

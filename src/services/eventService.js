@@ -7,7 +7,7 @@ export const eventService = {
     try {
       let query = supabase
         ?.from('events')
-        ?.select('*, organizer:businesses(id, name, category)', { count: 'exact' });
+        ?.select('*, organizer:event_organizers(id, name, type, logo_url)', { count: 'exact' });
 
       if (status && status !== 'all') {
         query = query?.eq('status', status);
@@ -41,7 +41,7 @@ export const eventService = {
     try {
       const { data, error } = await supabase
         ?.from('events')
-        ?.select('*, organizer:businesses(id, name)')
+        ?.select('*, organizer:event_organizers(id, name, logo_url)')
         ?.eq('status', 'approved')
         ?.gte('start_datetime', new Date()?.toISOString())
         ?.order('start_datetime', { ascending: true })
@@ -57,7 +57,7 @@ export const eventService = {
     try {
       const { data, error } = await supabase
         ?.from('events')
-        ?.select('*, organizer:businesses(id, name, category, address, phone)')
+        ?.select('*, organizer:event_organizers(id, name, type, description, logo_url, phone, whatsapp, website, social_links)')
         ?.eq('id', id)
         ?.single();
       if (error) throw error;
@@ -96,6 +96,7 @@ export const eventService = {
           address: formData?.address,
           image_url: imageUrl || null,
           contact_whatsapp: formData?.contactWhatsapp || null,
+          organizer_id: formData?.organizerId || null,
           organizer_business_id: formData?.organizerBusinessId || null,
           status: 'pending',
         })
@@ -155,7 +156,7 @@ export const eventService = {
     try {
       let query = supabase
         ?.from('events')
-        ?.select('*, user:user_profiles(id, full_name, email), organizer:businesses(id, name)', { count: 'exact' });
+        ?.select('*, user:user_profiles(id, full_name, email), organizer:event_organizers(id, name, type)', { count: 'exact' });
 
       if (status && status !== 'all') {
         query = query?.eq('status', status);

@@ -38,7 +38,7 @@ export default function ReplyCard({ reply, hasVoted, onVote, voteLoading, user }
               )}
             </div>
             <Link
-              to={`/negocios/${reply?.linked_business?.id}`}
+              to={`/directorio/${reply?.linked_business?.id}`}
               className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border border-border hover:bg-card transition-colors"
               style={{ color: 'var(--color-primary)' }}
             >

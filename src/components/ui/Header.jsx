@@ -10,7 +10,7 @@ const navItems = [
   { label: 'Negocios', path: '/business-directory-listing', icon: 'Building2' },
   { label: 'Profesionales', path: '/profesionales', icon: 'UserCheck' },
   { label: 'Ofertas', path: '/ofertas', icon: 'Tag' },
-  { label: 'Comunidad', path: '/comunidad', icon: 'MessageCircle' },
+  { label: 'Preguntas', path: '/comunidad', icon: 'HelpCircle' },
 ];
 
 const moreItems = [

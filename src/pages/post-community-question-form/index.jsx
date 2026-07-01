@@ -143,7 +143,7 @@ export default function PostCommunityQuestionForm() {
             <p className="text-sm text-muted-foreground mb-8">Nuestro equipo la revisará pronto y la publicará en la comunidad.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/comunidad">
-                <Button variant="default" iconName="MessageCircle" iconPosition="left" iconSize={16}>Ver comunidad</Button>
+                <Button variant="default" iconName="HelpCircle" iconPosition="left" iconSize={16}>Ver preguntas</Button>
               </Link>
               <Button
                 variant="outline"
@@ -167,7 +167,7 @@ export default function PostCommunityQuestionForm() {
           <nav className="flex items-center gap-1.5 text-xs font-caption text-muted-foreground flex-wrap">
             <Link to="/homepage" className="hover:text-primary transition-colors">Inicio</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
-            <Link to="/comunidad" className="hover:text-primary transition-colors">Comunidad</Link>
+            <Link to="/comunidad" className="hover:text-primary transition-colors">Preguntas</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
             <span className="text-foreground">Nueva Pregunta</span>
           </nav>

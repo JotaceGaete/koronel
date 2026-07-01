@@ -119,7 +119,7 @@ export default function CommunityQuestionDetailPage() {
           <div className="text-center">
             <Icon name="MessageCircleOff" size={40} color="var(--color-muted-foreground)" className="mx-auto mb-4" />
             <h2 className="font-heading font-bold text-foreground mb-2">Pregunta no encontrada</h2>
-            <Link to="/comunidad"><Button variant="outline">Ver comunidad</Button></Link>
+            <Link to="/comunidad"><Button variant="outline">Ver preguntas</Button></Link>
           </div>
         </div>
       </div>
@@ -135,7 +135,7 @@ export default function CommunityQuestionDetailPage() {
           <nav className="flex items-center gap-1.5 text-xs font-caption text-muted-foreground flex-wrap">
             <Link to="/homepage" className="hover:text-primary transition-colors">Inicio</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
-            <Link to="/comunidad" className="hover:text-primary transition-colors">Comunidad</Link>
+            <Link to="/comunidad" className="hover:text-primary transition-colors">Preguntas</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
             <span className="text-foreground truncate max-w-[200px]">{post?.title}</span>
           </nav>

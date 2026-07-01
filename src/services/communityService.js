@@ -21,8 +21,9 @@ export const communityService = {
       if (sort === 'votes') {
         query = query?.order('upvote_count', { ascending: false });
       } else if (sort === 'unanswered') {
-        // We'll filter client-side for unanswered
-        query = query?.order('created_at', { ascending: false });
+        query = query?.eq('reply_count', 0)?.order('created_at', { ascending: false });
+      } else if (sort === 'replies') {
+        query = query?.order('reply_count', { ascending: false });
       } else {
         query = query?.order('created_at', { ascending: false });
       }
@@ -34,26 +35,7 @@ export const communityService = {
       const { data, error, count } = await query;
       if (error) throw error;
 
-      // Get reply counts
-      const postIds = (data || [])?.map(p => p?.id);
-      let replyCounts = {};
-      if (postIds?.length > 0) {
-        const { data: replyData } = await supabase
-          ?.from('community_replies')
-          ?.select('post_id')
-          ?.in('post_id', postIds)
-          ?.eq('status', 'active');
-        (replyData || [])?.forEach(r => {
-          replyCounts[r?.post_id] = (replyCounts?.[r?.post_id] || 0) + 1;
-        });
-      }
-
-      const enriched = (data || [])?.map(p => ({
-        ...p,
-        reply_count: replyCounts?.[p?.id] || 0,
-      }));
-
-      return { data: enriched, count: count || 0, error: null };
+      return { data: data || [], count: count || 0, error: null };
     } catch (error) {
       logger.error('communityService.getPosts error:', error);
       return { data: [], count: 0, error };

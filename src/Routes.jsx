@@ -36,6 +36,10 @@ import JobApplicationForm from './pages/job-application-form';
 import ProfesionalesListing from './pages/profesionales-listing';
 import OfertasListing from './pages/ofertas-listing';
 import PostProfesionalForm from './pages/post-profesional-form';
+import GrowthCenter from './pages/growth-center';
+import CreateAction from './pages/create-action';
+import ActionsListing from './pages/actions-listing';
+import ActionDetail from './pages/action-detail';
 
 const Routes = () => {
   return (
@@ -62,6 +66,14 @@ const Routes = () => {
           <Route path="/oficios" element={<Navigate to="/profesionales" replace />} />
           <Route path="/oficios/publicar" element={<Navigate to="/profesionales/publicar" replace />} />
           <Route path="/ofertas" element={<OfertasListing />} />
+          <Route path="/acciones" element={<ActionsListing />} />
+          <Route path="/acciones/:slug" element={<ActionDetail />} />
+          <Route path="/crecer" element={
+            <ProtectedRoute><GrowthCenter /></ProtectedRoute>
+          } />
+          <Route path="/crecer/nueva" element={
+            <ProtectedRoute><CreateAction /></ProtectedRoute>
+          } />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />

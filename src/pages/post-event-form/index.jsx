@@ -6,7 +6,7 @@ import Button from 'components/ui/Button';
 import OSMMap from 'components/maps/OSMMap';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { businessService } from '../../services/businessService';
+import { organizerService, ORGANIZER_TYPE_LABELS } from '../../services/organizerService';
 
 const CORONEL_CENTER = [-37.0298, -73.1429];
 
@@ -18,6 +18,15 @@ const CATEGORIES = [
   { value: 'other', label: 'Otro' },
 ];
 
+const ORGANIZER_TYPES = [
+  { value: 'independent', label: 'Independiente' },
+  { value: 'institution', label: 'Institución' },
+  { value: 'business', label: 'Empresa / Negocio' },
+  { value: 'club', label: 'Club / Agrupación' },
+  { value: 'foundation', label: 'Fundación' },
+  { value: 'municipality', label: 'Municipalidad' },
+];
+
 const EMPTY_FORM = {
   title: '',
   description: '',
@@ -27,7 +36,15 @@ const EMPTY_FORM = {
   venueName: '',
   addressText: '',
   contactWhatsapp: '',
-  organizerBusinessId: '',
+  organizerId: '',
+};
+
+const EMPTY_NEW_ORGANIZER = {
+  name: '',
+  type: 'independent',
+  phone: '',
+  whatsapp: '',
+  email: '',
 };
 
 export default function PostEventForm() {
@@ -39,9 +56,15 @@ export default function PostEventForm() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [userBusinesses, setUserBusinesses] = useState([]);
+  const [organizers, setOrganizers] = useState([]);
   const [pin, setPin] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Create organizer modal state
+  const [showCreateOrganizer, setShowCreateOrganizer] = useState(false);
+  const [newOrganizer, setNewOrganizer] = useState(EMPTY_NEW_ORGANIZER);
+  const [newOrgErrors, setNewOrgErrors] = useState({});
+  const [creatingOrg, setCreatingOrg] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -51,8 +74,8 @@ export default function PostEventForm() {
 
   useEffect(() => {
     if (user?.id) {
-      businessService?.getByOwner(user?.id)?.then(({ data }) => {
-        if (data?.length > 0) setUserBusinesses(data);
+      organizerService.getByUser(user.id).then(({ data }) => {
+        setOrganizers(data || []);
       });
     }
   }, [user?.id]);
@@ -116,6 +139,9 @@ export default function PostEventForm() {
         }
       }
 
+      // Resolve selected organizer for legacy backfill
+      const selectedOrg = organizers.find(o => o.id === formData.organizerId);
+
       const payload = {
         user_id: user?.id,
         title: formData?.title,
@@ -127,7 +153,9 @@ export default function PostEventForm() {
         address: formData?.addressText,
         address_text: formData?.addressText,
         contact_whatsapp: formData?.contactWhatsapp || null,
-        organizer_business_id: formData?.organizerBusinessId || null,
+        organizer_id: formData?.organizerId || null,
+        // Populate legacy column if the organizer is linked to a business
+        organizer_business_id: selectedOrg?.business_id || null,
         lat: pin?.lat || null,
         lng: pin?.lng || null,
         image_url: imageUrl,
@@ -144,6 +172,47 @@ export default function PostEventForm() {
       setSubmitting(false);
     }
   };
+
+  // ── Create organizer modal handlers ─────────────────────────────────────────
+
+  const handleNewOrgChange = (field, value) => {
+    setNewOrganizer(prev => ({ ...prev, [field]: value }));
+    if (newOrgErrors?.[field]) setNewOrgErrors(prev => ({ ...prev, [field]: null }));
+  };
+
+  const validateNewOrg = () => {
+    const e = {};
+    if (!newOrganizer.name.trim()) e.name = 'El nombre es obligatorio';
+    return e;
+  };
+
+  const handleCreateOrganizer = async () => {
+    const e = validateNewOrg();
+    if (Object.keys(e).length > 0) { setNewOrgErrors(e); return; }
+    setCreatingOrg(true);
+    try {
+      const { data, error } = await organizerService.create({
+        userId: user.id,
+        name: newOrganizer.name,
+        type: newOrganizer.type,
+        phone: newOrganizer.phone,
+        whatsapp: newOrganizer.whatsapp,
+        email: newOrganizer.email,
+      });
+      if (error) throw error;
+      setOrganizers(prev => [data, ...prev]);
+      setFormData(prev => ({ ...prev, organizerId: data.id }));
+      setShowCreateOrganizer(false);
+      setNewOrganizer(EMPTY_NEW_ORGANIZER);
+      setNewOrgErrors({});
+    } catch (err) {
+      setNewOrgErrors({ submit: err?.message || 'Error al crear el organizador' });
+    } finally {
+      setCreatingOrg(false);
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (authLoading) {
     return (
@@ -182,6 +251,8 @@ export default function PostEventForm() {
       </div>
     );
   }
+
+  const selectedOrg = organizers.find(o => o.id === formData.organizerId);
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
@@ -314,7 +385,7 @@ export default function PostEventForm() {
                 {errors?.addressText && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.addressText}</p>}
               </div>
 
-              {/* Map Pin — OSMMap picker */}
+              {/* Map Pin */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Ubicación en el mapa
@@ -396,22 +467,89 @@ export default function PostEventForm() {
                 />
               </div>
 
-              {/* Organizer Business */}
-              {userBusinesses?.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Negocio organizador <span className="text-xs font-normal text-muted-foreground">(opcional)</span></label>
-                  <select
-                    value={formData?.organizerBusinessId}
-                    onChange={e => handleChange('organizerBusinessId', e?.target?.value)}
-                    className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              {/* ── Organizer Selector ──────────────────────────────────────────── */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-foreground">
+                    Organizador
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">(opcional)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateOrganizer(true)}
+                    className="flex items-center gap-1 text-xs font-medium hover:underline"
+                    style={{ color: 'var(--color-primary)' }}
                   >
-                    <option value="">Sin negocio organizador</option>
-                    {userBusinesses?.map(b => (
-                      <option key={b?.id} value={b?.id}>{b?.name}</option>
-                    ))}
-                  </select>
+                    <Icon name="Plus" size={12} color="currentColor" />
+                    Crear organizador
+                  </button>
                 </div>
-              )}
+
+                {organizers.length === 0 ? (
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+                    <Icon name="Users" size={16} color="currentColor" />
+                    <span>No tienes organizadores todavía.</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateOrganizer(true)}
+                      className="ml-auto text-xs font-medium hover:underline shrink-0"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      Crear uno
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* "None" option */}
+                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${!formData.organizerId ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'}`}>
+                      <input
+                        type="radio"
+                        name="organizerId"
+                        value=""
+                        checked={!formData.organizerId}
+                        onChange={() => handleChange('organizerId', '')}
+                        className="sr-only"
+                      />
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--color-muted)' }}>
+                        <Icon name="User" size={14} color="var(--color-muted-foreground)" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Sin organizador</p>
+                        <p className="text-xs text-muted-foreground">El evento aparece sin organizador asociado</p>
+                      </div>
+                      {!formData.organizerId && <Icon name="CheckCircle" size={16} color="var(--color-primary)" className="ml-auto shrink-0" />}
+                    </label>
+
+                    {organizers.map(org => (
+                      <label
+                        key={org.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${formData.organizerId === org.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="organizerId"
+                          value={org.id}
+                          checked={formData.organizerId === org.id}
+                          onChange={() => handleChange('organizerId', org.id)}
+                          className="sr-only"
+                        />
+                        {org.logo_url ? (
+                          <img src={org.logo_url} alt={org.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--color-primary)', opacity: 0.15 }}>
+                            <Icon name="Building2" size={14} color="var(--color-primary)" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{org.name}</p>
+                          <p className="text-xs text-muted-foreground">{ORGANIZER_TYPE_LABELS[org.type] || org.type}{org.business_id ? ' · vinculado a negocio' : ''}</p>
+                        </div>
+                        {formData.organizerId === org.id && <Icon name="CheckCircle" size={16} color="var(--color-primary)" className="shrink-0" />}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {errors?.submit && (
                 <div className="p-3 rounded-lg border text-sm" style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#dc2626' }}>
@@ -444,6 +582,130 @@ export default function PostEventForm() {
           </form>
         </div>
       </div>
+
+      {/* ── Create Organizer Modal ──────────────────────────────────────────────── */}
+      {showCreateOrganizer && (
+        <div
+          className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowCreateOrganizer(false); }}
+        >
+          <div className="w-full max-w-md bg-card rounded-2xl shadow-2xl overflow-hidden">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Icon name="Users" size={18} color="var(--color-primary)" />
+                <h2 className="text-base font-heading font-semibold text-foreground">Nuevo organizador</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowCreateOrganizer(false); setNewOrganizer(EMPTY_NEW_ORGANIZER); setNewOrgErrors({}); }}
+                className="p-1.5 rounded-full hover:bg-muted transition-colors"
+              >
+                <Icon name="X" size={16} color="currentColor" />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="p-5 space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Nombre <span style={{ color: 'var(--color-error)' }}>*</span></label>
+                <input
+                  type="text"
+                  value={newOrganizer.name}
+                  onChange={e => handleNewOrgChange('name', e.target.value)}
+                  placeholder="Ej: Municipalidad de Coronel"
+                  autoFocus
+                  className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={{ borderColor: newOrgErrors?.name ? 'var(--color-error)' : 'var(--color-border)' }}
+                />
+                {newOrgErrors?.name && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{newOrgErrors.name}</p>}
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Tipo</label>
+                <select
+                  value={newOrganizer.type}
+                  onChange={e => handleNewOrgChange('type', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {ORGANIZER_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Phone + WhatsApp in a grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    value={newOrganizer.phone}
+                    onChange={e => handleNewOrgChange('phone', e.target.value)}
+                    placeholder="+56 9 …"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">WhatsApp</label>
+                  <input
+                    type="tel"
+                    value={newOrganizer.whatsapp}
+                    onChange={e => handleNewOrgChange('whatsapp', e.target.value)}
+                    placeholder="+56 9 …"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Email</label>
+                <input
+                  type="email"
+                  value={newOrganizer.email}
+                  onChange={e => handleNewOrgChange('email', e.target.value)}
+                  placeholder="contacto@ejemplo.cl"
+                  className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              {newOrgErrors?.submit && (
+                <p className="text-xs" style={{ color: 'var(--color-error)' }}>{newOrgErrors.submit}</p>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex gap-3 px-5 pb-5">
+              <Button
+                variant="outline"
+                type="button"
+                className="flex-1"
+                onClick={() => { setShowCreateOrganizer(false); setNewOrganizer(EMPTY_NEW_ORGANIZER); setNewOrgErrors({}); }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="default"
+                type="button"
+                className="flex-1"
+                disabled={creatingOrg}
+                onClick={handleCreateOrganizer}
+              >
+                {creatingOrg ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'white', borderTopColor: 'transparent' }} />
+                    Creando...
+                  </span>
+                ) : 'Crear organizador'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import Icon from 'components/AppIcon';
 
-export default function OficioProfilePhoto({ photo, onChange }) {
+export default function ProfesionalProfilePhoto({ photo, onChange }) {
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 

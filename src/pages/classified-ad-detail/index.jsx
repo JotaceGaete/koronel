@@ -231,7 +231,7 @@ export default function ClassifiedAdDetail() {
         <div className="border-b border-border bg-card">
           <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 flex items-center gap-2 text-sm text-muted-foreground">
             {isOficio ? (
-              <Link to="/oficios" className="hover:text-foreground transition-colors">Oficios</Link>
+              <Link to="/profesionales" className="hover:text-foreground transition-colors">Profesionales</Link>
             ) : (
               <Link to="/clasificados" className="hover:text-foreground transition-colors">Clasificados</Link>
             )}

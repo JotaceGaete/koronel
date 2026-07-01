@@ -10,7 +10,7 @@ const OFICIO_CATEGORIES = [
   { group: 'Tecnología', items: ['Técnico PC', 'Reparación celulares', 'Cámaras de seguridad', 'Redes y WiFi'] },
   { group: 'Mascotas', items: ['Peluquería canina', 'Veterinario a domicilio', 'Paseo de perros'] },
   { group: 'Educación', items: ['Clases particulares', 'Apoyo escolar', 'Idiomas'] },
-  { group: 'Otro', items: ['Otro oficio'] },
+  { group: 'Otro', items: ['Otro servicio'] },
 ];
 
 const PRICE_TYPES = [
@@ -23,7 +23,7 @@ const PRICE_TYPES = [
 
 const ZONES = ['Coronel', 'Lota', 'Escuadrón', 'San Pedro', 'Concepción', 'Penco', 'Tomé'];
 
-export default function OficioForm({ form, errors, onChange }) {
+export default function ProfesionalForm({ form, errors, onChange }) {
   const set = (field, value) => onChange(field, value);
 
   const toggleZone = (zone) => {

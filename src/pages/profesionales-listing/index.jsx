@@ -8,12 +8,12 @@ import Button from 'components/ui/Button';
 import AdCardSkeleton from '../classified-ads-listing/components/AdCardSkeleton';
 import EmptyState from '../classified-ads-listing/components/EmptyState';
 import SortBar from '../classified-ads-listing/components/SortBar';
-import OficioCard from './components/OficioCard';
+import ProfesionalCard from './components/ProfesionalCard';
 import { adService } from '../../services/adService';
 
 const PAGE_SIZE = 8;
 
-export default function OficiosListing() {
+export default function ProfesionalesListing() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const initialQuery = params?.get('q') || '';
@@ -78,7 +78,11 @@ export default function OficiosListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Oficios y Servicios" description="Encuentra gasfíteres, electricistas, pintores y más personas que ofrecen servicios en Coronel." path={listingPath} />
+      <PageMeta
+        title="Profesionales de Coronel"
+        description="Encuentra gasfíteres, abogados, psicólogos y más servicios en tu ciudad."
+        path={listingPath}
+      />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
@@ -86,19 +90,22 @@ export default function OficiosListing() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-1">
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                <Icon name="Wrench" size={18} color="white" />
+                <Icon name="UserCheck" size={18} color="white" />
               </div>
               <h1 className="font-heading font-bold text-xl md:text-2xl lg:text-3xl text-white">
-                Oficios y Servicios
+                Profesionales de Coronel
               </h1>
             </div>
-            <p className="text-white/80 text-sm mb-4 ml-12">Personas que ofrecen servicios en Coronel — gasfíteres, electricistas, pintores y más.</p>
+            <p className="text-white/80 text-sm mb-4 ml-12">
+              Encuentra gasfíteres, abogados, psicólogos y más servicios en tu ciudad.
+            </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <Link to="/oficios/publicar"
+              <Link
+                to="/profesionales/publicar"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-caption font-semibold text-primary bg-white hover:bg-white/90 transition-all self-start"
               >
                 <Icon name="Plus" size={15} color="currentColor" />
-                Publicar mi oficio
+                Presentarme como profesional
               </Link>
             </div>
             <form onSubmit={handleSearch} className="flex gap-2">
@@ -110,7 +117,7 @@ export default function OficiosListing() {
                   type="search"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e?.target?.value)}
-                  placeholder="Buscar gasfíter, electricista..."
+                  placeholder="Buscar gasfíter, abogado, psicólogo..."
                   className="flex-1 px-3 h-full text-sm font-caption bg-transparent text-foreground placeholder-muted-foreground focus:outline-none"
                 />
               </div>
@@ -151,8 +158,7 @@ export default function OficiosListing() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                 {ads?.map((ad) => (
-                  <OficioCard key={ad?.id} ad={ad} />
-
+                  <ProfesionalCard key={ad?.id} ad={ad} />
                 ))}
                 {loading && Array.from({ length: 3 })?.map((_, i) => <AdCardSkeleton key={`sk-${i}`} />)}
               </div>
@@ -162,7 +168,7 @@ export default function OficiosListing() {
                     onClick={() => setPage(p => p + 1)}
                     className="px-6 py-2.5 rounded-md border border-border bg-card text-sm font-caption font-medium text-foreground hover:bg-muted transition-colors"
                   >
-                    Cargar más oficios
+                    Cargar más profesionales
                   </button>
                 </div>
               )}

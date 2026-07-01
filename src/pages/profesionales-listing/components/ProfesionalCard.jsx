@@ -10,7 +10,7 @@ const PRICE_LABELS = {
   negotiable: 'A convenir',
 };
 
-export default function OficioCard({ ad }) {
+export default function ProfesionalCard({ ad }) {
   const navigate = useNavigate();
   const phone = ad?.phone;
   const hasWhatsApp = !!ad?.whatsapp && !!phone;

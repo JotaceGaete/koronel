@@ -9,7 +9,7 @@ const PRICE_TYPE_LABELS = {
   negotiable: 'A convenir',
 };
 
-export default function OficioPreviewCard({ form, profilePhoto, portfolioPhotos }) {
+export default function ProfesionalPreviewCard({ form, profilePhoto, portfolioPhotos }) {
   const hasContent = form.providerName || form.title || form.category || form.description;
   const providerLabel = form.providerDisplayName?.trim()
     || [form.providerName, form.providerLastName]?.filter(Boolean)?.join(' ')?.trim()
@@ -57,7 +57,7 @@ export default function OficioPreviewCard({ form, profilePhoto, portfolioPhotos 
             {providerLabel || 'Tu nombre'}
           </h3>
           <p className="text-white/90 text-sm font-caption mt-0.5 line-clamp-1">
-            {form.title || 'Tu oficio'}
+            {form.title || 'Tu especialidad'}
           </p>
         </div>
       </div>

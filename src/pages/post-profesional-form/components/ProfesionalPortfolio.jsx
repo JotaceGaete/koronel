@@ -3,7 +3,7 @@ import Icon from 'components/AppIcon';
 
 const MAX_PHOTOS = 6;
 
-export default function OficioPortfolio({ photos, onChange }) {
+export default function ProfesionalPortfolio({ photos, onChange }) {
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 

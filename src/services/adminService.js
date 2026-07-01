@@ -139,10 +139,15 @@ export const adminClaimService = {
 
 // ── Classified Ads ──────────────────────────────────────────
 export const adminAdService = {
-  async getAll({ search = '', status = '' } = {}) {
+  async getAll({ search = '', status = '', listingType = null } = {}) {
     let query = supabase?.from('classified_ads')?.select('*, owner:user_profiles(full_name, email), ad_images(storage_path, alt_text, is_primary)')?.order('created_at', { ascending: false });
     if (search) query = query?.ilike('title', `%${search}%`);
     if (status) query = query?.eq('ad_status', status);
+    if (listingType === 'profesionales') {
+      query = query?.eq('listing_type', 'oficio');
+    } else if (listingType === 'clasificados') {
+      query = query?.or('listing_type.eq.venta,listing_type.is.null');
+    }
     const { data, error } = await query;
     if (error) throw error;
     return data || [];

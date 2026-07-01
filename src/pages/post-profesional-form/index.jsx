@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
-import OficioProfilePhoto from './components/OficioProfilePhoto';
-import OficioPortfolio from './components/OficioPortfolio';
-import OficioForm from './components/OficioForm';
-import OficioPreviewCard from './components/OficioPreviewCard';
-import OficioSuccessModal from './components/OficioSuccessModal';
+import ProfesionalProfilePhoto from './components/ProfesionalProfilePhoto';
+import ProfesionalPortfolio from './components/ProfesionalPortfolio';
+import ProfesionalForm from './components/ProfesionalForm';
+import ProfesionalPreviewCard from './components/ProfesionalPreviewCard';
+import ProfesionalSuccessModal from './components/ProfesionalSuccessModal';
 import GuestInfoModal from '../post-classified-ad/components/GuestInfoModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { adService } from '../../services/adService';
@@ -67,7 +67,7 @@ async function getClientIP() {
   }
 }
 
-export default function PostOficioForm() {
+export default function PostProfesionalForm() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
 
@@ -94,7 +94,7 @@ export default function PostOficioForm() {
     const errs = validate(form);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      document.querySelector('[data-oficio-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.querySelector('[data-profesional-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     if (!user) {
@@ -219,7 +219,7 @@ export default function PostOficioForm() {
     setProfilePhoto(null);
     setPortfolioPhotos([]);
     setErrors({});
-    navigate('/oficios');
+    navigate('/profesionales');
   };
 
   return (
@@ -233,7 +233,7 @@ export default function PostOficioForm() {
             <nav className="flex items-center gap-2 text-sm font-caption text-muted-foreground" aria-label="Breadcrumb">
               <Link to="/homepage" className="hover:text-primary transition-colors">Inicio</Link>
               <Icon name="ChevronRight" size={14} color="currentColor" />
-              <Link to="/oficios" className="hover:text-primary transition-colors">Oficios</Link>
+              <Link to="/profesionales" className="hover:text-primary transition-colors">Profesionales</Link>
               <Icon name="ChevronRight" size={14} color="currentColor" />
               <span className="text-foreground font-medium">Presentarme</span>
             </nav>
@@ -246,7 +246,7 @@ export default function PostOficioForm() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h1 className="font-heading font-bold text-2xl md:text-3xl text-foreground flex items-center gap-2">
-                  <Icon name="Wrench" size={28} color="var(--color-primary)" />
+                  <Icon name="UserCheck" size={28} color="var(--color-primary)" />
                   Presentate en Koronel
                 </h1>
                 <p className="text-sm md:text-base font-body text-muted-foreground mt-1">
@@ -295,12 +295,12 @@ export default function PostOficioForm() {
                       style={{ background: 'var(--color-primary)' }}>1</span>
                     <h2 className="font-heading font-semibold text-base text-foreground">Tu foto</h2>
                   </div>
-                  <OficioProfilePhoto photo={profilePhoto} onChange={setProfilePhoto} />
+                  <ProfesionalProfilePhoto photo={profilePhoto} onChange={setProfilePhoto} />
                 </section>
 
                 {/* Sección: Datos del oficio + contacto */}
                 <section className="bg-card border border-border rounded-xl p-4 md:p-6">
-                  <OficioForm form={form} errors={errors} onChange={setField} />
+                  <ProfesionalForm form={form} errors={errors} onChange={setField} />
                 </section>
 
                 {/* Sección: Portfolio */}
@@ -310,13 +310,13 @@ export default function PostOficioForm() {
                       style={{ background: 'var(--color-primary)' }}>6</span>
                     <h2 className="font-heading font-semibold text-base text-foreground">Trabajos realizados</h2>
                   </div>
-                  <OficioPortfolio photos={portfolioPhotos} onChange={setPortfolioPhotos} />
+                  <ProfesionalPortfolio photos={portfolioPhotos} onChange={setPortfolioPhotos} />
                 </section>
 
                 {/* Vista previa mobile (toggle) */}
                 {previewOpen && (
                   <section className="lg:hidden">
-                    <OficioPreviewCard form={form} profilePhoto={profilePhoto} portfolioPhotos={portfolioPhotos} />
+                    <ProfesionalPreviewCard form={form} profilePhoto={profilePhoto} portfolioPhotos={portfolioPhotos} />
                   </section>
                 )}
 
@@ -325,7 +325,7 @@ export default function PostOficioForm() {
                   {submitError && (
                     <div className="mb-4 flex items-center gap-2 p-3 rounded-md text-sm font-caption"
                       style={{ background: '#E53E3E18', color: 'var(--color-error)' }}
-                      data-oficio-error>
+                      data-profesional-error>
                       <Icon name="AlertCircle" size={15} color="currentColor" />
                       {submitError}
                     </div>
@@ -343,7 +343,7 @@ export default function PostOficioForm() {
                     >
                       {isSubmitting ? 'Publicando...' : 'Publicar mi ficha'}
                     </Button>
-                    <Link to="/oficios">
+                    <Link to="/profesionales">
                       <Button type="button" variant="ghost" size="lg">
                         Cancelar
                       </Button>
@@ -362,7 +362,7 @@ export default function PostOficioForm() {
                   <h3 className="font-heading font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
                     Vista previa de tu ficha
                   </h3>
-                  <OficioPreviewCard form={form} profilePhoto={profilePhoto} portfolioPhotos={portfolioPhotos} />
+                  <ProfesionalPreviewCard form={form} profilePhoto={profilePhoto} portfolioPhotos={portfolioPhotos} />
                 </div>
               </div>
 
@@ -380,7 +380,7 @@ export default function PostOficioForm() {
       )}
 
       {showSuccess && (
-        <OficioSuccessModal
+        <ProfesionalSuccessModal
           onClose={handleSuccessClose}
           isGuest={successIsGuest}
           guestEmail={successGuestEmail}

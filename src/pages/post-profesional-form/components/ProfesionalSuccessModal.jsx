@@ -11,12 +11,12 @@ const WaIcon = () => (
   </svg>
 );
 
-export default function OficioSuccessModal({ onClose, isGuest = false, guestEmail = '', verificationCode = '', title = '', phone = '' }) {
+export default function ProfesionalSuccessModal({ onClose, isGuest = false, guestEmail = '', verificationCode = '', title = '', phone = '' }) {
   const navigate = useNavigate();
 
   const handleWhatsAppVerify = () => {
     const msg = encodeURIComponent(
-      `Hola, quiero activar mi ficha de oficio.\nCódigo: ${verificationCode}\nOficio: ${title}\nTeléfono: ${phone}`
+      `Hola, quiero activar mi ficha de profesional.\nCódigo: ${verificationCode}\nServicio: ${title}\nTeléfono: ${phone}`
     );
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${msg}`, '_blank');
   };
@@ -80,8 +80,8 @@ export default function OficioSuccessModal({ onClose, isGuest = false, guestEmai
         </p>
         <div className="flex flex-col gap-3">
           <Button variant="default" fullWidth iconName="Wrench" iconPosition="left" iconSize={16}
-            onClick={() => navigate('/oficios')}>
-            Ver mis colegas en Oficios
+            onClick={() => navigate('/profesionales')}>
+            Ver directorio de profesionales
           </Button>
           <Button variant="outline" fullWidth iconName="LayoutDashboard" iconPosition="left" iconSize={16}
             onClick={() => navigate('/user-account-dashboard')}>

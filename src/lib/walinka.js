@@ -17,10 +17,26 @@ export function normalizeWalinkaCatalogInput(input) {
     return url.href;
   }
 
+  // Reject anything that looks like a URI scheme (contains `:` before any `/`)
+  if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(trimmed)) return null;
+
   // Treat as slug — strip leading slashes and build URL
   const slug = trimmed.replace(/^\/+/, '');
   if (!slug) return null;
   return `${WALINKA_BASE_URL}/${slug}`;
+}
+
+/**
+ * Extracts the slug portion from a plain-slug input (not a URL).
+ * Returns null if the input is a full URL or empty.
+ */
+export function extractWalinkaSlug(input) {
+  if (!input || typeof input !== 'string') return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  // If it has a scheme separator or looks like a URL, don't extract a slug
+  if (trimmed.includes('://') || trimmed.startsWith('//') || /^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(trimmed)) return null;
+  return trimmed.replace(/^\/+/, '') || null;
 }
 
 /**

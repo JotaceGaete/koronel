@@ -21,3 +21,22 @@ CREATE TABLE IF NOT EXISTS public.walinka_catalog_clicks (
 CREATE INDEX IF NOT EXISTS idx_walinka_clicks_listing ON public.walinka_catalog_clicks(listing_id, listing_type);
 CREATE INDEX IF NOT EXISTS idx_walinka_clicks_slug ON public.walinka_catalog_clicks(walinka_business_slug);
 CREATE INDEX IF NOT EXISTS idx_walinka_clicks_created ON public.walinka_catalog_clicks(created_at);
+
+-- RLS: anyone can insert a click (analytics); only service role can read/delete
+ALTER TABLE public.walinka_catalog_clicks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "anyone_insert_walinka_clicks"
+ON public.walinka_catalog_clicks FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+CREATE POLICY "admin_read_walinka_clicks"
+ON public.walinka_catalog_clicks FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_profiles
+    WHERE user_profiles.id = auth.uid()
+      AND user_profiles.role = 'admin'
+  )
+);

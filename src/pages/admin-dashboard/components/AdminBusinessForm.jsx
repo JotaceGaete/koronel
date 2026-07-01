@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Icon from 'components/AppIcon';
-import { normalizeWalinkaCatalogInput } from '../../../lib/walinka';
+import { normalizeWalinkaCatalogInput, extractWalinkaSlug } from '../../../lib/walinka';
 import { adminBusinessService } from '../../../services/adminService';
 import { businessService } from '../../../services/businessService';
 import { supabase } from '../../../lib/supabase';
@@ -602,7 +602,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         owner_id: form?.owner_id ?? null,
         tags: Array.isArray(form?.tags) ? form.tags : [],
         walinka_catalog_url: normalizeWalinkaCatalogInput(form?.walinka_catalog_input) || null,
-        walinka_business_slug: form?.walinka_business_slug || null,
+        walinka_business_slug: extractWalinkaSlug(form?.walinka_catalog_input) || null,
         walinka_enabled: !!(form?.walinka_enabled && normalizeWalinkaCatalogInput(form?.walinka_catalog_input)),
       };
 

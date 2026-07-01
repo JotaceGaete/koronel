@@ -88,7 +88,7 @@ export const adService = {
 
   async getRecent(limit = 6) {
     try {
-      const { data, error } = await supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')?.eq('ad_status', 'active')?.order('created_at', { ascending: false })?.limit(limit);
+      const { data, error } = await supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')?.eq('ad_status', 'active')?.or('listing_type.eq.venta,listing_type.eq.oferta,listing_type.is.null')?.order('created_at', { ascending: false })?.limit(limit);
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {

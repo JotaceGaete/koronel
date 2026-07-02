@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
-import { CITY_CONFIG } from '../config/city';
+import { getActiveCityConfig } from '../config/city';
 
 const BUSINESS_COLUMNS = new Set([
   'owner_id',
@@ -265,7 +265,7 @@ export const businessService = {
   getImageUrl(storagePath) {
     if (!storagePath) return null;
     if (storagePath?.startsWith('http')) return storagePath;
-    return `${CITY_CONFIG.mediaBaseUrl}/${storagePath}`;
+    return `${getActiveCityConfig().mediaBaseUrl}/${storagePath}`;
   },
 
   /** Búsqueda para sugerencias: negocios por nombre/dirección y categorías por nombre/key. */

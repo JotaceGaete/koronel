@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { formatDate, formatTime } from '../utils/format';
-import { CITY_CONFIG } from '../config/city';
+import { getActiveCityConfig } from '../config/city';
 
 export const mapService = {
   async getBusinessesForMap({ search = '', category = '' } = {}) {
@@ -39,7 +39,7 @@ export const mapService = {
         ?.single();
       if (error || !data) return null;
       if (data?.storage_path?.startsWith('http')) return data?.storage_path;
-      return `${CITY_CONFIG.mediaBaseUrl}/${data?.storage_path}`;
+      return `${getActiveCityConfig().mediaBaseUrl}/${data?.storage_path}`;
     } catch {
       return null;
     }

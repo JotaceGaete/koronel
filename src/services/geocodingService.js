@@ -1,9 +1,12 @@
-import { CITY_CONFIG, cityCountryLabel } from '../config/city';
+import { CITY_CONFIG, getActiveCityConfig, cityCountryLabel } from '../config/city';
 
 const CACHE = new Map();
 /** @deprecated use CITY_CONFIG.center — kept as an alias so existing imports keep working. */
 export const CORONEL_DEFAULT = CITY_CONFIG.center;
-const USER_AGENT = `${CITY_CONFIG.siteName}/1.0 (${CITY_CONFIG.siteDomain})`;
+const userAgent = () => {
+  const c = getActiveCityConfig();
+  return `${c.siteName}/1.0 (${c.siteDomain})`;
+};
 
 export async function geocode(addressText) {
   if (!addressText?.trim()) return null;
@@ -16,7 +19,7 @@ export async function geocode(addressText) {
   try {
     const res = await fetch(url, {
       headers: {
-        'User-Agent': USER_AGENT,
+        'User-Agent': userAgent(),
         'Accept-Language': 'es',
       },
     });
@@ -41,7 +44,7 @@ export async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(url, {
       headers: {
-        'User-Agent': USER_AGENT,
+        'User-Agent': userAgent(),
         'Accept-Language': 'es',
       },
     });

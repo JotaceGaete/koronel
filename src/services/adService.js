@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
-import { CITY_CONFIG } from '../config/city';
+import { getActiveCityConfig } from '../config/city';
 
-const R2_PUBLIC = CITY_CONFIG.mediaBaseUrl;
+const r2Public = () => getActiveCityConfig().mediaBaseUrl;
 
 // Helper: generate a simple verification token
 function generateToken() {
@@ -219,7 +219,7 @@ export const adService = {
         condition: formData?.condition || null,
         phone: formData?.phone,
         whatsapp: formData?.whatsapp || false,
-        location: formData?.location || CITY_CONFIG.name,
+        location: formData?.location || getActiveCityConfig().name,
         duration_days: parseInt(formData?.duration || 30),
         expires_at: expiresAt?.toISOString(),
         ad_status: isGuest ? 'pending' : 'active',
@@ -302,13 +302,13 @@ export const adService = {
   getImageUrl(storagePath) {
     if (!storagePath) return null;
     if (storagePath?.startsWith('http')) return storagePath;
-    return `${R2_PUBLIC}/${storagePath}`;
+    return `${r2Public()}/${storagePath}`;
   },
 
   formatAd(ad) {
     const primaryImage = ad?.ad_images?.find(img => img?.is_primary) || ad?.ad_images?.[0];
     const imageUrl = primaryImage?.storage_path
-      ? (primaryImage?.storage_path?.startsWith('http') ? primaryImage?.storage_path : `${R2_PUBLIC}/${primaryImage?.storage_path}`)
+      ? (primaryImage?.storage_path?.startsWith('http') ? primaryImage?.storage_path : `${r2Public()}/${primaryImage?.storage_path}`)
       : null;
     const now = Date.now();
     const createdAt = new Date(ad?.created_at);

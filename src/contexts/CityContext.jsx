@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { CITY_CONFIG } from '../config/city';
+import { CITY_CONFIG, setActiveCityConfig } from '../config/city';
 import { resolveActiveCity } from '../services/cityService';
 
 /**
@@ -20,7 +20,10 @@ export function CityProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
     resolveActiveCity()?.then((resolved) => {
-      if (!cancelled && resolved) setCity(resolved);
+      if (!cancelled && resolved) {
+        setCity(resolved);
+        setActiveCityConfig(resolved);
+      }
     });
     return () => {
       cancelled = true;

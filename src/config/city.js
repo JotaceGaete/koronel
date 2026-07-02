@@ -32,10 +32,27 @@ export const CITY_CONFIG = {
   adminWhatsapp: env.VITE_ADMIN_WHATSAPP || '56993443682',
 };
 
+/**
+ * Ciudad activa para módulos que no son componentes React (services, utils)
+ * y por lo tanto no pueden usar el hook useCity(). Arranca en CITY_CONFIG
+ * (estático) y CityProvider la actualiza una vez que resuelve la ciudad
+ * real desde community_cities, para que estos módulos queden en sincro
+ * con lo que ve la UI sin que cada uno tenga que importar Supabase.
+ */
+let activeCityConfig = CITY_CONFIG;
+
+export function getActiveCityConfig() {
+  return activeCityConfig;
+}
+
+export function setActiveCityConfig(config) {
+  activeCityConfig = config || CITY_CONFIG;
+}
+
 /** "Coronel, Chile" — usado para sesgar geocodificación y textos de ubicación. */
-export const cityCountryLabel = () => `${CITY_CONFIG.name}, ${CITY_CONFIG.country}`;
+export const cityCountryLabel = () => `${activeCityConfig.name}, ${activeCityConfig.country}`;
 
 /** "Coronel, Región del Biobío, Chile" — usado en footer/SEO. */
-export const cityFullLabel = () => `${CITY_CONFIG.name}, ${CITY_CONFIG.region}, ${CITY_CONFIG.country}`;
+export const cityFullLabel = () => `${activeCityConfig.name}, ${activeCityConfig.region}, ${activeCityConfig.country}`;
 
 export default CITY_CONFIG;

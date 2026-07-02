@@ -1,16 +1,27 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- Capa Account — Unidad raíz del ecosistema
--- Tablas: products, accounts, account_members
--- Relación: businesses.account_id (owner_id se mantiene intacto)
+-- Orden: tablas → RLS enable → policies → relaciones → migración de datos
+-- Re-ejecutable: usa IF NOT EXISTS y DROP POLICY IF EXISTS
 -- ═══════════════════════════════════════════════════════════════════════════════
 
--- ─── products ─────────────────────────────────────────────────────────────────
--- Catálogo de productos del ecosistema.
--- Las reglas de créditos (futuras) referenciarán esta tabla con FK real.
+
+-- ─── 0. Función updated_at (defensiva) ───────────────────────────────────────
+-- Se crea solo si no existe ninguna variante en el proyecto.
+
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+
+-- ─── 1. products ──────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.products (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  key         text        NOT NULL UNIQUE,   -- 'koronel' | 'walinka' | 'ia' | 'eventos'
+  key         text        NOT NULL UNIQUE,
   name        text        NOT NULL,
   description text,
   is_active   boolean     NOT NULL DEFAULT true,
@@ -19,27 +30,15 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 INSERT INTO public.products (key, name, description, sort_order) VALUES
-  ('koronel',  'Koronel',   'Directorio y motor de crecimiento para negocios locales', 1),
-  ('walinka',  'Walinka',   'Canal de mensajería y comunicación con clientes',          2),
-  ('ia',       'IA',        'Generación de contenido y asesoría con inteligencia artificial', 3),
-  ('eventos',  'Eventos',   'Publicación y difusión de eventos en la comunidad',        4),
-  ('marketplace', 'Marketplace', 'Compraventa de productos y servicios',                5)
+  ('koronel',     'Koronel',     'Directorio y motor de crecimiento para negocios locales',       1),
+  ('walinka',     'Walinka',     'Canal de mensajería y comunicación con clientes',                2),
+  ('ia',          'IA',          'Generación de contenido y asesoría con inteligencia artificial', 3),
+  ('eventos',     'Eventos',     'Publicación y difusión de eventos en la comunidad',              4),
+  ('marketplace', 'Marketplace', 'Compraventa de productos y servicios',                           5)
 ON CONFLICT (key) DO NOTHING;
 
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
--- Lectura pública — productos son información del ecosistema
-CREATE POLICY "public_read_products"
-  ON public.products FOR SELECT TO public
-  USING (is_active = true);
-
--- Solo admin puede escribir (via service_role; no se expone a usuarios)
--- No se agrega política de escritura: las mutaciones ocurren desde el backend.
-
-
--- ─── accounts ─────────────────────────────────────────────────────────────────
--- Unidad económica y propietaria del ecosistema.
--- Un account puede tener múltiples usuarios (account_members) y múltiples negocios.
+-- ─── 2. accounts ──────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.accounts (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -56,13 +55,58 @@ CREATE TABLE IF NOT EXISTS public.accounts (
 
 CREATE INDEX IF NOT EXISTS idx_accounts_plan_tier ON public.accounts(plan_tier);
 
-CREATE OR REPLACE TRIGGER set_accounts_updated_at
+DROP TRIGGER IF EXISTS set_accounts_updated_at ON public.accounts;
+CREATE TRIGGER set_accounts_updated_at
   BEFORE UPDATE ON public.accounts
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
-ALTER TABLE public.accounts ENABLE ROW LEVEL SECURITY;
 
--- Un usuario puede ver los accounts a los que pertenece
+-- ─── 3. account_members ───────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.account_members (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id  uuid        NOT NULL REFERENCES public.accounts(id)  ON DELETE CASCADE,
+  user_id     uuid        NOT NULL REFERENCES auth.users(id)        ON DELETE CASCADE,
+  role        text        NOT NULL DEFAULT 'member'
+                          CHECK (role IN ('owner', 'admin', 'member')),
+  invited_by  uuid        REFERENCES auth.users(id)                 ON DELETE SET NULL,
+  joined_at   timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (account_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_members_user_id    ON public.account_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_account_members_account_id ON public.account_members(account_id);
+
+
+-- ─── 4. businesses.account_id ─────────────────────────────────────────────────
+-- owner_id se mantiene intacto. RLS existentes no se tocan.
+
+ALTER TABLE public.businesses
+  ADD COLUMN IF NOT EXISTS account_id uuid
+  REFERENCES public.accounts(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_businesses_account_id ON public.businesses(account_id);
+
+
+-- ─── 5. Habilitar RLS ─────────────────────────────────────────────────────────
+
+ALTER TABLE public.products        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.accounts        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.account_members ENABLE ROW LEVEL SECURITY;
+
+
+-- ─── 6. Policies — products ───────────────────────────────────────────────────
+
+DROP POLICY IF EXISTS "public_read_products" ON public.products;
+CREATE POLICY "public_read_products"
+  ON public.products FOR SELECT TO public
+  USING (is_active = true);
+
+
+-- ─── 7. Policies — accounts ───────────────────────────────────────────────────
+-- Las subqueries a account_members son seguras aquí porque la tabla ya existe.
+
+DROP POLICY IF EXISTS "members_read_own_account" ON public.accounts;
 CREATE POLICY "members_read_own_account"
   ON public.accounts FOR SELECT TO authenticated
   USING (
@@ -73,7 +117,7 @@ CREATE POLICY "members_read_own_account"
     )
   );
 
--- Solo el owner puede actualizar los datos del account
+DROP POLICY IF EXISTS "owner_update_account" ON public.accounts;
 CREATE POLICY "owner_update_account"
   ON public.accounts FOR UPDATE TO authenticated
   USING (
@@ -93,30 +137,10 @@ CREATE POLICY "owner_update_account"
     )
   );
 
--- INSERT se hace solo via función/trigger, no directamente
--- No se expone política de INSERT para usuarios: cuentas se crean en el sign-up
 
+-- ─── 8. Policies — account_members ───────────────────────────────────────────
 
--- ─── account_members ─────────────────────────────────────────────────────────
--- Relación N:M entre auth.users y accounts con roles.
-
-CREATE TABLE IF NOT EXISTS public.account_members (
-  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  account_id  uuid        NOT NULL REFERENCES public.accounts(id)   ON DELETE CASCADE,
-  user_id     uuid        NOT NULL REFERENCES auth.users(id)         ON DELETE CASCADE,
-  role        text        NOT NULL DEFAULT 'member'
-                          CHECK (role IN ('owner', 'admin', 'member')),
-  invited_by  uuid        REFERENCES auth.users(id)                  ON DELETE SET NULL,
-  joined_at   timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (account_id, user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_account_members_user_id    ON public.account_members(user_id);
-CREATE INDEX IF NOT EXISTS idx_account_members_account_id ON public.account_members(account_id);
-
-ALTER TABLE public.account_members ENABLE ROW LEVEL SECURITY;
-
--- Un usuario puede ver todos los miembros de sus accounts
+DROP POLICY IF EXISTS "members_read_account_members" ON public.account_members;
 CREATE POLICY "members_read_account_members"
   ON public.account_members FOR SELECT TO authenticated
   USING (
@@ -127,7 +151,7 @@ CREATE POLICY "members_read_account_members"
     )
   );
 
--- Solo admins/owners pueden invitar nuevos miembros
+DROP POLICY IF EXISTS "admins_insert_account_members" ON public.account_members;
 CREATE POLICY "admins_insert_account_members"
   ON public.account_members FOR INSERT TO authenticated
   WITH CHECK (
@@ -139,7 +163,7 @@ CREATE POLICY "admins_insert_account_members"
     )
   );
 
--- Solo admins/owners pueden modificar roles (no pueden bajarse a sí mismos de owner)
+DROP POLICY IF EXISTS "admins_update_account_members" ON public.account_members;
 CREATE POLICY "admins_update_account_members"
   ON public.account_members FOR UPDATE TO authenticated
   USING (
@@ -151,7 +175,7 @@ CREATE POLICY "admins_update_account_members"
     )
   );
 
--- Solo owners pueden eliminar miembros
+DROP POLICY IF EXISTS "owners_delete_account_members" ON public.account_members;
 CREATE POLICY "owners_delete_account_members"
   ON public.account_members FOR DELETE TO authenticated
   USING (
@@ -164,61 +188,44 @@ CREATE POLICY "owners_delete_account_members"
   );
 
 
--- ─── businesses.account_id ───────────────────────────────────────────────────
--- Se agrega account_id sin tocar owner_id.
--- owner_id: quién creó el negocio (identidad técnica).
--- account_id: quién es el propietario económico (unidad del ecosistema).
-
-ALTER TABLE public.businesses
-  ADD COLUMN IF NOT EXISTS account_id uuid REFERENCES public.accounts(id) ON DELETE SET NULL;
-
-CREATE INDEX IF NOT EXISTS idx_businesses_account_id ON public.businesses(account_id);
-
--- No se agrega política RLS nueva para businesses:
--- Las políticas existentes (owner_id = auth.uid()) permanecen sin modificación.
--- account_id se usará en futuras políticas del Motor Económico.
-
-
--- ─── Migración de datos ───────────────────────────────────────────────────────
--- Para cada usuario existente:
---   1. Crea un account 'personal' con su nombre o email.
---   2. Lo agrega como 'owner' de ese account.
---   3. Asigna ese account a todos sus negocios.
---
--- Se ejecuta en una sola transacción para garantizar consistencia.
+-- ─── 9. Migración de datos ────────────────────────────────────────────────────
+-- Por cada usuario existente: crea account → registra como owner → vincula negocios.
+-- Idempotente: no duplica si ya existe el account para ese usuario.
 
 DO $$
 DECLARE
-  rec          RECORD;
-  new_account  uuid;
-  display_name text;
+  rec         RECORD;
+  acct_id     uuid;
+  uname       text;
 BEGIN
   FOR rec IN
     SELECT u.id AS user_id,
-           COALESCE(p.full_name, u.email, 'Usuario') AS name
+           COALESCE(p.full_name, u.email, 'Usuario') AS display_name
     FROM auth.users u
     LEFT JOIN public.user_profiles p ON p.id = u.id
   LOOP
-    display_name := rec.name;
+    uname := rec.display_name;
 
-    -- Crear account solo si este user todavía no tiene uno como owner
-    SELECT am.account_id INTO new_account
+    -- Buscar si ya existe un account donde este usuario es owner
+    SELECT am.account_id INTO acct_id
     FROM public.account_members am
-    WHERE am.user_id = rec.user_id AND am.role = 'owner'
+    WHERE am.user_id = rec.user_id
+      AND am.role = 'owner'
     LIMIT 1;
 
-    IF new_account IS NULL THEN
+    -- Si no existe, crear account y registrar como owner
+    IF acct_id IS NULL THEN
       INSERT INTO public.accounts (name, type, plan_tier)
-      VALUES (display_name, 'personal', 'free')
-      RETURNING id INTO new_account;
+      VALUES (uname, 'personal', 'free')
+      RETURNING id INTO acct_id;
 
       INSERT INTO public.account_members (account_id, user_id, role)
-      VALUES (new_account, rec.user_id, 'owner');
+      VALUES (acct_id, rec.user_id, 'owner');
     END IF;
 
-    -- Vincular negocios de este usuario al account recién creado
+    -- Vincular negocios de este usuario al account (solo los que aún no tienen)
     UPDATE public.businesses
-    SET account_id = new_account
+    SET account_id = acct_id
     WHERE owner_id = rec.user_id
       AND account_id IS NULL;
 

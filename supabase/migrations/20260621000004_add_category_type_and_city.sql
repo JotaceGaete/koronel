@@ -1,6 +1,6 @@
 -- Categorías: separa el tipo (business/classified_ad/event) y permite
 -- categorías propias por ciudad (city_id NULL = catálogo global compartido).
--- Depende de 20260601000001_create_community_cities.sql (FK).
+-- Depende de 20260621000001_create_community_cities.sql (FK).
 -- No depende de A2/A3. No toca ninguna política RLS de categories.
 -- Ver docs/diseno-multi-ciudad.md y docs/plan-fase-a-b.md.
 

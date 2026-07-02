@@ -1,6 +1,6 @@
 -- Funciones de rol por ciudad. Nuevas, no reemplazan is_admin() todavía.
 -- No se usan en ninguna política existente en esta migración.
--- Depende de 20260601000002_create_community_city_roles.sql.
+-- Depende de 20260621000002_create_community_city_roles.sql.
 -- Ver docs/diseno-multi-ciudad.md y docs/plan-fase-a-b.md.
 
 CREATE OR REPLACE FUNCTION public.is_platform_admin()

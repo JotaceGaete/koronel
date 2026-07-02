@@ -1,6 +1,6 @@
 # Hotfix de seguridad: dejar de confiar en `raw_user_meta_data` para admin
 
-**Estado: migración creada en `supabase/migrations/`. No aplicada a ninguna base de datos. Completamente separada de las migraciones multi-ciudad pausadas (`20260601000001` en adelante), que no se tocan.**
+**Estado: migración creada en `supabase/migrations/`. No aplicada a ninguna base de datos. Completamente separada de las migraciones multi-ciudad pausadas (`20260621000001` en adelante), que no se tocan.**
 
 ## Corrección importante: el admin real no es quien el historial sugería
 
@@ -35,7 +35,7 @@ También until confirmar: `raw_user_meta_data->>'full_name'`/`avatar_url` aparec
 
 ## SQL exacto propuesto
 
-**Archivo (a crear recién cuando confirmes):** `supabase/migrations/20260518000000_secure_admin_role_check.sql`
+**Archivo (a crear recién cuando confirmes):** `supabase/migrations/20260621000000_secure_admin_role_check.sql`
 
 ```sql
 -- SECURITY HOTFIX — no mezclar con las migraciones multi-ciudad pausadas.

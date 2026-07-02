@@ -1,5 +1,5 @@
 -- city_id (nullable, con backfill) en las tablas raíz de contenido.
--- Depende de 20260601000001_create_community_cities.sql.
+-- Depende de 20260621000001_create_community_cities.sql.
 --
 -- A propósito: ninguna columna queda NOT NULL en esta migración, y no se
 -- toca ninguna política RLS existente. Ningún INSERT existente que no
@@ -12,7 +12,7 @@ DECLARE
 BEGIN
   SELECT id INTO v_coronel_id FROM public.community_cities WHERE slug = 'coronel';
   IF v_coronel_id IS NULL THEN
-    RAISE EXCEPTION 'No existe la ciudad "coronel" en community_cities — aplicar 20260601000001 primero.';
+    RAISE EXCEPTION 'No existe la ciudad "coronel" en community_cities — aplicar 20260621000001 primero.';
   END IF;
 
   -- businesses

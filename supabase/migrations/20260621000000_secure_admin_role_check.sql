@@ -1,5 +1,5 @@
 -- SECURITY HOTFIX — no mezclar con las migraciones multi-ciudad pausadas
--- (20260601000001 en adelante). Ver docs/hotfix-admin-role.md.
+-- (20260621000001 en adelante). Ver docs/hotfix-admin-role.md.
 --
 -- Problema: is_admin(), is_admin_user() e is_admin_jobs() (tres funciones
 -- independientes, misma lógica) confían en raw_user_meta_data->>'role',

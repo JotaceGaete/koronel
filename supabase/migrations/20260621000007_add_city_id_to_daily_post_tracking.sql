@@ -1,5 +1,5 @@
 -- city_id en daily_post_tracking — caso especial de la Fase B.
--- Depende de 20260601000001_create_community_cities.sql.
+-- Depende de 20260621000001_create_community_cities.sql.
 --
 -- IMPORTANTE (ver docs/plan-fase-a-b.md para el detalle completo):
 -- esta migración agrega la columna y un nuevo índice único que la incluye,
@@ -19,7 +19,7 @@ DECLARE
 BEGIN
   SELECT id INTO v_coronel_id FROM public.community_cities WHERE slug = 'coronel';
   IF v_coronel_id IS NULL THEN
-    RAISE EXCEPTION 'No existe la ciudad "coronel" en community_cities — aplicar 20260601000001 primero.';
+    RAISE EXCEPTION 'No existe la ciudad "coronel" en community_cities — aplicar 20260621000001 primero.';
   END IF;
 
   ALTER TABLE public.daily_post_tracking

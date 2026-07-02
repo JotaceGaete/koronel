@@ -1,5 +1,5 @@
 -- Seed de categorías reales para avisos clasificados.
--- Depende de 20260601000004_add_category_type_and_city.sql.
+-- Depende de 20260621000004_add_category_type_and_city.sql.
 --
 -- Único cambio de la Fase A/B con efecto visible potencial: hoy no existe
 -- ninguna categoría category_type='classified_ad' utilizable (ver
@@ -14,7 +14,7 @@
 INSERT INTO public.categories (name, name_key, icon, color, category_type, city_id, sort_order, is_active) VALUES
     ('Vehículos',              'vehiculos',              'Car',        '#3B82F6', 'classified_ad', NULL, 1, true),
     ('Inmuebles',              'inmuebles',              'Home',       '#10B981', 'classified_ad', NULL, 2, true),
-    ('Electrónica',            'electronica',            'Smartphone', '#8B5CF6', 'classified_ad', NULL, 3, true),
+    ('Electrónica',            'clasificados-electronica', 'Smartphone', '#8B5CF6', 'classified_ad', NULL, 3, true),
     ('Ropa y accesorios',      'ropa-accesorios',        'Shirt',      '#EC4899', 'classified_ad', NULL, 4, true),
     ('Empleos',                'clasificados-empleos',   'Briefcase',  '#F59E0B', 'classified_ad', NULL, 5, true),
     ('Servicios',              'clasificados-servicios', 'Wrench',     '#6366F1', 'classified_ad', NULL, 6, true),

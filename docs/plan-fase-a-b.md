@@ -61,7 +61,7 @@ Ambas funciones son byte-idénticas en su lógica (mismo `SELECT EXISTS (...)`, 
 
 ### A1 — `community_cities`
 
-**Archivo:** `supabase/migrations/20260601000001_create_community_cities.sql`
+**Archivo:** `supabase/migrations/20260621000001_create_community_cities.sql`
 
 ```sql
 -- Community Cities: entidad raíz del motor multi-ciudad.
@@ -166,7 +166,7 @@ DROP TABLE IF EXISTS public.community_cities;
 
 ### A2 — `community_city_roles`
 
-**Archivo:** `supabase/migrations/20260601000002_create_community_city_roles.sql`
+**Archivo:** `supabase/migrations/20260621000002_create_community_city_roles.sql`
 
 **Depende de A1** (FK a `community_cities`).
 
@@ -241,7 +241,7 @@ DROP TABLE IF EXISTS public.community_city_roles;
 
 ### A3 — Funciones de rol
 
-**Archivo:** `supabase/migrations/20260601000003_create_city_role_functions.sql`
+**Archivo:** `supabase/migrations/20260621000003_create_city_role_functions.sql`
 
 **Depende de A2** (`is_city_admin`/`is_city_moderator` consultan `community_city_roles`).
 
@@ -296,7 +296,7 @@ DROP FUNCTION IF EXISTS public.is_platform_admin();
 
 ### A4 — `categories`: tipo + ciudad
 
-**Archivo:** `supabase/migrations/20260601000004_add_category_type_and_city.sql`
+**Archivo:** `supabase/migrations/20260621000004_add_category_type_and_city.sql`
 
 **Depende de A1** (FK a `community_cities`). No depende de A2/A3.
 
@@ -336,7 +336,7 @@ ALTER TABLE public.categories DROP COLUMN IF EXISTS category_type;
 
 ### A5 — Seed de categorías de avisos clasificados (único cambio visible)
 
-**Archivo:** `supabase/migrations/20260601000005_seed_classified_ad_categories.sql`
+**Archivo:** `supabase/migrations/20260621000005_seed_classified_ad_categories.sql`
 
 **Depende de A4.** Este es el paso que confirmaste como aceptable pese al efecto visible: hoy no hay categorías `classified_ad` utilizables.
 
@@ -376,7 +376,7 @@ DELETE FROM public.categories WHERE category_type = 'classified_ad';
 
 ### B1 — `city_id` en tablas de contenido (batch)
 
-**Archivo:** `supabase/migrations/20260601000006_add_city_id_to_content_tables.sql`
+**Archivo:** `supabase/migrations/20260621000006_add_city_id_to_content_tables.sql`
 
 **Depende de A1** (necesita el id de Coronel para el backfill).
 
@@ -478,7 +478,7 @@ ALTER TABLE public.suggested_businesses DROP COLUMN IF EXISTS city_id;
 
 ### B2 — `daily_post_tracking` (caso especial: cambia una constraint)
 
-**Archivo:** `supabase/migrations/20260601000007_add_city_id_to_daily_post_tracking.sql`
+**Archivo:** `supabase/migrations/20260621000007_add_city_id_to_daily_post_tracking.sql`
 
 **Depende de A1 y de B1** (por orden lógico, aunque no hay FK cruzada entre B1 y B2 — se mantiene después por consistencia). Esta es la única tabla de la Fase B donde el cambio no es "solo agregar una columna": el límite diario hoy se identifica por `(identifier, identifier_type, post_date)`, sin ciudad. Con más de una ciudad activa, ese índice único mezclaría contadores entre ciudades. Se corrige ahora porque hacerlo después (cuando ya haya una segunda ciudad activa) sería más disruptivo.
 

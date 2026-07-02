@@ -1,5 +1,5 @@
 -- Roles por ciudad. Reemplaza (progresivamente, no todavía) el is_admin() global.
--- Depende de 20260601000001_create_community_cities.sql (FK a community_cities).
+-- Depende de 20260621000001_create_community_cities.sql (FK a community_cities).
 -- Ver docs/diseno-multi-ciudad.md y docs/plan-fase-a-b.md.
 
 CREATE TABLE IF NOT EXISTS public.community_city_roles (

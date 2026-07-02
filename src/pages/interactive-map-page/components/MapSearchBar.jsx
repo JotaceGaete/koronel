@@ -170,9 +170,9 @@ export default function MapSearchBar({
             {categories.map(cat => (
               <button
                 key={cat.id}
-                onClick={() => onCategoryChange?.(cat.id)}
+                onClick={() => onCategoryChange?.(cat.name_key)}
                 className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
-                  selectedCategoryId === cat.id
+                  selectedCategoryId === cat.name_key
                     ? 'text-white border-transparent'
                     : 'border-border text-muted-foreground bg-white hover:bg-muted'
                 }`}

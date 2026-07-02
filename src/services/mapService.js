@@ -13,7 +13,7 @@ export const mapService = {
         query = query?.or(`name.ilike.%${search}%,category.ilike.%${search}%`);
       }
       if (categoryId) {
-        query = query?.eq('category_id', categoryId);
+        query = query?.eq('category_key', categoryId);
       }
 
       const { data, error } = await query;
@@ -30,7 +30,7 @@ export const mapService = {
     try {
       const { data, error } = await supabase
         ?.from('categories')
-        ?.select('id, name, icon')
+        ?.select('id, name, name_key, icon')
         ?.is('parent_id', null)
         ?.order('sort_order', { ascending: true })
         ?.order('name', { ascending: true });

@@ -4,10 +4,11 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { eventService } from '../../../services/eventService';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../../config/eventCategories';
 
-const FALLBACK_EVENTS = [
+function buildFallbackEvents(CITY_CONFIG) {
+  return [
 {
   id: '1',
   title: `Feria Gastronómica de ${CITY_CONFIG.name}`,
@@ -44,8 +45,7 @@ const FALLBACK_EVENTS = [
   image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1fcda0865-1772644648705.png",
   status: 'approved'
 }];
-
-
+}
 
 function EventCard({ event }) {
   const formatted = eventService?.formatEvent(event);
@@ -108,7 +108,8 @@ function EventCard({ event }) {
 }
 
 export default function UpcomingEvents() {
-  const [events, setEvents] = useState(FALLBACK_EVENTS);
+  const CITY_CONFIG = useCity();
+  const [events, setEvents] = useState(() => buildFallbackEvents(CITY_CONFIG));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

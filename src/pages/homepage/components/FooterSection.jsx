@@ -2,9 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Logo from 'components/Logo';
-import { CITY_CONFIG, cityFullLabel } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 export default function FooterSection() {
+  const CITY_CONFIG = useCity();
+  const cityFullLabel = `${CITY_CONFIG.name}, ${CITY_CONFIG.region}, ${CITY_CONFIG.country}`;
   const currentYear = new Date()?.getFullYear();
 
   return (
@@ -80,7 +82,7 @@ export default function FooterSection() {
           </p>
           <div className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
             <Icon name="MapPin" size={12} color="var(--color-primary)" />
-            <span>{cityFullLabel()}</span>
+            <span>{cityFullLabel}</span>
           </div>
         </div>
       </div>

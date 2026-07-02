@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { jobService } from '../../../services/jobService';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
 const MODALITY_COLORS = {
   'Presencial': { bg: '#d1fae5', color: '#065f46' },
@@ -54,6 +54,7 @@ function JobMiniCard({ job }) {
 }
 
 export default function LatestJobs() {
+  const CITY_CONFIG = useCity();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 

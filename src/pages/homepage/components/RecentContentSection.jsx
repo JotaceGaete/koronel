@@ -4,7 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { businessService } from '../../../services/businessService';
 import { adService } from '../../../services/adService';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
 const LIMIT = 8;
 
@@ -16,6 +16,7 @@ function humanizeCategory(key) {
 }
 
 function useRecentContent() {
+  const CITY_CONFIG = useCity();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 

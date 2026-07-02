@@ -4,9 +4,9 @@ import Button from 'components/ui/Button';
 import Icon from 'components/AppIcon';
 import FeaturedContentCarousel from 'components/ui/FeaturedContentCarousel';
 import { businessService } from '../../../services/businessService';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
-function formatBusiness(b) {
+function formatBusiness(b, cityConfig) {
   const primaryImg = b?.business_images?.find(img => img?.is_primary) || b?.business_images?.[0];
   const image = primaryImg?.storage_path
     ? (primaryImg?.storage_path?.startsWith('http') ? primaryImg?.storage_path : businessService?.getImageUrl(primaryImg?.storage_path))
@@ -21,11 +21,12 @@ function formatBusiness(b) {
     whatsapp: b?.whatsapp,
     featured: b?.featured,
     image: image ?? null,
-    imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en ${CITY_CONFIG.name}`,
+    imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en ${cityConfig.name}`,
   };
 }
 
 export default function FeaturedBusinesses() {
+  const CITY_CONFIG = useCity();
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,7 +37,7 @@ export default function FeaturedBusinesses() {
       const { data: featured, error: featError } = await businessService?.getFeatured(6) ?? {};
       if (!mounted) return;
       if (!featError && Array.isArray(featured) && featured?.length > 0) {
-        setBusinesses(featured?.map(formatBusiness) ?? []);
+        setBusinesses(featured?.map((b) => formatBusiness(b, CITY_CONFIG)) ?? []);
         setLoading(false);
         return;
       }
@@ -44,7 +45,7 @@ export default function FeaturedBusinesses() {
       const { data: recent, error: recentError } = await businessService?.getAll({ page: 1, pageSize: 6, sort: 'newest' }) ?? {};
       if (!mounted) return;
       if (!recentError && Array.isArray(recent) && recent?.length > 0) {
-        setBusinesses(recent?.map(formatBusiness) ?? []);
+        setBusinesses(recent?.map((b) => formatBusiness(b, CITY_CONFIG)) ?? []);
       }
       setLoading(false);
     };

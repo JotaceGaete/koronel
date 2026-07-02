@@ -11,10 +11,11 @@ import PostAdCTA from './components/PostAdCTA';
 import FooterSection from './components/FooterSection';
 import WelcomePopup from './components/WelcomePopup';
 import LatestJobs from './components/LatestJobs';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 export default function Homepage() {
   const location = useLocation();
+  const CITY_CONFIG = useCity();
   return (
     <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden" style={{ background: 'var(--color-background)' }}>
       <PageMeta title="Inicio" description={`Descubre negocios, clasificados, eventos, empleos y comunidad en ${CITY_CONFIG.name} y la región.`} path={location.pathname} />

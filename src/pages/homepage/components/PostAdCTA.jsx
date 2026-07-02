@@ -2,9 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 export default function PostAdCTA() {
+  const CITY_CONFIG = useCity();
   return (
     <>
       {/* Inline CTA Banner */}

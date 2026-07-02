@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import SmartSearchInput from 'components/ui/SmartSearchInput';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 const QUICK_CATEGORIES = [
   { label: 'Dentistas', term: 'Dentistas' },
@@ -13,6 +13,7 @@ const QUICK_CATEGORIES = [
 ];
 
 export default function HeroSection() {
+  const CITY_CONFIG = useCity();
   return (
     <section
       className="relative w-full py-3 px-4 sm:py-4 md:py-6 lg:py-8 md:px-6 lg:px-8 border-b border-border/60"

@@ -8,10 +8,11 @@ import { jobService } from '../../services/jobService';
 import { useAuth } from '../../contexts/AuthContext';
 import JobCard from './components/JobCard';
 import JobFilters from './components/JobFilters';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import JobsEmptyState from './components/JobsEmptyState';
 
 export default function JobsListing() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);

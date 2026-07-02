@@ -7,7 +7,7 @@ import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { eventService } from '../../services/eventService';
 import { formatDate as formatDateBase, formatTime as formatTimeBase } from '../../utils/format';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../config/eventCategories';
 
 const CATEGORIES = [
@@ -17,11 +17,13 @@ const CATEGORIES = [
 { value: 'meetups', label: 'Encuentros' },
 { value: 'other', label: 'Otro' }];
 
-const FALLBACK_EVENTS = [
+function buildFallbackEvents(CITY_CONFIG) {
+  return [
 { id: '1', title: `Feria Gastronómica de ${CITY_CONFIG.name}`, category: 'meetups', start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 3 * 86400000 + 6 * 3600000)?.toISOString(), venue_name: `Plaza de Armas de ${CITY_CONFIG.name}`, address_text: `Plaza de Armas, ${CITY_CONFIG.name}`, address: `Plaza de Armas, ${CITY_CONFIG.name}`, image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1f720e1f9-1772645296972.png", status: 'approved' },
 { id: '2', title: 'Taller de Emprendimiento Digital', category: 'courses', start_datetime: new Date(Date.now() + 7 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 7 * 86400000 + 3 * 3600000)?.toISOString(), venue_name: `Centro Comunitario ${CITY_CONFIG.name} Norte`, address_text: `Av. Colón 456, ${CITY_CONFIG.name} Norte`, address: `Av. Colón 456, ${CITY_CONFIG.name} Norte`, image_url: "https://images.unsplash.com/photo-1549495034-4c0f106db5e6", status: 'approved' },
 { id: '3', title: 'Culto de Alabanza y Adoración', category: 'church', start_datetime: new Date(Date.now() + 5 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 5 * 86400000 + 2 * 3600000)?.toISOString(), venue_name: `Iglesia Evangélica ${CITY_CONFIG.name}`, address_text: `Calle Freire 789, ${CITY_CONFIG.name}`, address: `Calle Freire 789, ${CITY_CONFIG.name}`, image_url: "https://images.unsplash.com/photo-1715503485494-1ed23a5be1ba", status: 'approved' },
 { id: '4', title: 'Encuentro de Vecinos Boca Sur', category: 'meetups', start_datetime: new Date(Date.now() + 10 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 10 * 86400000 + 2 * 3600000)?.toISOString(), venue_name: 'Sede Social Boca Sur', address_text: 'Pasaje Los Pinos 123, Boca Sur', address: 'Pasaje Los Pinos 123, Boca Sur', image_url: "https://images.unsplash.com/photo-1561650714-2c92f02c21de", status: 'approved' }];
+}
 
 
 function formatEventDate(dtStr) {
@@ -104,8 +106,9 @@ function EventCard({ event }) {
 }
 
 export default function EventsListing() {
+  const CITY_CONFIG = useCity();
   const location = useLocation();
-  const [events, setEvents] = useState(FALLBACK_EVENTS);
+  const [events, setEvents] = useState(() => buildFallbackEvents(CITY_CONFIG));
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');

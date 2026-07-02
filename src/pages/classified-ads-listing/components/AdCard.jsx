@@ -5,9 +5,10 @@ import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { formatCurrency } from 'utils/format';
 import { toDialablePhone } from 'utils/phone';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 export default function AdCard({ ad }) {
+  const CITY_CONFIG = useCity();
   const formatPrice = (price) => {
     if (!price) return 'Precio a convenir';
     return formatCurrency(price);

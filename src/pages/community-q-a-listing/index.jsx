@@ -7,7 +7,7 @@ import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDate as formatDateBase } from '../../utils/format';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Más recientes' },
@@ -107,6 +107,7 @@ function QuestionCard({ post, coverImage }) {
 }
 
 export default function CommunityQAListing() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);

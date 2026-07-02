@@ -8,7 +8,7 @@ import Icon from 'components/AppIcon';
 import BusinessCard from './components/BusinessCard';
 import BusinessCardSkeleton from './components/BusinessCardSkeleton';
 import FilterPanel from './components/FilterPanel';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import ResultsHeader from './components/ResultsHeader';
 import { businessService } from '../../services/businessService';
 
@@ -16,6 +16,7 @@ const DEFAULT_FILTERS = { rating: 'all', radius: 'all', sort: 'relevance', openN
 const PAGE_SIZE = 6;
 
 export default function BusinessDirectoryListing() {
+  const CITY_CONFIG = useCity();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();

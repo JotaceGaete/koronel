@@ -11,12 +11,13 @@ import SortBar from './components/SortBar';
 import AdCardSkeleton from './components/AdCardSkeleton';
 import EmptyState from './components/EmptyState';
 import { adService } from '../../services/adService';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const DEFAULT_FILTERS = { priceRange: 'all', dateFilter: 'all', condition: 'all' };
 const PAGE_SIZE = 8;
 
 export default function ClassifiedAdsListing() {
+  const CITY_CONFIG = useCity();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const initialQuery = params?.get('q') || '';

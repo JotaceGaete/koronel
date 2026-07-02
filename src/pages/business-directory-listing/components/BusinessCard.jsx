@@ -2,9 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 export default function BusinessCard({ business }) {
+  const CITY_CONFIG = useCity();
   const category = business?.parentCategoryName || business?.subCategoryName || business?.category || '';
   const hasContact = business?.phone || business?.whatsapp;
 

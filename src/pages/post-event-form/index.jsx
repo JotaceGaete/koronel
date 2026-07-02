@@ -8,8 +8,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { businessService } from '../../services/businessService';
 
-const CORONEL_CENTER = [-37.0298, -73.1429];
-
 const CATEGORIES = [
   { value: '', label: 'Seleccionar categoría...' },
   { value: 'church', label: 'Iglesia' },

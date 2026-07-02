@@ -11,9 +11,10 @@ import EventBottomSheet from './components/EventBottomSheet';
 import UpcomingEventsPanel from './components/UpcomingEventsPanel';
 import { BusinessMarker, EventMarker, CommunityPostMarker } from './components/MapMarkers';
 import { Link } from 'react-router-dom';
+import { CITY_CONFIG } from '../../config/city';
+import { SECTOR_COLORS_PALETTE_A } from '../../config/sectors';
 
-// Coronel, Chile coordinates
-const CORONEL_CENTER = [-37.0298, -73.1429];
+const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
 const DEFAULT_ZOOM = 14;
 
 // Fix Leaflet default icon issue with bundlers
@@ -36,15 +37,7 @@ function MapFlyTo({ target }) {
   return null;
 }
 
-const SECTOR_COLORS = {
-  Centro: { bg: '#dbeafe', color: '#1d4ed8' },
-  Lagunillas: { bg: '#d1fae5', color: '#065f46' },
-  Schwager: { bg: '#fef3c7', color: '#92400e' },
-  Puchoco: { bg: '#f3e8ff', color: '#6b21a8' },
-  'Las Higueras': { bg: '#fee2e2', color: '#991b1b' },
-  'Punta de Parra': { bg: '#e0f2fe', color: '#0369a1' },
-  Otro: { bg: '#f3f4f6', color: '#374151' },
-};
+const SECTOR_COLORS = SECTOR_COLORS_PALETTE_A;
 
 function CommunityPostBottomSheet({ post, onClose }) {
   if (!post) return null;
@@ -181,7 +174,7 @@ export default function InteractiveMapPage() {
       <div className="relative flex-1" style={{ marginTop: '64px' }}>
         {/* Leaflet Map */}
         <MapContainer
-          center={CORONEL_CENTER}
+          center={CITY_CENTER}
           zoom={DEFAULT_ZOOM}
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}

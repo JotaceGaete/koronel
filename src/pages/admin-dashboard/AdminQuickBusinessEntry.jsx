@@ -9,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { adminBusinessService } from '../../services/adminService';
 import { businessService } from '../../services/businessService';
 import { geocode } from '../../services/geocodingService';
-import { CORONEL_DEFAULT } from '../../services/geocodingService';
+import { CITY_CONFIG } from '../../config/city';
 
 const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
@@ -107,8 +107,8 @@ export default function AdminQuickBusinessEntry() {
     } else {
       setError('No se encontró la dirección. Ajusta el marcador en el mapa.');
       if (!form.lat) {
-        handleChange('lat', CORONEL_DEFAULT?.lat ?? -37.0167);
-        handleChange('lng', CORONEL_DEFAULT?.lng ?? -73.15);
+        handleChange('lat', CITY_CONFIG.center.lat);
+        handleChange('lng', CITY_CONFIG.center.lng);
       }
     }
   };
@@ -369,8 +369,8 @@ export default function AdminQuickBusinessEntry() {
           </div>
           <div className="rounded-lg overflow-hidden border border-border" style={{ height: '220px' }}>
             <OSMMap
-              lat={form.lat ?? CORONEL_DEFAULT?.lat}
-              lng={form.lng ?? CORONEL_DEFAULT?.lng}
+              lat={form.lat ?? CITY_CONFIG.center.lat}
+              lng={form.lng ?? CITY_CONFIG.center.lng}
               height="220px"
               zoom={15}
               readonly={false}

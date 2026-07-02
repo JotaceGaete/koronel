@@ -1,18 +1,9 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
+import { classifiedAdSectorOptions } from 'config/sectors';
 
-const LOCATIONS = [
-  { value: '', label: 'Selecciona un sector' },
-  { value: 'Centro', label: 'Centro' },
-  { value: 'Coronel Norte', label: 'Coronel Norte' },
-  { value: 'Coronel Sur', label: 'Coronel Sur' },
-  { value: 'Boca Sur', label: 'Boca Sur' },
-  { value: 'Lagunillas', label: 'Lagunillas' },
-  { value: 'Palomares', label: 'Palomares' },
-  { value: 'Schwager', label: 'Schwager' },
-  { value: 'Otro sector', label: 'Otro sector' },
-];
+const LOCATIONS = classifiedAdSectorOptions();
 
 export default function AdForm({ formData, errors, onChange, categories = [], categoriesLoading = false, categoriesError = null }) {
   const handleChange = (field, value) => onChange(field, value);

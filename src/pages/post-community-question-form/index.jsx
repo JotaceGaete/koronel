@@ -9,6 +9,8 @@ import Button from 'components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityService } from '../../services/communityService';
 import QuestionImageUpload from './components/QuestionImageUpload';
+import { CITY_CONFIG } from '../../config/city';
+import { communitySectorOptions } from '../../config/sectors';
 
 // Fix Leaflet icon
 delete L?.Icon?.Default?.prototype?._getIconUrl;
@@ -18,18 +20,9 @@ L?.Icon?.Default?.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const CORONEL_CENTER = [-37.0298, -73.1429];
+const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
 
-const SECTORS = [
-  { value: '', label: 'Seleccionar sector...' },
-  { value: 'Centro', label: 'Centro' },
-  { value: 'Lagunillas', label: 'Lagunillas' },
-  { value: 'Schwager', label: 'Schwager' },
-  { value: 'Puchoco', label: 'Puchoco' },
-  { value: 'Las Higueras', label: 'Las Higueras' },
-  { value: 'Punta de Parra', label: 'Punta de Parra' },
-  { value: 'Otro', label: 'Otro' },
-];
+const SECTORS = communitySectorOptions();
 
 function PinDropper({ pin, onPinDrop }) {
   useMapEvents({
@@ -264,7 +257,7 @@ export default function PostCommunityQuestionForm() {
                 )}
                 {showMap && (
                   <div className="rounded-lg overflow-hidden border border-border" style={{ height: '240px' }}>
-                    <MapContainer center={CORONEL_CENTER} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={true}>
+                    <MapContainer center={CITY_CENTER} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={true}>
                       <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

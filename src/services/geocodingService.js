@@ -1,13 +1,16 @@
+import { CITY_CONFIG, cityCountryLabel } from '../config/city';
+
 const CACHE = new Map();
-export const CORONEL_DEFAULT = { lat: -37.0167, lng: -73.1500 };
-const USER_AGENT = 'CoronelPortal/1.0 (coronellocal.cl)';
+/** @deprecated use CITY_CONFIG.center — kept as an alias so existing imports keep working. */
+export const CORONEL_DEFAULT = CITY_CONFIG.center;
+const USER_AGENT = `${CITY_CONFIG.siteName}/1.0 (${CITY_CONFIG.siteDomain})`;
 
 export async function geocode(addressText) {
   if (!addressText?.trim()) return null;
   const key = addressText?.trim()?.toLowerCase();
   if (CACHE?.has(key)) return CACHE?.get(key);
 
-  const query = encodeURIComponent(addressText?.trim() + ', Coronel, Chile');
+  const query = encodeURIComponent(`${addressText?.trim()}, ${cityCountryLabel()}`);
   const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
 
   try {

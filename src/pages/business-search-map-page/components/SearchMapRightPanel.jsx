@@ -3,8 +3,9 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { CITY_CONFIG } from '../../../config/city';
 
-const CORONEL_CENTER = [-37.0298, -73.1429];
+const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
 const DEFAULT_ZOOM = 13;
 
 // Inner component to expose map instance via ref
@@ -46,7 +47,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
   return (
     <div className="w-full h-full">
       <MapContainer
-        center={CORONEL_CENTER}
+        center={CITY_CENTER}
         zoom={DEFAULT_ZOOM}
         style={{ width: '100%', height: '100%' }}
         scrollWheelZoom={true}

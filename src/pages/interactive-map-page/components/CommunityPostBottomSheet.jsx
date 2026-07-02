@@ -1,16 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
-
-const SECTOR_COLORS = {
-  'Centro': { bg: '#dbeafe', color: '#1d4ed8' },
-  'Lagunillas': { bg: '#dcfce7', color: '#15803d' },
-  'Schwager': { bg: '#fef3c7', color: '#b45309' },
-  'Puchoco': { bg: '#fce7f3', color: '#be185d' },
-  'Las Higueras': { bg: '#ede9fe', color: '#7c3aed' },
-  'Punta de Parra': { bg: '#ffedd5', color: '#c2410c' },
-  'Otro': { bg: '#f1f5f9', color: '#475569' },
-};
+import { SECTOR_COLORS_PALETTE_B as SECTOR_COLORS } from 'config/sectors';
 
 export default function CommunityPostBottomSheet({ post, onClose }) {
   const sectorStyle = SECTOR_COLORS?.[post?.sector] || SECTOR_COLORS?.['Otro'];

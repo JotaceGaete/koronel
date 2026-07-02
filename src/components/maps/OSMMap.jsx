@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { CITY_CONFIG } from '../../config/city';
 
 // Fix Leaflet default icon with bundlers
 delete L?.Icon?.Default?.prototype?._getIconUrl;
@@ -11,7 +12,7 @@ L?.Icon?.Default?.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const CORONEL_DEFAULT = [-37.0167, -73.1500];
+const CITY_DEFAULT = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
 
 // Inner component: handles map click in picker mode
 function PickerEvents({ onChange }) {
@@ -46,7 +47,7 @@ export default function OSMMap({
   readonly = true,
 }) {
   const hasCoords = lat != null && lng != null && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng));
-  const center = hasCoords ? [parseFloat(lat), parseFloat(lng)] : CORONEL_DEFAULT;
+  const center = hasCoords ? [parseFloat(lat), parseFloat(lng)] : CITY_DEFAULT;
 
   const markerPosition = hasCoords ? [parseFloat(lat), parseFloat(lng)] : null;
 

@@ -250,6 +250,95 @@ export const actionService = {
     return `${R2_PUBLIC}/${storagePath}`;
   },
 
+  // ── Impulsar promoción ────────────────────────────────────────────────────────
+  // Flujo: reserve → mark featured → confirm  (release si algo falla)
+
+  async boostAction({ actionId, accountId, userId }) {
+    // Idempotency key: una sola clave por acción. Si ya se impulsó con esta key,
+    // fn_wallet_reserve retornará { idempotent: true } sin cobrar de nuevo.
+    const idempotencyKey = `boost-action-${actionId}`;
+
+    // 1. Verificar que la acción existe, pertenece al usuario y no está ya impulsada
+    const { data: action, error: fetchErr } = await supabase
+      .from('commercial_actions')
+      .select('id, user_id, boosted_at, status')
+      .eq('id', actionId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (fetchErr || !action) {
+      return { ok: false, error: 'Acción no encontrada o no tienes permiso.' };
+    }
+    if (action.boosted_at) {
+      return { ok: false, error: 'Esta acción ya está impulsada.', alreadyBoosted: true };
+    }
+    if (action.status !== 'active') {
+      return { ok: false, error: 'Solo se pueden impulsar acciones activas.' };
+    }
+
+    // 2. Reservar créditos
+    const { walletService } = await import('./walletService.js');
+    const reserveRes = await walletService.reserve({
+      accountId,
+      actionKey:      'PROMOTION_BOOST',
+      referenceType:  'commercial_action',
+      referenceId:    actionId,
+      idempotencyKey,
+    });
+
+    if (!reserveRes.data?.ok) {
+      const err = reserveRes.data?.error || reserveRes.error?.message || 'Error al reservar créditos.';
+      return { ok: false, error: err, insufficientBalance: err === 'insufficient_balance' };
+    }
+
+    const consumptionId = reserveRes.data.consumption_id;
+
+    // 3. Marcar como impulsada y featured
+    const { error: updateErr } = await supabase
+      .from('commercial_actions')
+      .update({
+        featured:             true,
+        tier:                 'boost',
+        boosted_at:           new Date().toISOString(),
+        boost_consumption_id: consumptionId,
+      })
+      .eq('id', actionId)
+      .eq('user_id', userId);
+
+    if (updateErr) {
+      // El UPDATE falló — liberar la reserva para no perder créditos
+      await walletService.release({
+        consumptionId,
+        failureReason: `update_failed: ${updateErr.message}`,
+      });
+      return { ok: false, error: 'No se pudo impulsar la acción. Créditos liberados.' };
+    }
+
+    // 4. Confirmar el consumo
+    const confirmRes = await walletService.confirm({
+      consumptionId,
+      displayLabel: 'Promoción impulsada',
+    });
+
+    if (!confirmRes.data?.ok) {
+      // El confirm falló — la acción ya está marcada como featured.
+      // Revertir el featured y liberar la reserva.
+      await Promise.all([
+        supabase
+          .from('commercial_actions')
+          .update({ featured: false, tier: 'free', boosted_at: null, boost_consumption_id: null })
+          .eq('id', actionId),
+        walletService.release({
+          consumptionId,
+          failureReason: `confirm_failed: ${confirmRes.error?.message}`,
+        }),
+      ]);
+      return { ok: false, error: 'Error al confirmar el pago. La acción no fue impulsada.' };
+    }
+
+    return { ok: true, balance: confirmRes.data.balance };
+  },
+
   formatAction(action) {
     const images = action?.action_images || [];
     const cover = images.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];

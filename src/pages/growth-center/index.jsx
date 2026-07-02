@@ -34,6 +34,7 @@ export default function GrowthCenter() {
   const [loadingData, setLoadingData] = useState(true);
   const [walletBalance, setWalletBalance] = useState(null);
   const [loadingWallet, setLoadingWallet] = useState(true);
+  const [accountId, setAccountId] = useState(null);
 
   // Load user's businesses
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function GrowthCenter() {
     // Cargar wallet en paralelo (no bloquea el resto del dashboard)
     accountService.getPrimaryAccountId(user.id).then(({ data: acctId }) => {
       if (acctId) {
+        setAccountId(acctId);
         walletService.getBalance(acctId).then(({ data }) => {
           setWalletBalance(data);
           setLoadingWallet(false);
@@ -217,7 +219,21 @@ export default function GrowthCenter() {
             )}
           </div>
           <div className="bg-card border border-border rounded-xl px-4">
-            <ActiveActionsMini actions={activeActions} loading={loadingData} />
+            <ActiveActionsMini
+              actions={activeActions}
+              loading={loadingData}
+              accountId={accountId}
+              userId={user?.id}
+              onBoosted={(actionId) => {
+                setActions(prev => prev.map(a =>
+                  a.id === actionId ? { ...a, boosted_at: new Date().toISOString() } : a
+                ));
+                // Refrescar saldo del widget
+                if (accountId) {
+                  walletService.getBalance(accountId).then(({ data }) => setWalletBalance(data));
+                }
+              }}
+            />
           </div>
         </div>
 

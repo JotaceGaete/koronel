@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
+import { formatLocalPhoneInput, PHONE_PLACEHOLDER } from 'utils/phone';
 
 const BASE_CATEGORIES = [
   { value: '', label: 'Selecciona una categoría' },
@@ -15,13 +16,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
   const handleChange = (field, value) => onChange(field, value);
 
   const handleWhatsAppChange = (e) => {
-    let val = e?.target?.value?.replace(/\D/g, '');
-    if (val?.startsWith('56')) val = val?.slice(2);
-    val = val?.slice(0, 9);
-    let formatted = val;
-    if (val?.length > 1) formatted = val?.slice(0, 1) + ' ' + val?.slice(1);
-    if (val?.length > 5) formatted = val?.slice(0, 1) + ' ' + val?.slice(1, 5) + ' ' + val?.slice(5);
-    handleChange('contactWhatsapp', formatted ? '+56 ' + formatted : '');
+    handleChange('contactWhatsapp', formatLocalPhoneInput(e?.target?.value));
   };
 
   return (
@@ -157,7 +152,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
         <Input
           label="WhatsApp de contacto"
           type="tel"
-          placeholder="+56 9 1234 5678"
+          placeholder={PHONE_PLACEHOLDER}
           value={formData?.contactWhatsapp || ''}
           onChange={handleWhatsAppChange}
           error={errors?.contactWhatsapp}

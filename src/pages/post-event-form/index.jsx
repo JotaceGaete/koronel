@@ -7,6 +7,7 @@ import OSMMap from 'components/maps/OSMMap';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { businessService } from '../../services/businessService';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
 
 const CATEGORIES = [
   { value: '', label: 'Seleccionar categoría...' },
@@ -389,7 +390,7 @@ export default function PostEventForm() {
                   type="tel"
                   value={formData?.contactWhatsapp}
                   onChange={e => handleChange('contactWhatsapp', e?.target?.value)}
-                  placeholder="+56 9 1234 5678"
+                  placeholder={PHONE_PLACEHOLDER}
                   className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>

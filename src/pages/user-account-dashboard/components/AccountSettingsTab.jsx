@@ -6,6 +6,7 @@ import Input from 'components/ui/Input';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
 import { formatDate } from '../../../utils/format';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 
 export default function AccountSettingsTab() {
   const { user, userProfile, updateProfile } = useAuth();
@@ -126,7 +127,7 @@ export default function AccountSettingsTab() {
               type="tel"
               value={form?.phone}
               onChange={(e) => setForm((f) => ({ ...f, phone: e?.target?.value }))}
-              placeholder="+56 9 XXXX XXXX" />
+              placeholder={PHONE_PLACEHOLDER} />
             <Input
               label="Ubicación"
               type="text"

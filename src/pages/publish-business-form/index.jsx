@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../services/geocodingService';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
+import { CITY_CONFIG } from '../../config/city';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -308,7 +310,7 @@ export default function PublishBusinessForm() {
       if (!s?.url?.trim()) { newErrors[`social_${i}`] = 'La URL es obligatoria.'; return; }
       if (s?.type === 'WhatsApp') {
         const waOk = /^(https?:\/\/(wa\.me|api\.whatsapp\.com)|\+\d{7,15})/?.test(s?.url?.trim());
-        if (!waOk) newErrors[`social_${i}`] = 'Para WhatsApp usa formato https://wa.me/... o +56...';
+        if (!waOk) newErrors[`social_${i}`] = `Para WhatsApp usa formato https://wa.me/... o +${CITY_CONFIG.phoneCountryCode}...`;
       } else {
         try { new URL(s.url.trim()); } catch { newErrors[`social_${i}`] = 'URL no válida.'; }
       }
@@ -568,7 +570,7 @@ export default function PublishBusinessForm() {
                     name="telefono"
                     value={form?.telefono}
                     onChange={handleChange}
-                    placeholder="Ej: +56 9 1234 5678"
+                    placeholder={`Ej: ${PHONE_PLACEHOLDER}`}
                     className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.telefono ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors?.telefono && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.telefono}</p>}
@@ -814,7 +816,7 @@ export default function PublishBusinessForm() {
                     name="whatsapp"
                     value={form?.whatsapp}
                     onChange={handleChange}
-                    placeholder="Ej: +56 9 1234 5678"
+                    placeholder={`Ej: ${PHONE_PLACEHOLDER}`}
                     className="w-full px-3 py-2.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
@@ -845,7 +847,7 @@ export default function PublishBusinessForm() {
                         </select>
                         <div className="flex-1">
                           <input type="text" value={s?.url} onChange={e => updateSocialLink(i, 'url', e?.target?.value)}
-                            placeholder={s?.type === 'WhatsApp' ? 'https://wa.me/56912345678 o +56...' : 'https://...'}
+                            placeholder={s?.type === 'WhatsApp' ? `https://wa.me/${CITY_CONFIG.phoneCountryCode}912345678 o +${CITY_CONFIG.phoneCountryCode}...` : 'https://...'}
                             className={`w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.[`social_${i}`] ? 'border-red-400' : 'border-border'}`} />
                           {errors?.[`social_${i}`] && <p className="text-xs mt-0.5" style={{ color: 'var(--color-error)' }}>{errors?.[`social_${i}`]}</p>}
                         </div>

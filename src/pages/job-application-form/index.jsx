@@ -4,6 +4,7 @@ import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { jobService } from '../../services/jobService';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
 
 const INITIAL_FORM = {
   nombre_completo: '',
@@ -179,7 +180,7 @@ export default function JobApplicationForm() {
                   type="text"
                   value={form?.telefono}
                   onChange={e => handleChange('telefono', e?.target?.value)}
-                  placeholder="+56 9 1234 5678"
+                  placeholder={PHONE_PLACEHOLDER}
                   className={inputCls(false)}
                 />
               </div>

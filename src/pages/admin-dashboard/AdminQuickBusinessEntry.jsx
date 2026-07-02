@@ -10,6 +10,7 @@ import { adminBusinessService } from '../../services/adminService';
 import { businessService } from '../../services/businessService';
 import { geocode } from '../../services/geocodingService';
 import { CITY_CONFIG } from '../../config/city';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
 
 const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
@@ -321,14 +322,14 @@ export default function AdminQuickBusinessEntry() {
             type="tel"
             value={form.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
-            placeholder="+56 41 234 5678"
+            placeholder={`+${CITY_CONFIG.phoneCountryCode} 41 234 5678`}
           />
           <Input
             label="WhatsApp"
             type="tel"
             value={form.whatsapp}
             onChange={(e) => handleChange('whatsapp', e.target.value)}
-            placeholder="+56 9 8765 4321"
+            placeholder={PHONE_PLACEHOLDER}
           />
           <Input
             label="Dirección"

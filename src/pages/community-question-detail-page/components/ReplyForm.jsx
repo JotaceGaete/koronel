@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { supabase } from '../../../lib/supabase';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 
 export default function ReplyForm({ postId, user, onReplySubmitted }) {
   const [body, setBody] = useState('');
@@ -202,7 +203,7 @@ export default function ReplyForm({ postId, user, onReplySubmitted }) {
                     type="text"
                     value={suggestData?.phone}
                     onChange={e => setSuggestData(p => ({ ...p, phone: e?.target?.value }))}
-                    placeholder="+56 9 XXXX XXXX"
+                    placeholder={PHONE_PLACEHOLDER}
                     className="w-full px-3 py-1.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>

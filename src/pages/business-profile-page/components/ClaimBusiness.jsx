@@ -5,6 +5,7 @@ import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import { useAuth } from '../../../contexts/AuthContext';
 import { businessService } from '../../../services/businessService';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 
 export default function ClaimBusiness({ businessId, businessName, claimed }) {
   const { user } = useAuth();
@@ -119,7 +120,7 @@ export default function ClaimBusiness({ businessId, businessName, claimed }) {
           <Input
             label="Teléfono"
             type="tel"
-            placeholder="+56 9 XXXX XXXX"
+            placeholder={PHONE_PLACEHOLDER}
             value={form?.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e?.target?.value }))}
           />

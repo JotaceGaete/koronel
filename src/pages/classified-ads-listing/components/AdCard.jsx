@@ -4,6 +4,8 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { formatCurrency } from 'utils/format';
+import { toDialablePhone } from 'utils/phone';
+import { CITY_CONFIG } from 'config/city';
 
 export default function AdCard({ ad }) {
   const formatPrice = (price) => {
@@ -14,13 +16,14 @@ export default function AdCard({ ad }) {
   const handleWhatsApp = (e) => {
     e?.preventDefault();
     e?.stopPropagation();
-    window.open(`https://wa.me/56${ad?.phone}?text=Hola, vi tu aviso "${ad?.title}" en CoronelLocal`, '_blank');
+    const digits = toDialablePhone(ad?.phone)?.replace('+', '');
+    window.open(`https://wa.me/${digits}?text=Hola, vi tu aviso "${ad?.title}" en ${CITY_CONFIG.siteName}`, '_blank');
   };
 
   const handleCall = (e) => {
     e?.preventDefault();
     e?.stopPropagation();
-    window.location.href = `tel:+56${ad?.phone}`;
+    window.location.href = `tel:${toDialablePhone(ad?.phone)}`;
   };
 
   return (

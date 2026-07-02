@@ -10,6 +10,7 @@ import SuccessModal from './components/SuccessModal';
 import GuestInfoModal from './components/GuestInfoModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { adService } from '../../services/adService';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
 
 const INITIAL_FORM = {
   title: '',
@@ -31,7 +32,7 @@ function validate(formData) {
   if (!formData?.description?.trim()) errs.description = 'La descripción es obligatoria';
   else if (formData?.description?.trim()?.length < 20) errs.description = 'La descripción debe tener al menos 20 caracteres';
   if (!formData?.phone?.trim()) errs.phone = 'El teléfono de contacto es obligatorio';
-  else if (formData?.phone?.replace(/\D/g, '')?.length < 9) errs.phone = 'Ingresa un número chileno válido (+56 9 XXXX XXXX)';
+  else if (formData?.phone?.replace(/\D/g, '')?.length < 9) errs.phone = `Ingresa un número válido (${PHONE_PLACEHOLDER})`;
   return errs;
 }
 

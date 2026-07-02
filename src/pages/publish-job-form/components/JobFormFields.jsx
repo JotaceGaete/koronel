@@ -1,5 +1,6 @@
 import React from 'react';
 import { jobService } from '../../../services/jobService';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 
 function FieldError({ msg }) {
   if (!msg) return null;
@@ -170,7 +171,7 @@ export default function JobFormFields({ form, errors, onChange }) {
               type="text"
               value={form?.whatsapp_contacto}
               onChange={e => onChange('whatsapp_contacto', e?.target?.value)}
-              placeholder="+56 9 1234 5678"
+              placeholder={PHONE_PLACEHOLDER}
               className={inputCls(false)}
             />
           </div>

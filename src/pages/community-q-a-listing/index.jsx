@@ -6,6 +6,7 @@ import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDate as formatDateBase } from '../../utils/format';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Más recientes' },
@@ -23,7 +24,7 @@ function formatRelativeDate(dateStr) {
     if (hrs < 24) return `hace ${hrs}h`;
     const days = Math.floor(hrs / 24);
     if (days < 7) return `hace ${days}d`;
-    return new Date(dateStr)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+    return formatDateBase(dateStr, { day: 'numeric', month: 'short' });
   } catch { return ''; }
 }
 

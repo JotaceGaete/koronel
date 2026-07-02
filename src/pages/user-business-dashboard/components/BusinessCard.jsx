@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
+import { formatDate } from '../../../utils/format';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -20,7 +21,7 @@ export default function BusinessCard({ business, onEdit }) {
     : null;
 
   const premiumUntil = business?.premium_until
-    ? new Date(business.premium_until)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })
+    ? formatDate(business.premium_until, { day: 'numeric', month: 'long' })
     : null;
 
   return (

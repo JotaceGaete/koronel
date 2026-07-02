@@ -12,6 +12,7 @@ import AccountSettingsTab from './components/AccountSettingsTab';
 import MyMessagesTab from './components/MyMessagesTab';
 import { useAuth } from '../../contexts/AuthContext';
 import { messageService } from '../../services/messageService';
+import { formatDate } from '../../utils/format';
 
 export default function UserAccountDashboard() {
   const [activeTab, setActiveTab] = useState('ads');
@@ -23,7 +24,7 @@ export default function UserAccountDashboard() {
 
   const displayName = userProfile?.full_name || user?.email?.split('@')?.[0] || 'Usuario';
   const memberSince = user?.created_at
-    ? new Date(user?.created_at)?.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+    ? formatDate(user?.created_at, { month: 'long', year: 'numeric' })
     : 'Recientemente';
   const avatarUrl = userProfile?.avatar_url || null;
 

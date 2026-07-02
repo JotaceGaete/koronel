@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import { formatDate, formatTime } from 'utils/format';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: 'bg-purple-100 text-purple-700', icon: 'Church' },
@@ -8,18 +9,6 @@ const CATEGORY_CONFIG = {
   meetups: { label: 'Encuentros', color: 'bg-green-100 text-green-700', icon: 'Users' },
   other: { label: 'Otro', color: 'bg-gray-100 text-gray-600', icon: 'Calendar' },
 };
-
-function formatDate(dt) {
-  if (!dt) return '';
-  const d = new Date(dt);
-  return d?.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' });
-}
-
-function formatTime(dt) {
-  if (!dt) return '';
-  const d = new Date(dt);
-  return d?.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-}
 
 export default function EventCard({ event }) {
   const cat = CATEGORY_CONFIG?.[event?.category] || CATEGORY_CONFIG?.other;
@@ -63,7 +52,7 @@ export default function EventCard({ event }) {
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Icon name="Calendar" size={13} color="currentColor" />
-            <span>{formatDate(event?.startDatetime)} · {formatTime(event?.startDatetime)}</span>
+            <span>{formatDate(event?.startDatetime, { weekday: 'short', day: 'numeric', month: 'short' })} · {formatTime(event?.startDatetime)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Icon name="MapPin" size={13} color="currentColor" />

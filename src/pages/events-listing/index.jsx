@@ -6,6 +6,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { eventService } from '../../services/eventService';
+import { formatDate as formatDateBase, formatTime as formatTimeBase } from '../../utils/format';
 
 const CATEGORIES = [
 { value: 'all', label: 'Todos' },
@@ -32,15 +33,14 @@ const FALLBACK_EVENTS = [
 function formatEventDate(dtStr) {
   if (!dtStr) return '';
   try {
-    const d = new Date(dtStr);
-    return d?.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+    return formatDateBase(dtStr, { weekday: 'long', day: 'numeric', month: 'long' });
   } catch {return '';}
 }
 
 function formatEventTime(dtStr) {
   if (!dtStr) return '';
   try {
-    return new Date(dtStr)?.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    return formatTimeBase(dtStr);
   } catch {return '';}
 }
 

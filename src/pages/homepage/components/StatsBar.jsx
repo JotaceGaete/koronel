@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import { supabase } from '../../../lib/supabase';
+import { formatNumber } from '../../../utils/format';
 
 const STAT_DEFS = [
   { key: 'businesses', label: 'Negocios registrados', icon: 'Building2', color: 'var(--color-primary)', showPlus: true },
@@ -11,7 +12,7 @@ const STAT_DEFS = [
 
 function formatValue(count, showPlus = false) {
   if (typeof count !== 'number' || Number.isNaN(count)) return '—';
-  const formatted = count.toLocaleString('es-CL');
+  const formatted = formatNumber(count);
   return showPlus ? `${formatted}+` : formatted;
 }
 

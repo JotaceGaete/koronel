@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
+import { formatCurrency } from 'utils/format';
 
 export default function AdCard({ ad }) {
   const formatPrice = (price) => {
     if (!price) return 'Precio a convenir';
-    return `$${price?.toLocaleString('es-CL')}`;
+    return formatCurrency(price);
   };
 
   const handleWhatsApp = (e) => {

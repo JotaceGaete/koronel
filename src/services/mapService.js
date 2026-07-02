@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { formatDate, formatTime } from '../utils/format';
 
 export const mapService = {
   async getBusinessesForMap({ search = '', category = '' } = {}) {
@@ -108,16 +109,14 @@ export const mapService = {
   formatEventDate(dtStr) {
     if (!dtStr) return '';
     try {
-      return new Date(dtStr)?.toLocaleDateString('es-CL', {
-        weekday: 'short', day: 'numeric', month: 'short',
-      });
+      return formatDate(dtStr, { weekday: 'short', day: 'numeric', month: 'short' });
     } catch { return ''; }
   },
 
   formatEventTime(dtStr) {
     if (!dtStr) return '';
     try {
-      return new Date(dtStr)?.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      return formatTime(dtStr);
     } catch { return ''; }
   },
 };

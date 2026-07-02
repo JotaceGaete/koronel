@@ -4,6 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { businessService } from '../../../services/businessService';
+import { formatDate } from '../../../utils/format';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -61,7 +62,7 @@ export default function MyBusinessesTab({ userId }) {
     const status = biz?.status || 'pending';
     const sc = STATUS_CONFIG?.[status] || STATUS_CONFIG?.pending;
     const premiumUntil = biz?.premium_until
-      ? new Date(biz.premium_until)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })
+      ? formatDate(biz.premium_until, { day: 'numeric', month: 'long' })
       : null;
     return (
       <div key={biz?.id} className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
@@ -149,7 +150,7 @@ export default function MyBusinessesTab({ userId }) {
                       {csc?.label}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{new Date(c?.created_at)?.toLocaleDateString('es-CL')}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(c?.created_at)}</span>
                   {biz?.id && (
                     <Link to={`/business-profile-page?id=${biz?.id}`}>
                       <Button variant="ghost" size="sm">Ver ficha</Button>

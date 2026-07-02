@@ -7,6 +7,9 @@ import Button from 'components/ui/Button';
 import { adService } from '../../services/adService';
 import { messageService } from '../../services/messageService';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatCurrency, formatDate as formatDateBase } from '../../utils/format';
+import { toDialablePhone } from '../../utils/phone';
+import { CITY_CONFIG } from '../../config/city';
 
 export default function ClassifiedAdDetail() {
   const { id } = useParams();
@@ -87,14 +90,12 @@ export default function ClassifiedAdDetail() {
 
   const handleWhatsApp = () => {
     const phone = ad?.phone?.replace(/\D/g, '');
-    const fullPhone = phone?.startsWith('56') ? phone : `56${phone}`;
-    window.open(`https://wa.me/${fullPhone}?text=Hola, vi tu aviso "${ad?.title}" en CoronelLocal`, '_blank');
+    const fullPhone = phone?.startsWith(CITY_CONFIG.phoneCountryCode) ? phone : `${CITY_CONFIG.phoneCountryCode}${phone}`;
+    window.open(`https://wa.me/${fullPhone}?text=Hola, vi tu aviso "${ad?.title}" en ${CITY_CONFIG.siteName}`, '_blank');
   };
 
   const handleCall = () => {
-    const phone = ad?.phone?.replace(/\D/g, '');
-    const fullPhone = phone?.startsWith('56') ? `+${phone}` : `+56${phone}`;
-    window.location.href = `tel:${fullPhone}`;
+    window.location.href = `tel:${toDialablePhone(ad?.phone)}`;
   };
 
   const handleCopyPhone = async () => {
@@ -149,12 +150,12 @@ export default function ClassifiedAdDetail() {
 
   const formatPrice = (price) => {
     if (!price) return 'Precio a convenir';
-    return `$${Number(price)?.toLocaleString('es-CL')}`;
+    return formatCurrency(price);
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    return new Date(dateStr)?.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+    return formatDateBase(dateStr, { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
   const images = ad?.ad_images?.length > 0
@@ -603,7 +604,7 @@ export default function ClassifiedAdDetail() {
                       {similar?.title}
                     </h3>
                     <p className="mt-1.5 text-sm font-bold" style={{ color: 'var(--color-primary)' }}>
-                      {similar?.price ? `$${Number(similar?.price)?.toLocaleString('es-CL')}` : 'Precio a convenir'}
+                      {similar?.price ? formatCurrency(similar?.price) : 'Precio a convenir'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">{similar?.timeAgo}</p>
                   </div>

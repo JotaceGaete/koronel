@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
 import { supabase } from '../../../lib/supabase';
+import { formatDate } from '../../../utils/format';
 
 function StarRating({ rating }) {
   return (
@@ -28,7 +29,7 @@ function ReviewCard({ review, onReplySubmit }) {
   const authorName = review?.user_profiles?.full_name || 'Usuario';
   const authorAvatar = review?.user_profiles?.avatar_url;
   const dateStr = review?.created_at
-    ? new Date(review?.created_at)?.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })
+    ? formatDate(review?.created_at, { day: '2-digit', month: 'long', year: 'numeric' })
     : '';
 
   const handleSubmitReply = async () => {

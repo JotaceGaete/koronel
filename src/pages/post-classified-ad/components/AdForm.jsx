@@ -2,6 +2,8 @@ import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
 import { classifiedAdSectorOptions } from 'config/sectors';
+import { formatNumber } from 'utils/format';
+import { formatLocalPhoneInput } from 'utils/phone';
 
 const LOCATIONS = classifiedAdSectorOptions();
 
@@ -11,7 +13,7 @@ export default function AdForm({ formData, errors, onChange, categories = [], ca
   const formatPrice = (raw) => {
     const digits = raw?.replace(/\D/g, '');
     if (!digits) return '';
-    return Number(digits)?.toLocaleString('es-CL');
+    return formatNumber(Number(digits));
   };
 
   const handlePriceChange = (e) => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
 import { communityService } from '../../../services/communityService';
+import { formatDate as formatDateBase } from 'utils/format';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', color: '#d97706', bg: '#fef3c7' },
@@ -14,7 +15,7 @@ const STATUS_CONFIG = {
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   try {
-    return new Date(dateStr)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
+    return formatDateBase(dateStr, { day: 'numeric', month: 'short', year: 'numeric' });
   } catch { return '—'; }
 }
 

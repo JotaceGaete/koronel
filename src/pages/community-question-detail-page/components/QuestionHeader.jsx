@@ -3,13 +3,12 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { communityService } from '../../../services/communityService';
 import { SECTOR_COLORS_PALETTE_A as SECTOR_COLORS } from 'config/sectors';
+import { formatDate as formatDateBase } from 'utils/format';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
-    return new Date(dateStr)?.toLocaleDateString('es-CL', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
+    return formatDateBase(dateStr, { day: 'numeric', month: 'long', year: 'numeric' });
   } catch { return ''; }
 }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { formatDate as formatDateBase, formatTime as formatTimeBase } from 'utils/format';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
@@ -15,16 +16,14 @@ export default function EventPreviewPanel({ formData, photo }) {
   const formatDate = (dtStr) => {
     if (!dtStr) return null;
     try {
-      const d = new Date(dtStr);
-      return d?.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' });
+      return formatDateBase(dtStr, { weekday: 'short', day: 'numeric', month: 'short' });
     } catch { return null; }
   };
 
   const formatTime = (dtStr) => {
     if (!dtStr) return null;
     try {
-      const d = new Date(dtStr);
-      return d?.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      return formatTimeBase(dtStr);
     } catch { return null; }
   };
 

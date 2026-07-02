@@ -5,6 +5,7 @@ import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
+import { formatDate } from '../../../utils/format';
 
 export default function AccountSettingsTab() {
   const { user, userProfile, updateProfile } = useAuth();
@@ -33,7 +34,7 @@ export default function AccountSettingsTab() {
   }, [userProfile, user]);
 
   const memberSince = user?.created_at
-    ? new Date(user?.created_at)?.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+    ? formatDate(user?.created_at, { month: 'long', year: 'numeric' })
     : 'Recientemente';
 
   const handleSave = async (e) => {

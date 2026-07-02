@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { formatDate, formatTime } from '../utils/format';
 
 export const eventService = {
   async getAll({ category, search, status = 'approved', upcoming = true, page = 1, pageSize = 12 } = {}) {
@@ -187,15 +188,12 @@ export const eventService = {
     const isUpcoming = start > now;
     const isPast = end < now;
 
-    const dateStr = start?.toLocaleDateString('es-CL', {
+    const dateStr = formatDate(start, {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
     });
-    const timeStr = start?.toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const timeStr = formatTime(start);
 
     const CATEGORY_LABELS = {
       church: 'Iglesia',

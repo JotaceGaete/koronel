@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
 import { adminAdService } from '../../../services/adminService';
+import { formatCurrency } from 'utils/format';
 
 const STATUS_LABELS = { active: 'Activo', expired: 'Expirado', draft: 'Borrador', deleted: 'Eliminado', pending: 'Pendiente' };
 const STATUS_COLORS = { active: '#22c55e', expired: '#f59e0b', draft: '#94a3b8', deleted: '#ef4444', pending: '#f97316' };
@@ -149,7 +150,7 @@ export default function AdminClassifiedAds() {
               <tr key={ad?.id} className={`hover:bg-muted/50 transition-colors ${ad?.ad_status === 'pending' ? 'bg-orange-50' : ''}`}>
                 <td className="px-4 py-3">
                   <div className="font-medium text-foreground">{ad?.title}</div>
-                  <div className="text-xs text-muted-foreground">{ad?.price ? `$${Number(ad?.price)?.toLocaleString('es-CL')}` : 'Sin precio'}</div>
+                  <div className="text-xs text-muted-foreground">{ad?.price ? formatCurrency(ad?.price) : 'Sin precio'}</div>
                 </td>
                 <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{ad?.category}</td>
                 <td className="px-4 py-3 hidden lg:table-cell">

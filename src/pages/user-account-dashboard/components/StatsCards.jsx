@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Icon from 'components/AppIcon';
 import { supabase } from '../../../lib/supabase';
+import { formatNumber } from '../../../utils/format';
 
 export default function StatsCards({ userId }) {
   const [stats, setStats] = useState({
@@ -40,8 +41,8 @@ export default function StatsCards({ userId }) {
   }, [userId]);
 
   const statItems = [
-    { label: 'Vistas de Avisos', value: loading ? '...' : stats?.adViews?.toLocaleString('es-CL'), icon: 'Eye', color: 'var(--color-primary)' },
-    { label: 'Visitas a Negocios', value: loading ? '...' : stats?.businessVisits?.toLocaleString('es-CL'), icon: 'Building2', color: 'var(--color-accent)' },
+    { label: 'Vistas de Avisos', value: loading ? '...' : formatNumber(stats?.adViews), icon: 'Eye', color: 'var(--color-primary)' },
+    { label: 'Visitas a Negocios', value: loading ? '...' : formatNumber(stats?.businessVisits), icon: 'Building2', color: 'var(--color-accent)' },
     { label: 'Avisos Activos', value: loading ? '...' : String(stats?.activeAds), icon: 'Tag', color: 'var(--color-success)' },
     { label: 'Negocios', value: loading ? '...' : String(stats?.businesses), icon: 'Store', color: 'var(--color-secondary)' },
   ];

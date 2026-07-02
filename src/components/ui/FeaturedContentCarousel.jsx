@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { formatCurrency } from 'utils/format';
 
 export default function FeaturedContentCarousel({
   items = [],
@@ -231,7 +232,7 @@ function ClassifiedCard({ item }) {
       </div>
       <div className="p-3">
         <h3 className="font-heading font-semibold text-base text-card-foreground line-clamp-2 mb-0.5">{item?.title}</h3>
-        <p className="text-xs text-muted-foreground">{item?.price ? `$${item?.price?.toLocaleString('es-CL')}` : 'Precio a convenir'}</p>
+        <p className="text-xs text-muted-foreground">{item?.price ? formatCurrency(item?.price) : 'Precio a convenir'}</p>
       </div>
     </Link>
   );

@@ -7,6 +7,7 @@ import Button from 'components/ui/Button';
 import { eventService } from '../../services/eventService';
 import { useAuth } from '../../contexts/AuthContext';
 import ShareButtons from 'components/ui/ShareButtons';
+import { formatDate, formatTime } from '../../utils/format';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff', icon: 'Church' },
@@ -34,16 +35,7 @@ const FALLBACK_EVENT = {
 function formatFullDate(dtStr) {
   if (!dtStr) return '';
   try {
-    return new Date(dtStr)?.toLocaleDateString('es-CL', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-    });
-  } catch {return '';}
-}
-
-function formatTime(dtStr) {
-  if (!dtStr) return '';
-  try {
-    return new Date(dtStr)?.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    return formatDate(dtStr, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   } catch {return '';}
 }
 

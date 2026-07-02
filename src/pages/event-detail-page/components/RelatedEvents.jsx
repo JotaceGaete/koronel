@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import { formatDate } from 'utils/format';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: 'bg-purple-100 text-purple-700' },
@@ -8,11 +9,6 @@ const CATEGORY_CONFIG = {
   meetups: { label: 'Encuentros', color: 'bg-green-100 text-green-700' },
   other: { label: 'Otro', color: 'bg-gray-100 text-gray-600' },
 };
-
-function formatDate(dt) {
-  if (!dt) return '';
-  return new Date(dt)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 export default function RelatedEvents({ events }) {
   if (!events?.length) return null;

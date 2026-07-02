@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import { adminClaimService } from '../../../services/adminService';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
+import { formatDate } from 'utils/format';
 
 const STATUS_LABELS = { pending: 'Pendiente', approved: 'Aprobado', rejected: 'Rechazado' };
 const STATUS_COLORS = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444' };
@@ -72,7 +73,7 @@ export default function AdminClaimRequests() {
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white" style={{ background: STATUS_COLORS?.[claim?.claim_status] || '#94a3b8' }}>
                     {STATUS_LABELS?.[claim?.claim_status] || claim?.claim_status}
                   </span>
-                  <span className="text-xs text-muted-foreground">{new Date(claim.created_at)?.toLocaleDateString('es-CL')}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(claim.created_at)}</span>
                 </div>
                 <h4 className="font-medium text-foreground">{claim?.business?.name || 'Negocio desconocido'}</h4>
                 <p className="text-sm text-muted-foreground">{claim?.business?.category} · {claim?.business?.address}</p>

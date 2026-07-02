@@ -40,6 +40,7 @@ import GrowthCenter from './pages/growth-center';
 import CreateAction from './pages/create-action';
 import ActionsListing from './pages/actions-listing';
 import ActionDetail from './pages/action-detail';
+import WalletPage from './pages/wallet';
 
 const Routes = () => {
   return (
@@ -73,6 +74,9 @@ const Routes = () => {
           } />
           <Route path="/crecer/nueva" element={
             <ProtectedRoute><CreateAction /></ProtectedRoute>
+          } />
+          <Route path="/billetera" element={
+            <ProtectedRoute><WalletPage /></ProtectedRoute>
           } />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

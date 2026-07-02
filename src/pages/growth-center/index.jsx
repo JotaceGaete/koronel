@@ -9,11 +9,14 @@ import { businessService } from '../../services/businessService';
 import { pulseService } from '../../services/pulseService';
 import { actionService } from '../../services/actionService';
 import { calendarService } from '../../services/calendarService';
+import { accountService } from '../../services/accountService';
+import { walletService } from '../../services/walletService';
 import { INTENT_OPTIONS } from '../../lib/intentToSuggestion';
 import PulseIndicator from './components/PulseIndicator';
 import WeeklySummary from './components/WeeklySummary';
 import AdvisorCard from './components/AdvisorCard';
 import ActiveActionsMini from './components/ActiveActionsMini';
+import WalletWidget from './components/WalletWidget';
 
 export default function GrowthCenter() {
   const { user } = useAuth();
@@ -29,6 +32,8 @@ export default function GrowthCenter() {
   const [calendarEvent, setCalendarEvent] = useState(null);
   const [advisorDismissed, setAdvisorDismissed] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [loadingWallet, setLoadingWallet] = useState(true);
 
   // Load user's businesses
   useEffect(() => {
@@ -44,6 +49,18 @@ export default function GrowthCenter() {
       setLoadingBusiness(false);
     }
     loadBusinesses();
+
+    // Cargar wallet en paralelo (no bloquea el resto del dashboard)
+    accountService.getPrimaryAccountId(user.id).then(({ data: acctId }) => {
+      if (acctId) {
+        walletService.getBalance(acctId).then(({ data }) => {
+          setWalletBalance(data);
+          setLoadingWallet(false);
+        });
+      } else {
+        setLoadingWallet(false);
+      }
+    });
   }, [user]);
 
   // Load dashboard data once we have a business
@@ -115,7 +132,8 @@ export default function GrowthCenter() {
       <div style={{ paddingTop: '64px' }} className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
         {/* Greeting + business selector */}
-        <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
           <p className="text-sm font-caption text-muted-foreground">{greeting}, {firstName}.</p>
           {businesses.length > 1 ? (
             <select
@@ -128,6 +146,8 @@ export default function GrowthCenter() {
           ) : (
             <h1 className="font-heading font-bold text-xl text-foreground mt-0.5">{business?.name}</h1>
           )}
+          </div>
+          <WalletWidget balance={walletBalance} loading={loadingWallet} />
         </div>
 
         {/* Pulse */}

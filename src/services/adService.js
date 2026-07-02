@@ -12,8 +12,23 @@ function generateToken() {
 export const adService = {
   async getAdCategories() {
     try {
-      const { data, error } = await supabase?.from('categories')?.select('id, name, name_key')?.order('name', { ascending: true });
-      if (error) throw error;
+      const { data, error } = await supabase
+        ?.from('categories')
+        ?.select('id, name, name_key')
+        ?.eq('category_type', 'classified_ad')
+        ?.order('name', { ascending: true });
+      if (error) {
+        // category_type puede no existir todavía en algún entorno que no
+        // corrió 20260621000004_add_category_type_and_city.sql — en vez de
+        // romper el formulario, caemos al comportamiento anterior
+        // (todas las categorías, sin filtrar) en vez de mostrar error.
+        if (error?.code === '42703') {
+          const fallback = await supabase?.from('categories')?.select('id, name, name_key')?.order('name', { ascending: true });
+          if (fallback?.error) throw fallback.error;
+          return { data: fallback?.data || [], error: null };
+        }
+        throw error;
+      }
       return { data: data || [], error: null };
     } catch (error) {
       console.error('adService.getAdCategories error:', error);

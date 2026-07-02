@@ -9,7 +9,7 @@ import { businessService } from '../../services/businessService';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../services/geocodingService';
 import { PHONE_PLACEHOLDER } from '../../utils/phone';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -62,6 +62,7 @@ const INITIAL_FORM = {
 };
 
 export default function PublishBusinessForm() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
 

@@ -11,7 +11,7 @@ import GuestInfoModal from './components/GuestInfoModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { adService } from '../../services/adService';
 import { PHONE_PLACEHOLDER } from '../../utils/phone';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const INITIAL_FORM = {
   title: '',
@@ -57,6 +57,7 @@ function isAdminUser(user, userProfile) {
 }
 
 export default function PostClassifiedAd() {
+  const CITY_CONFIG = useCity();
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   const [formData, setFormData] = useState(INITIAL_FORM);

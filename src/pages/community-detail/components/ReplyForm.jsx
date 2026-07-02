@@ -3,9 +3,10 @@ import Icon from 'components/AppIcon';
 import { communityService } from '../../../services/communityService';
 import BusinessSearchDropdown from './BusinessSearchDropdown';
 import { PHONE_PLACEHOLDER } from '../../../utils/phone';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
 export default function ReplyForm({ postId, userId, onReplyAdded }) {
+  const CITY_CONFIG = useCity();
   const [body, setBody] = useState('');
   const [linkedBusiness, setLinkedBusiness] = useState(null);
   const [showSuggestForm, setShowSuggestForm] = useState(false);

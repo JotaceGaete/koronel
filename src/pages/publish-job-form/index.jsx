@@ -8,7 +8,7 @@ import { jobService } from '../../services/jobService';
 import JobFormFields from './components/JobFormFields';
 import JobLogoUpload from './components/JobLogoUpload';
 import BusinessLinkSection from './components/BusinessLinkSection';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const INITIAL_FORM = {
   titulo: '',
@@ -28,6 +28,7 @@ const INITIAL_FORM = {
 };
 
 export default function PublishJobForm() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(INITIAL_FORM);

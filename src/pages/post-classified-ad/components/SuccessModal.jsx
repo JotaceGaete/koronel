@@ -2,9 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 export default function SuccessModal({ onClose, isGuest = false, guestEmail = '', verificationCode = '', adTitle = '', adPhone = '' }) {
+  const CITY_CONFIG = useCity();
   const navigate = useNavigate();
 
   const handleWhatsAppVerify = () => {

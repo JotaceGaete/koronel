@@ -4,11 +4,12 @@ import Input from 'components/ui/Input';
 import { classifiedAdSectorOptions } from 'config/sectors';
 import { formatNumber } from 'utils/format';
 import { formatLocalPhoneInput, PHONE_PLACEHOLDER } from 'utils/phone';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 const LOCATIONS = classifiedAdSectorOptions();
 
 export default function AdForm({ formData, errors, onChange, categories = [], categoriesLoading = false, categoriesError = null }) {
+  const CITY_CONFIG = useCity();
   const handleChange = (field, value) => onChange(field, value);
 
   const formatPrice = (raw) => {

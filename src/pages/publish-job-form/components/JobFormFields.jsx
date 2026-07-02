@@ -1,7 +1,7 @@
 import React from 'react';
 import { jobService } from '../../../services/jobService';
 import { PHONE_PLACEHOLDER } from '../../../utils/phone';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
 function FieldError({ msg }) {
   if (!msg) return null;
@@ -22,6 +22,7 @@ const inputCls = (hasError) =>
   }`;
 
 export default function JobFormFields({ form, errors, onChange }) {
+  const CITY_CONFIG = useCity();
   return (
     <div className="space-y-5">
       {/* Section: Información básica */}

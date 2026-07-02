@@ -2,7 +2,7 @@ import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
 import { formatLocalPhoneInput, PHONE_PLACEHOLDER } from 'utils/phone';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 const BASE_CATEGORIES = [
   { value: '', label: 'Selecciona una categoría' },
@@ -14,6 +14,7 @@ const BASE_CATEGORIES = [
 ];
 
 export default function EventFormFields({ formData, errors, onChange, userBusinesses }) {
+  const CITY_CONFIG = useCity();
   const handleChange = (field, value) => onChange(field, value);
 
   const handleWhatsAppChange = (e) => {

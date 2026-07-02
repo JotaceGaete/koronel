@@ -1,6 +1,10 @@
 # Hotfix de seguridad: dejar de confiar en `raw_user_meta_data` para admin
 
-**Estado: propuesta para revisión. No se creó ningún archivo en `supabase/migrations/`. Nada se aplicó. Completamente separado de las migraciones multi-ciudad pausadas (`20260601000001` en adelante), que no se tocan.**
+**Estado: migración creada en `supabase/migrations/`. No aplicada a ninguna base de datos. Completamente separada de las migraciones multi-ciudad pausadas (`20260601000001` en adelante), que no se tocan.**
+
+## Corrección importante: el admin real no es quien el historial sugería
+
+El historial de migraciones (seed inicial + promoción explícita a `role='admin'`) apunta consistentemente a `carlos@coronellocal.cl`. Le pregunté al usuario para confirmarlo antes de crear el archivo real, y la respuesta fue que **el admin real es `contacto@walinka.com`, no Carlos**. La lista `v_admin_emails` de la migración usa `contacto@walinka.com`. Esto confirma por qué no convenía derivar automáticamente la lista de admins desde los datos existentes (fueran migraciones o la condición insegura en vivo): ninguna de las dos fuentes tenía el email correcto.
 
 ## Alcance ampliado tras revisar a fondo
 
@@ -87,7 +91,7 @@ ON CONFLICT (user_id) DO NOTHING;
 DO $$
 DECLARE
   v_admin_emails TEXT[] := ARRAY[
-    'carlos@coronellocal.cl'
+    'contacto@walinka.com'
     -- agregar acá cualquier otro admin real, confirmado contra el paso 0
   ];
   v_updated INTEGER;
@@ -236,7 +240,7 @@ WHERE au.id = a.user_id;
 -- Confirma que quedó con el campo correcto
 SELECT email, raw_app_meta_data->>'role' AS role_en_app_metadata
 FROM auth.users
-WHERE email = ANY(ARRAY['carlos@coronellocal.cl']);
+WHERE email = ANY(ARRAY['contacto@walinka.com']);
 -- Esperado: role_en_app_metadata = 'admin'.
 ```
 

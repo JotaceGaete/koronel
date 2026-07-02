@@ -22,6 +22,19 @@ export const mapService = {
 
       const normalized = (data || [])?.filter(b => b?.lat && b?.lng);
 
+      // --- DIAGNÓSTICO TEMPORAL (auditoría de filtrado del mapa, ver
+      // docs/diagnostico-filtrado-mapa.md) — no cambia ningún resultado,
+      // solo lo hace visible en consola. Quitar una vez confirmada la causa. ---
+      if (category && category !== 'all') {
+        console.log('[mapa][diagnóstico] valor recibido del selector de categoría:', category);
+        console.log('[mapa][diagnóstico] negocios que matchearon ese category_key:', normalized?.length);
+        const { data: allBiz } = await supabase?.from('businesses')?.select('name, category_key')?.not('lat', 'is', null);
+        const realKeys = [...new Set((allBiz || [])?.map(b => b?.category_key)?.filter(Boolean))]?.sort();
+        console.log('[mapa][diagnóstico] category_key reales presentes en businesses con coordenadas:', realKeys);
+        console.log('[mapa][diagnóstico] ¿el valor del selector existe en esa lista?', realKeys?.includes(category));
+      }
+      // --- FIN DIAGNÓSTICO TEMPORAL ---
+
       return { data: normalized, error: null };
     } catch (error) {
       console.error('mapService.getBusinessesForMap error:', error);

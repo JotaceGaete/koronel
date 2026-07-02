@@ -212,42 +212,59 @@ cambios ahora.
   ya no es un cambio de solo-frontend ni cero-riesgo. Se queda como
   deuda documentada.
 
-## 7. Estrategia de implementación por etapas (propuesta — no implementada)
+## 7. Estrategia de implementación por etapas
 
-### Etapa 1 — bajo riesgo, mismo patrón ya usado (recomendada para ejecutar primero)
+Plan ajustado y aprobado por el usuario tras revisar el diagnóstico:
+branding dinámico como una sola tarea coherente (no varios commits
+independientes por campo), aprovechando la misma etapa para igualar
+completamente la forma de `CITY_CONFIG` con la de `mapCityRow()` — no
+solo agregar `theme: {}`.
 
-1. `Logo.jsx`: agregar `useCity()`, usar
-   `CITY_CONFIG.logoUrl || '/koronel-logo.png'` como `src`, y el `alt`
-   derivado de `CITY_CONFIG.siteName` en vez de `"Koronel.cl"` fijo.
-2. `PageMeta.jsx`: agregar un `<link rel="icon" href={CITY_CONFIG.faviconUrl || '/favicon.ico'} />`
-   dinámico vía Helmet (favicon real del navegador, hoy inexistente como
-   concepto dinámico), y usar `CITY_CONFIG.logoUrl` antes que
-   `/favicon.ico` como fallback de `og:image`.
-3. `config/city.js`: agregar `theme: {}` al objeto estático para que
-   coincida con la forma que devuelve `mapCityRow()`.
-4. Verificación previa obligatoria (pedírtela a ti, no asumir):
-   confirmar `logo_url`/`favicon_url` reales de la fila `coronel`.
-5. Un commit por punto, `test:run` + `build` verdes después de cada uno,
-   igual que el resto de esta fase.
+### Etapa 1 — Branding dinámico completo + contrato de datos unificado (implementado)
 
-### Etapa 2 — documentar como deuda, no tocar código
+Un solo commit, un solo concepto ("branding sale del mismo origen de
+datos"):
 
-6. Nota en `docs/diseno-multi-ciudad.md` (o un doc nuevo) sobre
-   `sectors.js`: requiere una entidad nueva (tabla o JSONB) antes de
-   poder migrarse; queda fuera de esta fase.
-7. Nota sobre `api/upload/*.js`: requiere decidir cómo una función
-   serverless conoce la ciudad activa de un request (header, query
-   param, claim del JWT) antes de tocarlo; fuera del alcance de
-   "frontend" y de esta fase.
+1. **`config/city.js`**: `CITY_CONFIG` ahora tiene exactamente la misma
+   forma que devuelve `cityService.mapCityRow()` — se agregaron `id`
+   (`null`, no hay UUID de DB en modo fallback), `slug`
+   (`VITE_CITY_SLUG || 'coronel'`), `logoUrl` (`VITE_CITY_LOGO_URL ||
+   null`), `faviconUrl` (`VITE_CITY_FAVICON_URL || null`) y `theme`
+   (`{}`). Regla aplicada: cualquier propiedad que pueda venir de
+   `community_cities` existe también en el fallback estático, aunque hoy
+   no tenga uso.
+2. **`Logo.jsx`**: ahora usa `useCity()`. `src` = `CITY_CONFIG.logoUrl ||
+   '/koronel-logo.png'`. `alt` = `CITY_CONFIG.siteName` (antes fijo,
+   `"Koronel.cl"`).
+3. **`PageMeta.jsx`**: agregado `<link rel="icon" href={CITY_CONFIG.faviconUrl
+   || '/favicon.ico'} />` dinámico vía Helmet (favicon real del
+   navegador — antes solo existía el estático de `index.html`).
+   `og:image` ahora prioriza `CITY_CONFIG.logoUrl` sobre el fallback
+   `/favicon.ico` cuando la página no pasa una imagen propia.
+4. **Verificado (no asumido):** la fila `coronel` en producción tiene
+   `logo_url`/`favicon_url` en `NULL` (confirmado por la migración semilla,
+   que no los setea) — con eso, los fallbacks (`/koronel-logo.png`,
+   `/favicon.ico`) se activan exactamente igual que el comportamiento
+   estático anterior. Cero cambio visible confirmado, no solo asumido.
+5. `test:run` + `build` verdes.
 
-### Etapa 3 — decisión arquitectónica a confirmar antes de escribir nada
+### Etapa 2 — documentar como deuda, sin tocar código (pendiente)
 
-8. Confirmar el modelo de deployment objetivo (pregunta de la sección
-   3.3): ¿"una ciudad por deployment" sigue siendo el modelo real (como
-   hoy), o el objetivo final es multi-tenant real (un deployment
-   sirviendo varios dominios)? La respuesta determina si
-   `index.html`/`manifest.json` necesitan trabajo futuro (SSR/edge) o si
-   ya están resueltos y no hace falta tocarlos.
+6. Nota sobre `sectors.js`: son barrios/sectores, un dominio de datos
+   distinto al de `community_cities` (identidad de la ciudad). Si algún
+   día se modela, debe ser una entidad propia (`community_sectors` o
+   similar) — nunca forzado dentro de la tabla de ciudades. Queda fuera
+   de esta fase.
+7. Nota sobre `api/upload/*.js` y los assets estáticos de build (`public/
+   favicon.ico`, `public/koronel-logo.png`): mismo problema de fondo en
+   otro runtime/mecanismo — requieren su propia decisión antes de
+   tocarlos, fuera del alcance frontend de esta fase.
 
-No se toca ningún archivo de código hasta que confirmes cuáles de estas
-etapas quieres ejecutar.
+### Etapa 3 — decisión arquitectónica a confirmar antes de tocar `index.html`/`manifest.json`/infraestructura SEO (pendiente, sin fecha)
+
+8. ¿El modelo sigue siendo "una ciudad = un deployment" (como hoy), o el
+   objetivo final es un deployment multi-tenant sirviendo varias
+   ciudades/dominios a la vez? Mientras el modelo sea el actual, no vale
+   la pena volver dinámicos `index.html`, `manifest.json` ni los assets
+   de build — solo tendría sentido cuando exista de verdad ese
+   deployment multi-tenant. Hasta entonces, esto no se toca.

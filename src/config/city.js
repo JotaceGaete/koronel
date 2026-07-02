@@ -11,7 +11,16 @@ const toFloat = (value, fallback) => {
 
 const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
 
+/**
+ * Mismo contrato de datos que services/cityService.js#mapCityRow() —
+ * cualquier propiedad que pueda venir de una fila real de community_cities
+ * existe acá también, aunque hoy no tenga uso, para que nunca haya una
+ * diferencia de forma entre "ciudad resuelta desde la DB" y "fallback
+ * estático". id es null porque no hay UUID de DB en modo fallback.
+ */
 export const CITY_CONFIG = {
+  id: null,
+  slug: env.VITE_CITY_SLUG || 'coronel',
   name: env.VITE_CITY_NAME || 'Coronel',
   region: env.VITE_CITY_REGION || 'Región del Biobío',
   country: env.VITE_CITY_COUNTRY || 'Chile',
@@ -30,6 +39,9 @@ export const CITY_CONFIG = {
     'Directorio de negocios, clasificados, eventos, empleos y comunidad en Coronel y la región.',
   mediaBaseUrl: env.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl',
   adminWhatsapp: env.VITE_ADMIN_WHATSAPP || '56993443682',
+  logoUrl: env.VITE_CITY_LOGO_URL || null,
+  faviconUrl: env.VITE_CITY_FAVICON_URL || null,
+  theme: {},
 };
 
 /**

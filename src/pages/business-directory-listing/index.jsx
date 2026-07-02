@@ -8,6 +8,7 @@ import Icon from 'components/AppIcon';
 import BusinessCard from './components/BusinessCard';
 import BusinessCardSkeleton from './components/BusinessCardSkeleton';
 import FilterPanel from './components/FilterPanel';
+import { CITY_CONFIG } from '../../config/city';
 import ResultsHeader from './components/ResultsHeader';
 import { businessService } from '../../services/businessService';
 
@@ -169,7 +170,7 @@ export default function BusinessDirectoryListing() {
     return {
       ...b,
       image,
-      imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en Coronel`,
+      imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en ${CITY_CONFIG.name}`,
       distance: null,
       parentCategoryName,
       subCategoryName,
@@ -180,7 +181,7 @@ export default function BusinessDirectoryListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Directorio de Negocios" description="Busca y descubre negocios en Coronel. Filtros por categoría, valoración y más." path={listingPath} />
+      <PageMeta title="Directorio de Negocios" description={`Busca y descubre negocios en ${CITY_CONFIG.name}. Filtros por categoría, valoración y más.`} path={listingPath} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
@@ -188,7 +189,7 @@ export default function BusinessDirectoryListing() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-start justify-between gap-4 mb-4">
               <h1 className="font-heading font-bold text-xl md:text-2xl lg:text-3xl text-white">
-                Directorio de Negocios en Coronel
+                Directorio de Negocios en {CITY_CONFIG.name}
               </h1>
               <div className="flex items-center gap-2 shrink-0">
                 <button

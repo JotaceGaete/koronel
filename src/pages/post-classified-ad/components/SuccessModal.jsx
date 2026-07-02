@@ -2,8 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
-
-const ADMIN_WHATSAPP = '56993443682';
+import { CITY_CONFIG } from 'config/city';
 
 export default function SuccessModal({ onClose, isGuest = false, guestEmail = '', verificationCode = '', adTitle = '', adPhone = '' }) {
   const navigate = useNavigate();
@@ -12,7 +11,7 @@ export default function SuccessModal({ onClose, isGuest = false, guestEmail = ''
     const msg = encodeURIComponent(
       `Hola, quiero verificar mi aviso.\nCódigo: ${verificationCode}\nTítulo: ${adTitle}\nTeléfono: ${adPhone}`
     );
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${CITY_CONFIG.adminWhatsapp}?text=${msg}`, '_blank');
   };
 
   if (isGuest) {
@@ -76,7 +75,7 @@ export default function SuccessModal({ onClose, isGuest = false, guestEmail = ''
           ¡Aviso publicado!
         </h2>
         <p className="text-sm font-body text-muted-foreground mb-6">
-          Tu aviso ha sido publicado exitosamente en CoronelLocal. Los interesados podrán contactarte pronto.
+          Tu aviso ha sido publicado exitosamente en {CITY_CONFIG.siteName}. Los interesados podrán contactarte pronto.
         </p>
         <div className="flex flex-col gap-3">
           <Button variant="default" fullWidth iconName="LayoutDashboard" iconPosition="left" iconSize={16}

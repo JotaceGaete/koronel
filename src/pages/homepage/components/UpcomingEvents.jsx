@@ -4,14 +4,15 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { eventService } from '../../../services/eventService';
+import { CITY_CONFIG } from '../../../config/city';
 
 const FALLBACK_EVENTS = [
 {
   id: '1',
-  title: 'Feria Gastronómica de Coronel',
+  title: `Feria Gastronómica de ${CITY_CONFIG.name}`,
   category: 'meetups',
   start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(),
-  venue_name: 'Plaza de Armas de Coronel',
+  venue_name: `Plaza de Armas de ${CITY_CONFIG.name}`,
   image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1b7319b13-1772644649238.png",
   status: 'approved'
 },
@@ -20,7 +21,7 @@ const FALLBACK_EVENTS = [
   title: 'Taller de Emprendimiento Digital',
   category: 'courses',
   start_datetime: new Date(Date.now() + 7 * 86400000)?.toISOString(),
-  venue_name: 'Centro Comunitario Coronel Norte',
+  venue_name: `Centro Comunitario ${CITY_CONFIG.name} Norte`,
   image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1a3248069-1772644647717.png",
   status: 'approved'
 },
@@ -29,7 +30,7 @@ const FALLBACK_EVENTS = [
   title: 'Culto de Alabanza y Adoración',
   category: 'church',
   start_datetime: new Date(Date.now() + 5 * 86400000)?.toISOString(),
-  venue_name: 'Iglesia Evangélica Coronel',
+  venue_name: `Iglesia Evangélica ${CITY_CONFIG.name}`,
   image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_190940992-1772644647591.png",
   status: 'approved'
 },
@@ -138,7 +139,7 @@ export default function UpcomingEvents() {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Próximos Eventos</h2>
-              <p className="text-xs text-muted-foreground">Lo que se viene en Coronel</p>
+              <p className="text-xs text-muted-foreground">Lo que se viene en {CITY_CONFIG.name}</p>
             </div>
           </div>
           <Link to="/eventos">

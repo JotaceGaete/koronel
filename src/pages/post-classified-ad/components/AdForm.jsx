@@ -4,6 +4,7 @@ import Input from 'components/ui/Input';
 import { classifiedAdSectorOptions } from 'config/sectors';
 import { formatNumber } from 'utils/format';
 import { formatLocalPhoneInput, PHONE_PLACEHOLDER } from 'utils/phone';
+import { CITY_CONFIG } from 'config/city';
 
 const LOCATIONS = classifiedAdSectorOptions();
 
@@ -182,7 +183,7 @@ export default function AdForm({ formData, errors, onChange, categories = [], ca
       {/* Location */}
       <div>
         <label className="block text-sm font-caption font-semibold text-foreground mb-1.5">
-          Sector en Coronel
+          Sector en {CITY_CONFIG.name}
         </label>
         <div className="relative">
           <select

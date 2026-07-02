@@ -832,7 +832,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                   type="text"
                   value={form?.address}
                   onChange={e => { setForm(f => ({ ...f, address: e?.target?.value })); if (errors?.address) setErrors(p => ({ ...p, address: null })); }}
-                  placeholder="Ej: Av. Los Carrera 123, Coronel"
+                  placeholder={`Ej: Av. Los Carrera 123, ${CITY_CONFIG.name}`}
                   className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.address ? 'border-red-400' : 'border-border'}`}
                 />
                 {errors?.address && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.address}</p>}
@@ -852,7 +852,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                       type="text"
                       value={form?.address_text}
                       onChange={e => { setForm(f => ({ ...f, address_text: e?.target?.value })); setGeocodeError(null); }}
-                      placeholder="Ej: Las Encinas 80, Coronel"
+                      placeholder={`Ej: Las Encinas 80, ${CITY_CONFIG.name}`}
                       className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <button

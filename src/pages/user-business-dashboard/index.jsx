@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
 import BusinessCard from './components/BusinessCard';
 import EditBusinessModal from './components/EditBusinessModal';
+import { CITY_CONFIG } from '../../config/city';
 
 export default function UserBusinessDashboard() {
   const { user } = useAuth();
@@ -72,7 +73,7 @@ export default function UserBusinessDashboard() {
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div>
               <h1 className="font-heading font-bold text-xl text-white">Mis negocios</h1>
-              <p className="text-white/80 text-sm font-caption mt-0.5">Gestiona tus negocios publicados en CoronelLocal</p>
+              <p className="text-white/80 text-sm font-caption mt-0.5">Gestiona tus negocios publicados en {CITY_CONFIG.siteName}</p>
             </div>
             <Link
               to="/publicar-negocio"
@@ -110,7 +111,7 @@ export default function UserBusinessDashboard() {
                 <Icon name="Building2" size={32} color="var(--color-muted-foreground)" />
               </div>
               <h3 className="font-heading font-semibold text-foreground mb-2">Aún no tienes negocios publicados</h3>
-              <p className="text-sm text-muted-foreground mb-6">Publica tu negocio en el directorio de Coronel y llega a más clientes.</p>
+              <p className="text-sm text-muted-foreground mb-6">Publica tu negocio en el directorio de {CITY_CONFIG.name} y llega a más clientes.</p>
               <Link
                 to="/publicar-negocio"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-medium transition-colors"

@@ -173,7 +173,7 @@ export default function PostCommunityQuestionForm() {
             </div>
             <div>
               <h1 className="text-2xl font-heading font-bold text-foreground">Hacer una Pregunta</h1>
-              <p className="text-sm text-muted-foreground">Consulta a la comunidad de Coronel</p>
+              <p className="text-sm text-muted-foreground">Consulta a la comunidad de {CITY_CONFIG.name}</p>
             </div>
           </div>
 

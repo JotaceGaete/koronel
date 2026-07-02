@@ -469,7 +469,7 @@ export default function PublishBusinessForm() {
               </Link>
               <h1 className="font-heading font-bold text-xl text-white">Publicar mi negocio</h1>
             </div>
-            <p className="text-white/80 text-sm font-caption ml-8">Completa el formulario para agregar tu negocio al directorio de Coronel</p>
+            <p className="text-white/80 text-sm font-caption ml-8">Completa el formulario para agregar tu negocio al directorio de {CITY_CONFIG.name}</p>
           </div>
         </div>
 
@@ -584,7 +584,7 @@ export default function PublishBusinessForm() {
                     name="direccion"
                     value={form?.direccion}
                     onChange={handleChange}
-                    placeholder="Ej: Av. Los Carrera 123, Coronel"
+                    placeholder={`Ej: Av. Los Carrera 123, ${CITY_CONFIG.name}`}
                     className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.direccion ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors?.direccion && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.direccion}</p>}
@@ -603,7 +603,7 @@ export default function PublishBusinessForm() {
                         type="text"
                         value={form?.address_text}
                         onChange={e => { setForm(prev => ({ ...prev, address_text: e?.target?.value })); setGeocodeError(null); }}
-                        placeholder="Ej: Las Encinas 80, Coronel"
+                        placeholder={`Ej: Las Encinas 80, ${CITY_CONFIG.name}`}
                         className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                       <button

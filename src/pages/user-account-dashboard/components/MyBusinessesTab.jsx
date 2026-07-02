@@ -5,6 +5,7 @@ import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { businessService } from '../../../services/businessService';
 import { formatDate } from '../../../utils/format';
+import { CITY_CONFIG } from '../../../config/city';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -68,7 +69,7 @@ export default function MyBusinessesTab({ userId }) {
       <div key={biz?.id} className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
         <div className="h-36 overflow-hidden bg-muted flex items-center justify-center relative">
           {image ? (
-            <Image src={image} alt={`${biz?.name} - negocio en Coronel`} className="w-full h-full object-cover" />
+            <Image src={image} alt={`${biz?.name} - negocio en ${CITY_CONFIG.name}`} className="w-full h-full object-cover" />
           ) : (
             <Icon name="Building2" size={40} color="var(--color-muted-foreground)" />
           )}

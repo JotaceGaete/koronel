@@ -1,6 +1,7 @@
 import React from 'react';
 import { jobService } from '../../../services/jobService';
 import { PHONE_PLACEHOLDER } from '../../../utils/phone';
+import { CITY_CONFIG } from '../../../config/city';
 
 function FieldError({ msg }) {
   if (!msg) return null;
@@ -118,7 +119,7 @@ export default function JobFormFields({ form, errors, onChange }) {
               type="text"
               value={form?.ubicacion}
               onChange={e => onChange('ubicacion', e?.target?.value)}
-              placeholder="Ej: Coronel, Biobío"
+              placeholder={`Ej: ${CITY_CONFIG.name}, ${CITY_CONFIG.region}`}
               className={inputCls(!!errors?.ubicacion)}
             />
             <FieldError msg={errors?.ubicacion} />

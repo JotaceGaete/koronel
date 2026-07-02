@@ -4,6 +4,7 @@ import Button from 'components/ui/Button';
 import Icon from 'components/AppIcon';
 import FeaturedContentCarousel from 'components/ui/FeaturedContentCarousel';
 import { businessService } from '../../../services/businessService';
+import { CITY_CONFIG } from '../../../config/city';
 
 function formatBusiness(b) {
   const primaryImg = b?.business_images?.find(img => img?.is_primary) || b?.business_images?.[0];
@@ -20,7 +21,7 @@ function formatBusiness(b) {
     whatsapp: b?.whatsapp,
     featured: b?.featured,
     image: image ?? null,
-    imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en Coronel`,
+    imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en ${CITY_CONFIG.name}`,
   };
 }
 

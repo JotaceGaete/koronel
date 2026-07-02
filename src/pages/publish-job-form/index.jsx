@@ -8,6 +8,7 @@ import { jobService } from '../../services/jobService';
 import JobFormFields from './components/JobFormFields';
 import JobLogoUpload from './components/JobLogoUpload';
 import BusinessLinkSection from './components/BusinessLinkSection';
+import { CITY_CONFIG } from '../../config/city';
 
 const INITIAL_FORM = {
   titulo: '',
@@ -124,7 +125,7 @@ export default function PublishJobForm() {
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-heading font-bold text-foreground">Publicar Empleo</h1>
-            <p className="text-muted-foreground mt-1">Completa el formulario para publicar tu oferta de trabajo en Coronel.</p>
+            <p className="text-muted-foreground mt-1">Completa el formulario para publicar tu oferta de trabajo en {CITY_CONFIG.name}.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>

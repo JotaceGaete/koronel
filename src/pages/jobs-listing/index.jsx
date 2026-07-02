@@ -8,6 +8,7 @@ import { jobService } from '../../services/jobService';
 import { useAuth } from '../../contexts/AuthContext';
 import JobCard from './components/JobCard';
 import JobFilters from './components/JobFilters';
+import { CITY_CONFIG } from '../../config/city';
 import JobsEmptyState from './components/JobsEmptyState';
 
 export default function JobsListing() {
@@ -63,7 +64,7 @@ export default function JobsListing() {
   const location = useLocation();
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Empleos" description="Ofertas de empleo en Coronel. Encuentra trabajo en la región." path={location.pathname + (location.search || '')} />
+      <PageMeta title="Empleos" description={`Ofertas de empleo en ${CITY_CONFIG.name}. Encuentra trabajo en la región.`} path={location.pathname + (location.search || '')} />
       <Header />
       <main className="flex-1" style={{ paddingTop: '64px' }}>
         {/* Page Header */}
@@ -71,7 +72,7 @@ export default function JobsListing() {
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
-                <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground">Empleos en Coronel</h1>
+                <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground">Empleos en {CITY_CONFIG.name}</h1>
                 <p className="text-muted-foreground mt-1">{count > 0 ? `${count} oferta${count !== 1 ? 's' : ''} disponible${count !== 1 ? 's' : ''}` : 'Encuentra tu próximo trabajo'}</p>
               </div>
               <Button

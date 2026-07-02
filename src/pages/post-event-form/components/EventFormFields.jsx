@@ -2,6 +2,7 @@ import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
 import { formatLocalPhoneInput, PHONE_PLACEHOLDER } from 'utils/phone';
+import { CITY_CONFIG } from 'config/city';
 
 const BASE_CATEGORIES = [
   { value: '', label: 'Selecciona una categoría' },
@@ -26,7 +27,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
         <Input
           label="Título del evento"
           type="text"
-          placeholder="Ej: Feria Gastronómica de Coronel"
+          placeholder={`Ej: Feria Gastronómica de ${CITY_CONFIG.name}`}
           value={formData?.title || ''}
           onChange={(e) => handleChange('title', e?.target?.value)}
           required
@@ -102,7 +103,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
       <Input
         label="Nombre del lugar"
         type="text"
-        placeholder="Ej: Plaza de Armas de Coronel"
+        placeholder={`Ej: Plaza de Armas de ${CITY_CONFIG.name}`}
         value={formData?.venueName || ''}
         onChange={(e) => handleChange('venueName', e?.target?.value)}
         required
@@ -113,7 +114,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
       <Input
         label="Dirección"
         type="text"
-        placeholder="Ej: Av. Capitán Ávalos 1245, Coronel"
+        placeholder={`Ej: Av. Capitán Ávalos 1245, ${CITY_CONFIG.name}`}
         value={formData?.address || ''}
         onChange={(e) => handleChange('address', e?.target?.value)}
         required

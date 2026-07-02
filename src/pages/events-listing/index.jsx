@@ -7,6 +7,7 @@ import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { eventService } from '../../services/eventService';
 import { formatDate as formatDateBase, formatTime as formatTimeBase } from '../../utils/format';
+import { CITY_CONFIG } from '../../config/city';
 
 const CATEGORIES = [
 { value: 'all', label: 'Todos' },
@@ -24,9 +25,9 @@ const CATEGORY_CONFIG = {
 };
 
 const FALLBACK_EVENTS = [
-{ id: '1', title: 'Feria Gastronómica de Coronel', category: 'meetups', start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 3 * 86400000 + 6 * 3600000)?.toISOString(), venue_name: 'Plaza de Armas de Coronel', address_text: 'Plaza de Armas, Coronel', address: 'Plaza de Armas, Coronel', image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1f720e1f9-1772645296972.png", status: 'approved' },
-{ id: '2', title: 'Taller de Emprendimiento Digital', category: 'courses', start_datetime: new Date(Date.now() + 7 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 7 * 86400000 + 3 * 3600000)?.toISOString(), venue_name: 'Centro Comunitario Coronel Norte', address_text: 'Av. Colón 456, Coronel Norte', address: 'Av. Colón 456, Coronel Norte', image_url: "https://images.unsplash.com/photo-1549495034-4c0f106db5e6", status: 'approved' },
-{ id: '3', title: 'Culto de Alabanza y Adoración', category: 'church', start_datetime: new Date(Date.now() + 5 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 5 * 86400000 + 2 * 3600000)?.toISOString(), venue_name: 'Iglesia Evangélica Coronel', address_text: 'Calle Freire 789, Coronel', address: 'Calle Freire 789, Coronel', image_url: "https://images.unsplash.com/photo-1715503485494-1ed23a5be1ba", status: 'approved' },
+{ id: '1', title: `Feria Gastronómica de ${CITY_CONFIG.name}`, category: 'meetups', start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 3 * 86400000 + 6 * 3600000)?.toISOString(), venue_name: `Plaza de Armas de ${CITY_CONFIG.name}`, address_text: `Plaza de Armas, ${CITY_CONFIG.name}`, address: `Plaza de Armas, ${CITY_CONFIG.name}`, image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1f720e1f9-1772645296972.png", status: 'approved' },
+{ id: '2', title: 'Taller de Emprendimiento Digital', category: 'courses', start_datetime: new Date(Date.now() + 7 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 7 * 86400000 + 3 * 3600000)?.toISOString(), venue_name: `Centro Comunitario ${CITY_CONFIG.name} Norte`, address_text: `Av. Colón 456, ${CITY_CONFIG.name} Norte`, address: `Av. Colón 456, ${CITY_CONFIG.name} Norte`, image_url: "https://images.unsplash.com/photo-1549495034-4c0f106db5e6", status: 'approved' },
+{ id: '3', title: 'Culto de Alabanza y Adoración', category: 'church', start_datetime: new Date(Date.now() + 5 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 5 * 86400000 + 2 * 3600000)?.toISOString(), venue_name: `Iglesia Evangélica ${CITY_CONFIG.name}`, address_text: `Calle Freire 789, ${CITY_CONFIG.name}`, address: `Calle Freire 789, ${CITY_CONFIG.name}`, image_url: "https://images.unsplash.com/photo-1715503485494-1ed23a5be1ba", status: 'approved' },
 { id: '4', title: 'Encuentro de Vecinos Boca Sur', category: 'meetups', start_datetime: new Date(Date.now() + 10 * 86400000)?.toISOString(), end_datetime: new Date(Date.now() + 10 * 86400000 + 2 * 3600000)?.toISOString(), venue_name: 'Sede Social Boca Sur', address_text: 'Pasaje Los Pinos 123, Boca Sur', address: 'Pasaje Los Pinos 123, Boca Sur', image_url: "https://images.unsplash.com/photo-1561650714-2c92f02c21de", status: 'approved' }];
 
 
@@ -141,7 +142,7 @@ export default function EventsListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Eventos" description="Eventos en Coronel: ferias, talleres, cultos y encuentros comunitarios." path={location.pathname + (location.search || '')} />
+      <PageMeta title="Eventos" description={`Eventos en ${CITY_CONFIG.name}: ferias, talleres, cultos y encuentros comunitarios.`} path={location.pathname + (location.search || '')} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
@@ -151,7 +152,7 @@ export default function EventsListing() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Icon name="CalendarDays" size={22} color="var(--color-primary)" />
-                  <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Eventos en Coronel</h1>
+                  <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Eventos en {CITY_CONFIG.name}</h1>
                 </div>
                 <p className="text-muted-foreground text-sm">Descubre lo que está pasando en tu ciudad</p>
               </div>

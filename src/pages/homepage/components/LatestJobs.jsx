@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { jobService } from '../../../services/jobService';
+import { CITY_CONFIG } from '../../../config/city';
 
 const MODALITY_COLORS = {
   'Presencial': { bg: '#d1fae5', color: '#065f46' },
@@ -78,7 +79,7 @@ export default function LatestJobs() {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Últimas Ofertas de Empleo</h2>
-              <p className="text-xs text-muted-foreground">Oportunidades laborales en Coronel</p>
+              <p className="text-xs text-muted-foreground">Oportunidades laborales en {CITY_CONFIG.name}</p>
             </div>
           </div>
           <Link to="/empleos">

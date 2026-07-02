@@ -29,6 +29,7 @@ export const CITY_CONFIG = {
     env.VITE_SITE_DESCRIPTION ||
     'Directorio de negocios, clasificados, eventos, empleos y comunidad en Coronel y la región.',
   mediaBaseUrl: env.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl',
+  adminWhatsapp: env.VITE_ADMIN_WHATSAPP || '56993443682',
 };
 
 /** "Coronel, Chile" — usado para sesgar geocodificación y textos de ubicación. */

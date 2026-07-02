@@ -11,6 +11,7 @@ import GuestInfoModal from './components/GuestInfoModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { adService } from '../../services/adService';
 import { PHONE_PLACEHOLDER } from '../../utils/phone';
+import { CITY_CONFIG } from '../../config/city';
 
 const INITIAL_FORM = {
   title: '',
@@ -250,7 +251,7 @@ export default function PostClassifiedAd() {
                   Publicar aviso
                 </h1>
                 <p className="text-sm md:text-base font-body text-muted-foreground mt-1">
-                  Llega a miles de vecinos de Coronel con tu aviso clasificado
+                  Llega a miles de vecinos de {CITY_CONFIG.name} con tu aviso clasificado
                 </p>
               </div>
               <button

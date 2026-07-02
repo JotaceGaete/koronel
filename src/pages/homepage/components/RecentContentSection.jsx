@@ -4,6 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { businessService } from '../../../services/businessService';
 import { adService } from '../../../services/adService';
+import { CITY_CONFIG } from '../../../config/city';
 
 const LIMIT = 8;
 
@@ -41,7 +42,7 @@ function useRecentContent() {
           id: b?.id,
           title: b?.name,
           category: b?.category_key ? humanizeCategory(b.category_key) : 'Negocio',
-          sector: 'Coronel',
+          sector: CITY_CONFIG.name,
           image,
           imageAlt: primaryImg?.alt_text || b?.name,
           link: `/business-profile-page?id=${b?.id}`,

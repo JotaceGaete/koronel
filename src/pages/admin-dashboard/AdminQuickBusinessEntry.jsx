@@ -335,7 +335,7 @@ export default function AdminQuickBusinessEntry() {
             label="Dirección"
             value={form.address}
             onChange={(e) => handleChange('address', e.target.value)}
-            placeholder="Calle y número, Coronel"
+            placeholder={`Calle y número, ${CITY_CONFIG.name}`}
           />
         </section>
 

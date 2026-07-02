@@ -203,7 +203,7 @@ export default function PostEventForm() {
             </div>
             <div>
               <h1 className="text-2xl font-heading font-bold text-foreground">Publicar Evento</h1>
-              <p className="text-sm text-muted-foreground">Comparte tu evento con la comunidad de Coronel</p>
+              <p className="text-sm text-muted-foreground">Comparte tu evento con la comunidad de {CITY_CONFIG.name}</p>
             </div>
           </div>
 
@@ -222,7 +222,7 @@ export default function PostEventForm() {
                   type="text"
                   value={formData?.title}
                   onChange={e => handleChange('title', e?.target?.value)}
-                  placeholder="Ej: Feria Gastronómica de Coronel"
+                  placeholder={`Ej: Feria Gastronómica de ${CITY_CONFIG.name}`}
                   className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   style={{ borderColor: errors?.title ? 'var(--color-error)' : 'var(--color-border)' }}
                 />
@@ -292,7 +292,7 @@ export default function PostEventForm() {
                   type="text"
                   value={formData?.venueName}
                   onChange={e => handleChange('venueName', e?.target?.value)}
-                  placeholder="Ej: Plaza de Armas de Coronel"
+                  placeholder={`Ej: Plaza de Armas de ${CITY_CONFIG.name}`}
                   className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   style={{ borderColor: errors?.venueName ? 'var(--color-error)' : 'var(--color-border)' }}
                 />
@@ -306,7 +306,7 @@ export default function PostEventForm() {
                   type="text"
                   value={formData?.addressText}
                   onChange={e => handleChange('addressText', e?.target?.value)}
-                  placeholder="Ej: Av. Colón 1234, Coronel"
+                  placeholder={`Ej: Av. Colón 1234, ${CITY_CONFIG.name}`}
                   className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   style={{ borderColor: errors?.addressText ? 'var(--color-error)' : 'var(--color-border)' }}
                 />

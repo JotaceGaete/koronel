@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { CITY_CONFIG } from 'config/city';
 
 const CATEGORY_CONFIG = {
   supermercados: { label: 'Supermercados', color: '#0891b2', bg: '#e0f2fe' },
@@ -19,7 +20,7 @@ export default function BusinessBottomSheet({ business, onClose }) {
   const handleWhatsApp = () => {
     if (!business?.phone) return;
     const phone = business?.phone?.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola, vi ${business?.name} en CoronelLocal y me gustaría más información.`);
+    const msg = encodeURIComponent(`Hola, vi ${business?.name} en ${CITY_CONFIG.siteName} y me gustaría más información.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Logo from 'components/Logo';
+import { CITY_CONFIG, cityFullLabel } from 'config/city';
 
 export default function FooterSection() {
   const currentYear = new Date()?.getFullYear();
@@ -16,7 +17,7 @@ export default function FooterSection() {
               <Logo variant="footer" />
             </div>
             <p className="text-sm font-caption text-muted-foreground leading-relaxed">
-              El directorio local de negocios y clasificados de Coronel, Chile.
+              El directorio local de negocios y clasificados de {CITY_CONFIG.name}, {CITY_CONFIG.country}.
             </p>
           </div>
 
@@ -75,11 +76,11 @@ export default function FooterSection() {
 
         <div className="border-t border-border pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs font-caption text-muted-foreground">
-            &copy; {currentYear} CoronelLocal. Todos los derechos reservados.
+            &copy; {currentYear} {CITY_CONFIG.siteName}. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
             <Icon name="MapPin" size={12} color="var(--color-primary)" />
-            <span>Coronel, Región del Biobío, Chile</span>
+            <span>{cityFullLabel()}</span>
           </div>
         </div>
       </div>

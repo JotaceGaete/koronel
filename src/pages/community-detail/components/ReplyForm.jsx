@@ -3,6 +3,7 @@ import Icon from 'components/AppIcon';
 import { communityService } from '../../../services/communityService';
 import BusinessSearchDropdown from './BusinessSearchDropdown';
 import { PHONE_PLACEHOLDER } from '../../../utils/phone';
+import { CITY_CONFIG } from '../../../config/city';
 
 export default function ReplyForm({ postId, userId, onReplyAdded }) {
   const [body, setBody] = useState('');
@@ -129,7 +130,7 @@ export default function ReplyForm({ postId, userId, onReplyAdded }) {
                   type="text"
                   value={suggestData?.address}
                   onChange={e => setSuggestData(p => ({ ...p, address: e?.target?.value }))}
-                  placeholder="Dirección en Coronel"
+                  placeholder={`Dirección en ${CITY_CONFIG.name}`}
                   className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>

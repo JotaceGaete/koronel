@@ -7,6 +7,7 @@ import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDate as formatDateBase } from '../../utils/format';
+import { CITY_CONFIG } from '../../config/city';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Más recientes' },
@@ -165,7 +166,7 @@ export default function CommunityQAListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Comunidad" description="Preguntas, recomendaciones y conversaciones de la comunidad en Coronel." path={location.pathname + (location.search || '')} />
+      <PageMeta title="Comunidad" description={`Preguntas, recomendaciones y conversaciones de la comunidad en ${CITY_CONFIG.name}.`} path={location.pathname + (location.search || '')} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
@@ -177,7 +178,7 @@ export default function CommunityQAListing() {
                   <Icon name="MessageCircle" size={22} color="var(--color-primary)" />
                   <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Preguntas a la Comunidad</h1>
                 </div>
-                <p className="text-muted-foreground text-sm">Consultas y recomendaciones en Coronel</p>
+                <p className="text-muted-foreground text-sm">Consultas y recomendaciones en {CITY_CONFIG.name}</p>
               </div>
               <Button
                 variant="default"

@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
+import { CITY_CONFIG } from 'config/city';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: 'bg-purple-100 text-purple-700' },
@@ -16,7 +17,7 @@ export default function EventHero({ event }) {
       {event?.imageUrl ? (
         <img
           src={event?.imageUrl}
-          alt={`${event?.title} - evento en ${event?.venueName}, Coronel`}
+          alt={`${event?.title} - evento en ${event?.venueName}, ${CITY_CONFIG.name}`}
           className="w-full h-full object-cover"
           style={{ maxHeight: '420px', minHeight: '280px' }}
         />

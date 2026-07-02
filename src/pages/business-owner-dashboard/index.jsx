@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import OwnerBusinessCard from './components/OwnerBusinessCard';
 import EditBusinessModal from '../user-business-dashboard/components/EditBusinessModal';
 import ReviewsTab from './components/ReviewsTab';
+import { CITY_CONFIG } from '../../config/city';
 import StatsTab from './components/StatsTab';
 import MessagesTab from './components/MessagesTab';
 
@@ -172,7 +173,7 @@ export default function BusinessOwnerDashboard() {
                         <Icon name="Building2" size={32} color="var(--color-muted-foreground)" />
                       </div>
                       <h3 className="font-heading font-semibold text-foreground mb-2">Aún no tienes negocios registrados</h3>
-                      <p className="text-sm text-muted-foreground mb-6">Publica tu negocio en el directorio de Coronel y llega a más clientes.</p>
+                      <p className="text-sm text-muted-foreground mb-6">Publica tu negocio en el directorio de {CITY_CONFIG.name} y llega a más clientes.</p>
                       <Link
                         to="/publicar-negocio"
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-medium transition-colors"

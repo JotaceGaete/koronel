@@ -11,6 +11,7 @@ import SortBar from './components/SortBar';
 import AdCardSkeleton from './components/AdCardSkeleton';
 import EmptyState from './components/EmptyState';
 import { adService } from '../../services/adService';
+import { CITY_CONFIG } from '../../config/city';
 
 const DEFAULT_FILTERS = { priceRange: 'all', dateFilter: 'all', condition: 'all' };
 const PAGE_SIZE = 8;
@@ -100,14 +101,14 @@ export default function ClassifiedAdsListing() {
   const listingPath = location.pathname + (location.search || '');
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Clasificados" description="Avisos clasificados en Coronel. Compra, vende y encuentra lo que buscas." path={listingPath} />
+      <PageMeta title="Clasificados" description={`Avisos clasificados en ${CITY_CONFIG.name}. Compra, vende y encuentra lo que buscas.`} path={listingPath} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
         <div style={{ background: 'var(--color-primary)' }} className="px-4 md:px-6 lg:px-8 py-6 md:py-8">
           <div className="max-w-7xl mx-auto">
             <h1 className="font-heading font-bold text-xl md:text-2xl lg:text-3xl text-white mb-4">
-              Clasificados en Coronel
+              Clasificados en {CITY_CONFIG.name}
             </h1>
             <form onSubmit={handleSearch} className="flex gap-2">
               <div className="flex-1 flex items-center bg-card rounded-md overflow-hidden border border-border shadow-sm h-11">

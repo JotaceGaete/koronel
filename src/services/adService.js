@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { CITY_CONFIG } from '../config/city';
 
-const R2_PUBLIC = import.meta.env?.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl';
+const R2_PUBLIC = CITY_CONFIG.mediaBaseUrl;
 
 // Helper: generate a simple verification token
 function generateToken() {
@@ -218,7 +219,7 @@ export const adService = {
         condition: formData?.condition || null,
         phone: formData?.phone,
         whatsapp: formData?.whatsapp || false,
-        location: formData?.location || 'Coronel',
+        location: formData?.location || CITY_CONFIG.name,
         duration_days: parseInt(formData?.duration || 30),
         expires_at: expiresAt?.toISOString(),
         ad_status: isGuest ? 'pending' : 'active',

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { formatCurrency } from 'utils/format';
+import { CITY_CONFIG } from 'config/city';
 
 export default function FeaturedContentCarousel({
   items = [],
@@ -173,7 +174,7 @@ function BusinessCard({ item }) {
       </div>
       <div className="p-3 flex flex-col flex-1 min-w-0">
         <h3 className="font-heading font-semibold text-base text-card-foreground line-clamp-1 mb-0.5">{item?.name}</h3>
-        <p className="text-xs text-muted-foreground mb-3">Coronel</p>
+        <p className="text-xs text-muted-foreground mb-3">{CITY_CONFIG.name}</p>
         <div className="mt-auto flex flex-col gap-2">
           <Link
             to={`/business-profile-page?id=${item?.id}`}

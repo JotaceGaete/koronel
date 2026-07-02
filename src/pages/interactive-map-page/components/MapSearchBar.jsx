@@ -4,7 +4,7 @@ import Icon from 'components/AppIcon';
 const CATEGORIES = [
   { value: 'all', label: 'Todas' },
   { value: 'supermercados', label: 'Supermercados' },
-  { value: 'farmacias', label: 'Farmacias' },
+  { value: 'salud-farmacia', label: 'Farmacias' },
   { value: 'restaurantes', label: 'Restaurantes' },
   { value: 'iglesias-templos', label: 'Iglesias' },
   { value: 'church', label: 'Iglesia' },
@@ -16,7 +16,7 @@ const CATEGORIES = [
 const BUSINESS_CATEGORIES = [
   { value: 'all', label: 'Todas' },
   { value: 'supermercados', label: 'Supermercados' },
-  { value: 'farmacias', label: 'Farmacias' },
+  { value: 'salud-farmacia', label: 'Farmacias' },
   { value: 'restaurantes', label: 'Restaurantes' },
   { value: 'iglesias-templos', label: 'Iglesias' },
   { value: 'ferreterias', label: 'Ferreterías' },

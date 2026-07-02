@@ -13,13 +13,44 @@ Este documento continúa `docs/diseno-multi-ciudad.md` con las decisiones ya con
 
 Cada migración de abajo es: **aditiva** (no borra ni reescribe nada existente salvo donde se indica explícitamente), **reversible** (rollback incluido), y **verificable** (query de verificación incluida). El orden importa por las dependencias de FK — están numeradas en el orden exacto en que deben aplicarse.
 
-Los nombres de archivo usan el mismo formato que ya usa el proyecto (`YYYYMMDDHHMMSS_descripcion.sql`). El timestamp exacto se fija recién cuando se cree el archivo de verdad (será el momento real de creación, no los que aparecen aquí — estos son ilustrativos para mostrar el orden).
+Los nombres de archivo usan el mismo formato que ya usa el proyecto (`YYYYMMDDHHMMSS_descripcion.sql`). **Actualización: los 7 archivos ya fueron creados en `supabase/migrations/` con estos nombres exactos, después de las verificaciones de abajo — ver el diff al final de este documento. Ninguno fue aplicado/ejecutado contra ninguna base de datos.**
+
+---
+
+## Verificaciones pedidas antes de crear los archivos
+
+**Importante: no tengo acceso a la base de datos en vivo de Supabase en este entorno.** Todo lo que sigue está verificado contra el **historial de migraciones del repositorio** (que es lo único a lo que tengo acceso), no contra el estado real de producción. Si la base de datos de producción tiene cambios manuales que no pasaron por una migración versionada, estas verificaciones no los detectan.
+
+### 1. Email del admin de producción
+
+`carlos@coronellocal.cl` aparece de forma consistente en el historial: se crea como usuario mock en `20260304161514_coronellocal_schema.sql` y se promueve explícitamente a `role='admin'` en `20260304163200_admin_tables.sql`. Eso es evidencia razonable de que es (o fue) el admin real, pero no es una confirmación contra la base viva — pudo haberse creado otra cuenta admin después, o esa cuenta pudo cambiar de email.
+
+**Cambio al plan**: en vez de depender de saber el email exacto, reescribí el `INSERT` de A2 para que use la **misma condición que ya usan las funciones `is_admin()`/`is_admin_user()` existentes** (`raw_user_meta_data->>'role' = 'admin' OR raw_app_meta_data->>'role' = 'admin'`), y otorgue el rol de ciudad a **todo usuario que hoy cumpla esa condición**, sea cual sea su email. Es más robusto: no importa si el admin real es Carlos, otra persona, o si hay más de un admin global hoy — todos quedan con rol `admin` en Coronel automáticamente, sin tener que acertarle a un string. Ver A2 actualizado abajo.
+
+### 2. Nombre de la función `updated_at`
+
+Confirmado: `public.set_updated_at()` existe desde la migración inicial (`20260304161514_coronellocal_schema.sql`, línea 173), y ya la usan los triggers de `businesses` y `classified_ads`. El nombre que usa A1 es correcto — sin cambios.
+
+(Nota al margen, no bloqueante: existe también `public.set_review_updated_at()`, una función *distinta* con el mismo propósito pero específica de `business_reviews` — no es la que necesito, y no la uso.)
+
+### 3. Constraint única en `categories.name_key`
+
+Confirmado: `name_key TEXT NOT NULL UNIQUE` está declarado inline en la definición original de la tabla (`20260304161514_coronellocal_schema.sql`, línea 33) y nunca se altera ni se elimina en ninguna migración posterior — de hecho la propia migración de jerarquía de categorías (`20260310000000_business_category_hierarchy.sql`) ya depende de este mismo `ON CONFLICT (name_key)` para su seed, así que está probado en el propio historial del proyecto. A5 puede usar `ON CONFLICT (name_key) DO NOTHING` sin cambios.
+
+### 4. Hallazgo no pedido, pero relevante para A1/A2: hay dos funciones de admin duplicadas
+
+Al verificar el punto 1 encontré algo que no estaba buscando: el proyecto tiene **dos funciones de "es admin" con lógica idéntica pero nombres distintos**, creadas en migraciones separadas sin que la segunda supiera que la primera ya existía:
+
+- `public.is_admin()` — definida en `20260304163200_admin_tables.sql`, usada por las políticas de `categories`, `businesses`, `classified_ads`, `business_claims`, `featured_listings`, `user_profiles`.
+- `public.is_admin_user()` — definida (dos veces, en migraciones distintas) en `20260305_community_qa.sql` y `20260306000000_business_status.sql`, usada por las políticas de `community_posts`, `community_replies`, `community_votes`, `suggested_businesses`, `community_question_images`.
+
+Ambas funciones son byte-idénticas en su lógica (mismo `SELECT EXISTS (...)`, misma condición `raw_user_meta_data->>'role' = 'admin' OR raw_app_meta_data->>'role' = 'admin'`), así que no hay riesgo de que devuelvan resultados distintos para el mismo usuario — pero es la misma clase de duplicación silenciosa que venimos encontrando en frontend, ahora en el esquema. **No lo toco en esta fase** (consolidarlas es un cambio de RLS a tablas existentes, fuera del alcance de Fase A/B), pero es la razón por la que A1/A2 usan específicamente `is_admin()` y no `is_admin_user()`: es la que gobierna `categories`, `businesses`, `classified_ads` y `featured_listings` — las tablas más directamente relacionadas con lo que `community_cities`/`community_city_roles` están extendiendo. Queda anotado como candidato a limpieza para cuando se aborde el reemplazo de RLS en Fase D.
 
 ---
 
 ## Antes de aplicar nada: checklist
 
-- [ ] Confirmar el email exacto de la cuenta que debe quedar como `admin` de Coronel en el nuevo modelo (asumo `carlos@coronellocal.cl`, el mismo que ya es `admin` global hoy — avisar si es otro).
+- [x] ~~Confirmar el email exacto del admin~~ — ya no hace falta: A2 (ver abajo) otorga el rol a todo usuario que ya cumpla la condición de `is_admin()`/`is_admin_user()` hoy, sin depender de un email específico.
 - [ ] Confirmar que `koronel.cl` es el valor correcto para `community_cities.domain` (coincide con `VITE_SITE_DOMAIN`/`.env.example` actual).
 - [ ] Idealmente, aplicar primero en un proyecto Supabase de *staging* o una copia de desarrollo antes que en el proyecto de producción de `koronel.cl`, aunque cada migración individual ya está diseñada para no romper nada si se aplica directo. Decisión tuya — lo dejo como recomendación, no como bloqueo.
 - [ ] Tener a mano acceso al SQL Editor de Supabase (o `supabase db push` vía CLI) para ejecutar las verificaciones después de cada paso.
@@ -169,15 +200,16 @@ ON public.community_city_roles FOR ALL TO authenticated
 USING (public.is_admin())
 WITH CHECK (public.is_admin());
 
--- Seed: otorgar rol 'admin' de Coronel al mismo usuario que hoy es admin global.
--- Usa lookup por email (no UUID hardcodeado) para portabilidad entre entornos.
--- Si el email no existe en este entorno, el INSERT ... SELECT no inserta nada
--- (no falla) — verificar con la query de abajo.
+-- Seed: otorgar rol 'admin' de Coronel a todo usuario que YA cumpla la
+-- condición de admin global existente (misma condición que is_admin()/
+-- is_admin_user()). No depende de conocer un email específico: sea quien
+-- sea el/los admin(es) reales hoy en este entorno, quedan cubiertos.
 INSERT INTO public.community_city_roles (city_id, user_id, role)
 SELECT cc.id, au.id, 'admin'
 FROM public.community_cities cc
 CROSS JOIN auth.users au
-WHERE cc.slug = 'coronel' AND au.email = 'carlos@coronellocal.cl'
+WHERE cc.slug = 'coronel'
+  AND (au.raw_user_meta_data->>'role' = 'admin' OR au.raw_app_meta_data->>'role' = 'admin')
 ON CONFLICT (city_id, user_id, role) DO NOTHING;
 ```
 
@@ -188,10 +220,13 @@ SELECT cr.role, au.email, cc.slug
 FROM public.community_city_roles cr
 JOIN auth.users au ON au.id = cr.user_id
 JOIN public.community_cities cc ON cc.id = cr.city_id;
--- Esperado: 1 fila → admin | carlos@coronellocal.cl | coronel
--- Si devuelve 0 filas: el email de la cuenta admin real no coincide con
--- 'carlos@coronellocal.cl' en este entorno. Corregir el email en el INSERT
--- y volver a correrlo (es idempotente por el ON CONFLICT).
+-- Esperado: al menos 1 fila (una por cada admin global que exista hoy),
+-- todas con role='admin', slug='coronel'.
+-- Si devuelve 0 filas: no hay ningún usuario con role='admin' en
+-- raw_user_meta_data/raw_app_meta_data en este entorno — hay que revisar
+-- manualmente quién debería ser admin de Coronel y otorgarle el rol con un
+-- INSERT directo antes de continuar a Fase D (sin admin de ciudad, el swap
+-- de RLS futuro dejaría a Coronel sin nadie que pueda administrar contenido).
 ```
 
 **Rollback:**
@@ -471,6 +506,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_post_tracking_unique_by_city
 ```
 
 Nota deliberada: esta migración **no borra** `idx_daily_post_tracking_unique` (el índice único viejo, sin `city_id`). Mientras exista una sola ciudad, ambos índices son redundantes pero no conflictivos (las mismas filas cumplen ambas restricciones). El índice viejo se elimina recién en una migración posterior — separada, trivial, después de confirmar en producción que el nuevo funciona y que el código que lo usa (`check_post_cooldown`, `check_daily_post_limit`, `increment_daily_post_count` — funciones RPC existentes) fue actualizado para incluir `city_id`. Actualizar esas 3 funciones RPC es cambio de **lógica**, no de esquema aditivo, así que queda fuera de esta fase a propósito.
+
+**Consecuencia explícita de dejarlo así (para que quede sin ambigüedad):** las 3 funciones RPC (`check_post_cooldown`, `check_daily_post_limit`, `increment_daily_post_count`) siguen sin recibir ni usar `city_id` después de esta migración — siguen contando publicaciones por `(identifier, identifier_type, post_date)` únicamente, exactamente igual que hoy. Es decir: **el límite diario/cooldown anti-spam sigue siendo global entre ciudades después de B2**, no por ciudad, a pesar de que la columna `city_id` ya exista en la tabla. La columna queda poblada y lista, pero el límite real no se vuelve "por ciudad" hasta que una fase posterior (fuera de este plan) actualice esas 3 funciones para incluir `city_id` en su lógica de conteo y recién ahí se elimine el índice viejo. Con una sola ciudad activa esto no tiene ningún efecto observable; el riesgo aparece únicamente cuando exista una segunda ciudad activa y ese trabajo de RPC todavía no se haya hecho — por eso conviene resolverlo antes de activar la Fase E (segunda ciudad), no antes de Fase B.
 
 **Verificación:**
 

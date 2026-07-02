@@ -6,7 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../../services/geocodingService';
 import { PHONE_PLACEHOLDER } from '../../../utils/phone';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -84,6 +84,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
+  const CITY_CONFIG = useCity();
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);

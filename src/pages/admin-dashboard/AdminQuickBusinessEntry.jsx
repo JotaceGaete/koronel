@@ -9,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { adminBusinessService } from '../../services/adminService';
 import { businessService } from '../../services/businessService';
 import { geocode } from '../../services/geocodingService';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import { PHONE_PLACEHOLDER } from '../../utils/phone';
 
 const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
@@ -38,6 +38,7 @@ const INITIAL = {
 };
 
 export default function AdminQuickBusinessEntry() {
+  const CITY_CONFIG = useCity();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);

@@ -5,7 +5,7 @@ import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { cityCountryLabel } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const BATCH_SIZE = 5;
 
@@ -43,9 +43,11 @@ async function getAuthHeaders() {
 }
 
 export default function AdminImportBusinesses() {
+  const CITY_CONFIG = useCity();
+  const cityCountryLabel = `${CITY_CONFIG.name}, ${CITY_CONFIG.country}`;
   const { user, userProfile, loading, profileLoading } = useAuth();
   const [query, setQuery] = useState('');
-  const [location, setLocation] = useState(cityCountryLabel());
+  const [location, setLocation] = useState(cityCountryLabel);
   const [places, setPlaces] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -209,7 +211,7 @@ export default function AdminImportBusinesses() {
             label="Ubicacion"
             value={location}
             onChange={(event) => setLocation(event.target.value)}
-            placeholder={cityCountryLabel()}
+            placeholder={cityCountryLabel}
             disabled={searching || importing}
           />
           <Button

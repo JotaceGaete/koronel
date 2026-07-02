@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { formatCurrency } from 'utils/format';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 export default function FeaturedContentCarousel({
   items = [],
@@ -146,6 +146,7 @@ export default function FeaturedContentCarousel({
 }
 
 function BusinessCard({ item }) {
+  const CITY_CONFIG = useCity();
   const hasContact = item?.phone || item?.whatsapp;
   return (
     <article className="flex flex-col h-full bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">

@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { mapService } from '../../../services/mapService';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../../config/eventCategories';
 
 export default function EventBottomSheet({ event, onClose }) {
+  const CITY_CONFIG = useCity();
   if (!event) return null;
 
   const cat = CATEGORY_CONFIG?.[event?.category] || { label: event?.category || '', color: '#6b7280', bg: '#f3f4f6' };

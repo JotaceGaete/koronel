@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { businessService } from '../../services/businessService';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -20,6 +20,7 @@ export default function SmartSearchInput({
   onChange,
   onSearch,
 }) {
+  const CITY_CONFIG = useCity();
   const navigate = useNavigate();
   const [internalQuery, setInternalQuery] = useState('');
   const isControlled = value !== undefined && onChange !== undefined;

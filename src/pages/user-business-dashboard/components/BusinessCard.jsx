@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
 import { formatDate } from '../../../utils/format';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -13,6 +13,7 @@ const STATUS_CONFIG = {
 };
 
 export default function BusinessCard({ business, onEdit }) {
+  const CITY_CONFIG = useCity();
   const status = business?.status || 'pending';
   const statusCfg = STATUS_CONFIG?.[status] || STATUS_CONFIG?.pending;
 

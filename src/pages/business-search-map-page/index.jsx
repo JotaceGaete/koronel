@@ -5,11 +5,12 @@ import Icon from 'components/AppIcon';
 import { businessService } from '../../services/businessService';
 import SearchMapLeftPanel from './components/SearchMapLeftPanel';
 import SearchMapRightPanel from './components/SearchMapRightPanel';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 const LIMIT = 50;
 
 export default function BusinessSearchMapPage() {
+  const CITY_CONFIG = useCity();
   const location = useLocation();
   const navigate = useNavigate();
 

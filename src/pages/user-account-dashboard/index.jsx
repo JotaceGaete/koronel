@@ -13,9 +13,10 @@ import MyMessagesTab from './components/MyMessagesTab';
 import { useAuth } from '../../contexts/AuthContext';
 import { messageService } from '../../services/messageService';
 import { formatDate } from '../../utils/format';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 export default function UserAccountDashboard() {
+  const CITY_CONFIG = useCity();
   const [activeTab, setActiveTab] = useState('ads');
   const [unreadCount, setUnreadCount] = useState(0);
   const [toast, setToast] = useState(null);

@@ -8,9 +8,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
 import BusinessCard from './components/BusinessCard';
 import EditBusinessModal from './components/EditBusinessModal';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 export default function UserBusinessDashboard() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState([]);

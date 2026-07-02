@@ -5,7 +5,7 @@ import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { businessService } from '../../../services/businessService';
 import { formatDate } from '../../../utils/format';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -21,6 +21,7 @@ const CLAIM_STATUS_CONFIG = {
 };
 
 export default function MyBusinessesTab({ userId }) {
+  const CITY_CONFIG = useCity();
   const [businesses, setBusinesses] = useState([]);
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);

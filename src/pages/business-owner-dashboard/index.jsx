@@ -10,7 +10,7 @@ import { supabase } from '../../lib/supabase';
 import OwnerBusinessCard from './components/OwnerBusinessCard';
 import EditBusinessModal from '../user-business-dashboard/components/EditBusinessModal';
 import ReviewsTab from './components/ReviewsTab';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import StatsTab from './components/StatsTab';
 import MessagesTab from './components/MessagesTab';
 
@@ -22,6 +22,7 @@ const TABS = [
 ];
 
 export default function BusinessOwnerDashboard() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('businesses');

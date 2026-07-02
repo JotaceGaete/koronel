@@ -9,13 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ShareButtons from 'components/ui/ShareButtons';
 import { formatDate, formatTime } from '../../utils/format';
 import { CITY_CONFIG } from '../../config/city';
-
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff', icon: 'Church' },
-  courses: { label: 'Cursos', color: '#0891b2', bg: '#e0f2fe', icon: 'BookOpen' },
-  meetups: { label: 'Encuentros', color: '#059669', bg: '#d1fae5', icon: 'Users' },
-  other: { label: 'Otro', color: '#d97706', bg: '#fef3c7', icon: 'Tag' }
-};
+import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../config/eventCategories';
 
 const FALLBACK_EVENT = {
   id: '1',

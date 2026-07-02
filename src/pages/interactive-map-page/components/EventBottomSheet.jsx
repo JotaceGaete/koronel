@@ -4,13 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { mapService } from '../../../services/mapService';
 import { CITY_CONFIG } from '../../../config/city';
-
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
-  courses: { label: 'Cursos', color: '#0891b2', bg: '#e0f2fe' },
-  meetups: { label: 'Encuentros', color: '#059669', bg: '#d1fae5' },
-  other: { label: 'Otro', color: '#d97706', bg: '#fef3c7' },
-};
+import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../../config/eventCategories';
 
 export default function EventBottomSheet({ event, onClose }) {
   if (!event) return null;

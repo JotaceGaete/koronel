@@ -5,6 +5,7 @@ import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { eventService } from '../../../services/eventService';
 import { CITY_CONFIG } from '../../../config/city';
+import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../../config/eventCategories';
 
 const FALLBACK_EVENTS = [
 {
@@ -45,12 +46,6 @@ const FALLBACK_EVENTS = [
 }];
 
 
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
-  courses: { label: 'Cursos', color: '#0891b2', bg: '#e0f2fe' },
-  meetups: { label: 'Encuentros', color: '#059669', bg: '#d1fae5' },
-  other: { label: 'Otro', color: '#d97706', bg: '#fef3c7' }
-};
 
 function EventCard({ event }) {
   const formatted = eventService?.formatEvent(event);

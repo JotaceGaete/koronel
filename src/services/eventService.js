@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
 import { formatDate, formatTime } from '../utils/format';
+import { EVENT_CATEGORY_CONFIG } from '../config/eventCategories';
 
 export const eventService = {
   async getAll({ category, search, status = 'approved', upcoming = true, page = 1, pageSize = 12 } = {}) {
@@ -195,25 +196,11 @@ export const eventService = {
     });
     const timeStr = formatTime(start);
 
-    const CATEGORY_LABELS = {
-      church: 'Iglesia',
-      courses: 'Cursos',
-      meetups: 'Encuentros',
-      other: 'Otro',
-    };
-
-    const CATEGORY_COLORS = {
-      church: '#7c3aed',
-      courses: '#0891b2',
-      meetups: '#059669',
-      other: '#d97706',
-    };
-
     // Capitalize first letter for unknown/dynamic categories
     const rawCategory = event?.category || 'other';
-    const categoryLabel = CATEGORY_LABELS?.[rawCategory]
+    const categoryLabel = EVENT_CATEGORY_CONFIG?.[rawCategory]?.label
       || (rawCategory?.charAt(0)?.toUpperCase() + rawCategory?.slice(1));
-    const categoryColor = CATEGORY_COLORS?.[rawCategory] || '#6b7280';
+    const categoryColor = EVENT_CATEGORY_CONFIG?.[rawCategory]?.color || '#6b7280';
 
     return {
       ...event,

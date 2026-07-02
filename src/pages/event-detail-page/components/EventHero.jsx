@@ -1,13 +1,7 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import { CITY_CONFIG } from 'config/city';
-
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: 'bg-purple-100 text-purple-700' },
-  courses: { label: 'Cursos', color: 'bg-blue-100 text-blue-700' },
-  meetups: { label: 'Encuentros', color: 'bg-green-100 text-green-700' },
-  other: { label: 'Otro', color: 'bg-gray-100 text-gray-600' },
-};
+import { EVENT_CATEGORY_TAILWIND as CATEGORY_CONFIG } from 'config/eventCategories';
 
 export default function EventHero({ event }) {
   const cat = CATEGORY_CONFIG?.[event?.category] || CATEGORY_CONFIG?.other;

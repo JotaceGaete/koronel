@@ -2,13 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { formatDate, formatTime } from 'utils/format';
-
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: 'bg-purple-100 text-purple-700', icon: 'Church' },
-  courses: { label: 'Cursos', color: 'bg-blue-100 text-blue-700', icon: 'BookOpen' },
-  meetups: { label: 'Encuentros', color: 'bg-green-100 text-green-700', icon: 'Users' },
-  other: { label: 'Otro', color: 'bg-gray-100 text-gray-600', icon: 'Calendar' },
-};
+import { EVENT_CATEGORY_TAILWIND as CATEGORY_CONFIG } from 'config/eventCategories';
 
 export default function EventCard({ event }) {
   const cat = CATEGORY_CONFIG?.[event?.category] || CATEGORY_CONFIG?.other;

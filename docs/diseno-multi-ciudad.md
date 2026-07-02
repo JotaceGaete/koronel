@@ -23,6 +23,11 @@ Evalué dos opciones:
 
 Esta decisión es la base de todo lo demás, así que la marco como el primer punto a confirmar.
 
+> **Convención de nombres del motor de ciudad**: entidades nuevas usan
+> prefijo `community_` o nombres neutrales. Nunca prefijo `wa_` (legado
+> Walinka) — ver decisión y justificación completa en
+> `docs/decision-prefijo-wa.md`.
+
 ### Esquema propuesto
 
 ```sql

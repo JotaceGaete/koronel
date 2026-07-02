@@ -1,9 +1,10 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 import { EVENT_CATEGORY_TAILWIND as CATEGORY_CONFIG } from 'config/eventCategories';
 
 export default function EventHero({ event }) {
+  const CITY_CONFIG = useCity();
   const cat = CATEGORY_CONFIG?.[event?.category] || CATEGORY_CONFIG?.other;
 
   return (

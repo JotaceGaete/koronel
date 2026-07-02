@@ -15,8 +15,9 @@ import ChurchDetails from './components/ChurchDetails';
 import ShareButtons from 'components/ui/ShareButtons';
 import BusinessJobs from './components/BusinessJobs';
 import { businessService } from '../../services/businessService';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
+function buildProfileMocks(CITY_CONFIG) {
 const BUSINESS = {
   id: 1,
   name: "Restaurante El Rincón Chileno",
@@ -139,8 +140,13 @@ const RELATED = [
   imageAlt: "Plato de mariscos frescos con langostinos y choritos sobre mesa de restaurante con decoración marina"
 }];
 
+return { BUSINESS, REVIEWS, RELATED };
+}
+
 
 export default function BusinessProfilePage() {
+  const CITY_CONFIG = useCity();
+  const { BUSINESS, RELATED } = buildProfileMocks(CITY_CONFIG);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [shareToast, setShareToast] = useState(false);

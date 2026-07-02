@@ -8,24 +8,26 @@ import { eventService } from '../../services/eventService';
 import { useAuth } from '../../contexts/AuthContext';
 import ShareButtons from 'components/ui/ShareButtons';
 import { formatDate, formatTime } from '../../utils/format';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../config/eventCategories';
 
-const FALLBACK_EVENT = {
-  id: '1',
-  title: `Feria Gastronómica de ${CITY_CONFIG.name}`,
-  description: 'Gran feria con los mejores sabores de la región. Disfruta de comida típica chilena, mariscos frescos y empanadas artesanales. Entrada liberada para toda la familia.\n\nHabrá stands de más de 30 emprendedores locales, música en vivo y actividades para niños.',
-  category: 'meetups',
-  start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(),
-  end_datetime: new Date(Date.now() + 3 * 86400000 + 6 * 3600000)?.toISOString(),
-  venue_name: `Plaza de Armas de ${CITY_CONFIG.name}`,
-  address: `Plaza de Armas, ${CITY_CONFIG.name}, ${CITY_CONFIG.region}`,
-  address_text: `Plaza de Armas, ${CITY_CONFIG.name}, ${CITY_CONFIG.region}`,
-  image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_14d5880d2-1772645297822.png",
-  contact_whatsapp: `+${CITY_CONFIG.phoneCountryCode}912345678`,
-  status: 'approved',
-  organizer: { name: `Municipalidad de ${CITY_CONFIG.name}` }
-};
+function buildFallbackEvent(CITY_CONFIG) {
+  return {
+    id: '1',
+    title: `Feria Gastronómica de ${CITY_CONFIG.name}`,
+    description: 'Gran feria con los mejores sabores de la región. Disfruta de comida típica chilena, mariscos frescos y empanadas artesanales. Entrada liberada para toda la familia.\n\nHabrá stands de más de 30 emprendedores locales, música en vivo y actividades para niños.',
+    category: 'meetups',
+    start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(),
+    end_datetime: new Date(Date.now() + 3 * 86400000 + 6 * 3600000)?.toISOString(),
+    venue_name: `Plaza de Armas de ${CITY_CONFIG.name}`,
+    address: `Plaza de Armas, ${CITY_CONFIG.name}, ${CITY_CONFIG.region}`,
+    address_text: `Plaza de Armas, ${CITY_CONFIG.name}, ${CITY_CONFIG.region}`,
+    image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_14d5880d2-1772645297822.png",
+    contact_whatsapp: `+${CITY_CONFIG.phoneCountryCode}912345678`,
+    status: 'approved',
+    organizer: { name: `Municipalidad de ${CITY_CONFIG.name}` }
+  };
+}
 
 function formatFullDate(dtStr) {
   if (!dtStr) return '';
@@ -35,6 +37,7 @@ function formatFullDate(dtStr) {
 }
 
 export default function EventDetailPage() {
+  const CITY_CONFIG = useCity();
   const { id } = useParams();
   const { user } = useAuth();
   const [event, setEvent] = useState(null);
@@ -46,7 +49,7 @@ export default function EventDetailPage() {
     if (!id) return;
     setLoading(true);
     eventService?.getById(id)?.then(({ data, error }) => {
-      setEvent(error || !data ? FALLBACK_EVENT : data);
+      setEvent(error || !data ? buildFallbackEvent(CITY_CONFIG) : data);
       setLoading(false);
     });
     eventService?.getUpcoming(4)?.then(({ data }) => {

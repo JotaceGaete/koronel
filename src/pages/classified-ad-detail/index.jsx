@@ -9,9 +9,10 @@ import { messageService } from '../../services/messageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate as formatDateBase } from '../../utils/format';
 import { toDialablePhone } from '../../utils/phone';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 
 export default function ClassifiedAdDetail() {
+  const CITY_CONFIG = useCity();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();

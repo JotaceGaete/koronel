@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 
 import Button from 'components/ui/Button';
-import { CITY_CONFIG } from 'config/city';
+import { useCity } from 'contexts/CityContext';
 
 export default function EventActions({ event }) {
+  const CITY_CONFIG = useCity();
   const [copied, setCopied] = useState(false);
 
   const handleWhatsApp = () => {

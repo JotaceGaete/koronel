@@ -9,7 +9,7 @@ import Button from 'components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityService } from '../../services/communityService';
 import QuestionImageUpload from './components/QuestionImageUpload';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import { communitySectorOptions } from '../../config/sectors';
 
 // Fix Leaflet icon
@@ -19,8 +19,6 @@ L?.Icon?.Default?.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
-
-const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
 
 const SECTORS = communitySectorOptions();
 
@@ -36,6 +34,8 @@ function PinDropper({ pin, onPinDrop }) {
 export default function PostCommunityQuestionForm() {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const CITY_CONFIG = useCity();
+  const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
   const [formData, setFormData] = useState({ title: '', body: '', sector: '' });
   const [pin, setPin] = useState(null);
   const [errors, setErrors] = useState({});

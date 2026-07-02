@@ -3,9 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { CITY_CONFIG } from '../../../config/city';
+import { useCity } from '../../../contexts/CityContext';
 
-const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
 const DEFAULT_ZOOM = 13;
 
 // Inner component to expose map instance via ref
@@ -24,6 +23,8 @@ function MapController({ flyTarget, onMapReady }) {
 
 export default function SearchMapRightPanel({ businesses, selectedId, onMarkerClick, flyTarget, onMapReady }) {
   const navigate = useNavigate();
+  const CITY_CONFIG = useCity();
+  const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
   const markerRefs = useRef({});
 
   // Open popup when selectedId changes

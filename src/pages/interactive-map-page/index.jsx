@@ -11,10 +11,9 @@ import EventBottomSheet from './components/EventBottomSheet';
 import UpcomingEventsPanel from './components/UpcomingEventsPanel';
 import { BusinessMarker, EventMarker, CommunityPostMarker } from './components/MapMarkers';
 import { Link } from 'react-router-dom';
-import { CITY_CONFIG } from '../../config/city';
+import { useCity } from '../../contexts/CityContext';
 import { SECTOR_COLORS_PALETTE_A } from '../../config/sectors';
 
-const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
 const DEFAULT_ZOOM = 14;
 
 // Fix Leaflet default icon issue with bundlers
@@ -77,6 +76,8 @@ function CommunityPostBottomSheet({ post, onClose }) {
 }
 
 export default function InteractiveMapPage() {
+  const CITY_CONFIG = useCity();
+  const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
   const [businesses, setBusinesses] = useState([]);
   const [events, setEvents] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);

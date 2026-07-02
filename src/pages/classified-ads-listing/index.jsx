@@ -38,6 +38,7 @@ export default function ClassifiedAdsListing() {
     setLoading(true);
     const currentPage = resetPage ? 1 : page;
     const { data, count, error } = await adService?.getAll({
+      listingType: 'clasificados',
       category: selectedCategory,
       search: searchQuery,
       priceRange: filters?.priceRange,

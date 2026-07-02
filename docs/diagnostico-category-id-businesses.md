@@ -220,15 +220,66 @@ group by category_key
 order by negocios desc;
 ```
 
-## 6. Qué necesito que me compartas
+## 6. Conclusión confirmada
 
-1. Los 6 resultados de la sección 5.
+```sql
+select category_type, count(*) as filas from public.categories group by category_type;
+-- Success. No rows returned.
+```
 
-Con eso identifico con certeza: si el problema raíz es que `categories`
-perdió sus filas de negocio (recuperable con un reseed análogo al de
-avisos clasificados), si además hay negocios con `category_key`
-genuinamente ad-hoc que no corresponden a ninguna categoría formal
-(requiere una decisión de mapeo, no solo un reseed), o ambas cosas a la
-vez — y recién ahí armamos el backfill seguro.
+`GROUP BY` sin ninguna fila en el resultado solo es posible si la tabla
+no tiene **ninguna** fila. **`categories` está completamente vacía —
+0 filas, ni de negocio ni de avisos clasificados.**
 
-No se aplica ningún backfill ni migración todavía.
+Esto es más severo que la hipótesis anterior ("se perdieron las de
+negocio, pero las de avisos siguen"). Lo más probable:
+`20260702000000_reseed_classified_ad_categories_after_incident.sql`
+(la migración que ya escribí para restaurar las 10 categorías de
+avisos) **nunca se ejecutó en producción** — existe en el repo desde
+hace días, pero yo no tengo forma de confirmar que se corrió, y este
+resultado indica que no.
+
+Esto también implica que el formulario "Nuevo aviso" debería estar
+mostrando cero categorías ahora mismo, no solo el mapa — es el mismo
+problema raíz (`categories` vacía) con dos síntomas distintos.
+
+De los 29 negocios con `lat`/`lng` (sección 4), separado del tema
+`categories` vacía:
+- **20 (69%)** tienen `category_key` `null` o `''` — no hay ningún
+  dato de rubro que backfillear para estos, ni siquiera texto libre
+  útil; requieren asignación manual o quedan sin categoría.
+- **9** tienen algún `category_key`, pero solo 2 (`restaurantes`) se
+  parecen a la taxonomía formal — el resto (`mecanicos`,
+  `comida-peruana`, `envases`, `ropa-segunda-seleccion`, `farmacia`,
+  `comida-para-llevar`, `sushi`) son valores ad-hoc que no
+  corresponden a ningún `name_key` de
+  `20260310000000_business_category_hierarchy.sql`.
+
+## 7. Plan (a confirmar antes de escribir ninguna migración)
+
+Dos problemas distintos, dos soluciones distintas:
+
+**A. `categories` vacía** — recuperable con un reseed, mismo patrón que
+ya usamos para avisos clasificados:
+1. Confirmar contigo si el reseed de avisos (`20260702000000`) se
+   corrió o no — si no, correrlo primero, es independiente de esto.
+2. Preparar una migración nueva (timestamp de hoy, aditiva, `ON
+   CONFLICT ... DO UPDATE`, mismo criterio que el reseed de avisos) que
+   restaure las ~40 categorías de negocio con el contenido exacto de
+   `20260310000000_business_category_hierarchy.sql`.
+
+**B. Los 29 negocios con `category_key` ad-hoc o vacío** — no se
+arregla solo repoblando `categories`, porque:
+- Los 20 sin `category_key` no tienen ningún dato de rubro que
+  mapear — quedarían sin categoría hasta que alguien la asigne a mano
+  (vía panel admin, ya con `categories` repoblada).
+- Los 9 con valor ad-hoc necesitan una decisión: ¿mapear cada uno a la
+  categoría formal más parecida (`mecanicos` → `automotriz-mecanica`,
+  `farmacia` → `salud-farmacia`, etc.), o crear categorías nuevas para
+  los rubros que no tienen equivalente formal (`sushi`, `comida-peruana`,
+  `envases`, `ropa-segunda-seleccion`, `comida-para-llevar` no calzan
+  claramente en ninguna categoría de las ~40 originales)?
+
+No implemento ninguna de las dos todavía — a la espera de que confirmes
+lo del reseed de avisos y de tu decisión sobre el punto B antes de
+escribir la migración de categorías de negocio.

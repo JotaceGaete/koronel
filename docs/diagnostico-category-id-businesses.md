@@ -144,18 +144,91 @@ group by b.category_key, c.id, c.name
 order by negocios desc;
 ```
 
-## 4. Qué necesito que me compartas
+## 4. Resultados recibidos — actualización
 
-1. Resultado completo del punto 1 (`information_schema.columns`).
-2. Resultado del punto 2 (aunque sean muchas filas, con que compartas un
-   resumen o las primeras 20-30 alcanza para ver el patrón).
-3. Los 6 conteos del punto 3.
+Se corrieron el punto 1 (schema) y una versión del cruce del punto 3.
+Dos hallazgos:
 
-Con eso identifico con certeza (no con hipótesis): cuál campo tiene el
-rubro real hoy, si el problema es que `category_id` nunca se pobló, si
-en cambio es `category_key` el que está vacío para la mayoría, o si el
-dato real vive en el `category` de texto libre sin ninguna key asociada
-— y recién ahí armamos el backfill seguro (aditivo, con `UPDATE`
-acotado, nunca tocando negocios que ya tengan el campo bien poblado).
+**Error mío a corregir:** mi consulta del punto 2 incluía
+`b.category_type` — esa columna existe en `categories`, **no** en
+`businesses` (confirmado por el schema real recibido, que no la lista).
+Las consultas de la sección 3 más abajo ya no la usan.
+
+**Hallazgo grave, no anticipado:** el cruce `business.category_key`
+contra `categories.name_key` devuelve `category_id_real: null` /
+`category_name_real: null` para **`category_key = 'restaurantes'`** —
+y `restaurantes` **sí es** un `name_key` real, definido explícitamente
+en `20260310000000_business_category_hierarchy.sql:48`
+(`VALUES ('Restaurantes', 'restaurantes', ...)`). Si el join no
+encuentra esa fila, la explicación más simple y consistente con todo lo
+que ya sabemos de esta sesión es: **las ~40 categorías de negocio ya no
+existen en `categories`** — se perdieron con el `DELETE FROM
+public.categories` accidental, y yo solo reseedé las 10 categorías de
+avisos clasificados
+(`20260702000000_reseed_classified_ad_categories_after_incident.sql`),
+dejando explícitamente pendiente el reseed de las categorías de negocio
+en `docs/incidente-delete-categories-produccion.md`. Esto **no está
+confirmado todavía con un conteo directo** — es la hipótesis más fuerte,
+a confirmar con la consulta 1 de la sección 5.
+
+Además, los `category_key` reales que sí aparecen en negocios
+(`mecanicos`, `comida-peruana`, `envases`, `ropa-segunda-seleccion`,
+`farmacia`, `comida-para-llevar`, `sushi`) **no coinciden con ningún
+`name_key` de la jerarquía original** (que usa slugs como
+`automotriz-mecanica`, `salud-farmacia`, etc.). Esto sugiere que esos
+negocios se cargaron por una vía que genera `category_key` a partir de
+texto libre (p. ej. slugificando el nombre de categoría de Google
+Places al importar), sin pasar por el selector jerárquico del panel
+admin — un problema de datos independiente y adicional al de la tabla
+`categories` vacía.
+
+## 5. Consultas pendientes (corregidas, sin `category_type` en `businesses`)
+
+```sql
+-- ¿Cuántas categorías hay hoy, y de qué tipo? (confirma o descarta la hipótesis de arriba)
+select category_type, count(*) as filas
+from public.categories
+group by category_type;
+
+-- ¿Existen hoy las categorías de negocio puntuales que ya sabemos que deberían existir?
+select id, name, name_key, category_type
+from public.categories
+where name_key in ('restaurantes', 'salud-farmacia', 'ferreterias', 'supermercados', 'iglesias-templos');
+
+select count(*) as total_con_coords
+from public.businesses
+where lat is not null and lng is not null;
+
+select count(*) as con_coords_category_id_null
+from public.businesses
+where lat is not null and lng is not null and category_id is null;
+
+select count(*) as con_coords_category_key_null_o_vacio
+from public.businesses
+where lat is not null and lng is not null and (category_key is null or category_key = '');
+
+select count(*) as con_latlong_legacy_pero_sin_lat_lng
+from public.businesses
+where latitude is not null and longitude is not null
+  and (lat is null or lng is null);
+
+-- Todos los category_key distintos en negocios con coords (no solo los primeros 10)
+select category_key, count(*) as negocios
+from public.businesses
+where lat is not null and lng is not null
+group by category_key
+order by negocios desc;
+```
+
+## 6. Qué necesito que me compartas
+
+1. Los 6 resultados de la sección 5.
+
+Con eso identifico con certeza: si el problema raíz es que `categories`
+perdió sus filas de negocio (recuperable con un reseed análogo al de
+avisos clasificados), si además hay negocios con `category_key`
+genuinamente ad-hoc que no corresponden a ninguna categoría formal
+(requiere una decisión de mapeo, no solo un reseed), o ambas cosas a la
+vez — y recién ahí armamos el backfill seguro.
 
 No se aplica ningún backfill ni migración todavía.

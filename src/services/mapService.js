@@ -2,6 +2,144 @@ import { supabase } from '../lib/supabase';
 import { formatDate, formatTime } from '../utils/format';
 import { getActiveCityConfig } from '../config/city';
 
+const BUSINESS_CATEGORY_ALIASES = {
+  farmacias: 'salud-farmacia',
+  farmacia: 'salud-farmacia',
+  supermercado: 'supermercados',
+  supermarkets: 'supermercados',
+  supermarket: 'supermercados',
+  grocery_or_supermarket: 'supermercados',
+};
+
+const BUSINESS_CATEGORY_CHILDREN = {
+  restaurantes: [
+    'restaurantes',
+    'restaurantes-chilena',
+    'restaurantes-pizzeria',
+    'restaurantes-mariscos',
+    'restaurantes-rapida',
+    'restaurantes-cafe',
+    'restaurantes-panaderia',
+  ],
+  salud: [
+    'salud',
+    'salud-dentistas',
+    'salud-medicos',
+    'salud-farmacia',
+    'salud-optica',
+    'salud-psicologia',
+    'salud-kinesiologia',
+    'salud-veterinaria',
+  ],
+  automotriz: [
+    'automotriz',
+    'automotriz-mecanica',
+    'automotriz-lubricentro',
+    'automotriz-electrico',
+    'automotriz-lavado',
+    'automotriz-repuestos',
+  ],
+  belleza: [
+    'belleza',
+    'belleza-peluqueria',
+    'belleza-barberia',
+    'belleza-manicure',
+    'belleza-estetica',
+  ],
+  'servicios-negocio': [
+    'servicios-negocio',
+    'servicios-gasfiteria',
+    'servicios-electricidad',
+    'servicios-construccion',
+    'servicios-jardineria',
+    'servicios-mudanzas',
+    'servicios-seguridad',
+  ],
+  'tecnologia-negocio': [
+    'tecnologia-negocio',
+    'tecnologia-reparacion-pc',
+    'tecnologia-celulares',
+    'tecnologia-redes',
+    'tecnologia-diseno-web',
+  ],
+};
+
+function normalizeText(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+export function normalizeBusinessCategoryFilter(category) {
+  const normalized = normalizeText(category);
+  if (!normalized || normalized === 'all') return null;
+
+  const categoryKey = BUSINESS_CATEGORY_ALIASES?.[normalized] || normalized;
+  const keys = BUSINESS_CATEGORY_CHILDREN?.[categoryKey] || [categoryKey];
+
+  return [...new Set(keys?.filter(Boolean))];
+}
+
+function collectBusinessCategoryKeys(business) {
+  const categoryValues = [
+    business?.category_key,
+    typeof business?.category === 'string' ? business?.category : null,
+    business?.category?.name_key,
+    business?.category?.slug,
+    business?.category?.key,
+    business?.category?.name,
+    typeof business?.rubro === 'string' ? business?.rubro : null,
+    business?.rubro?.name_key,
+    business?.rubro?.slug,
+    business?.rubro?.key,
+    business?.rubro?.name,
+  ];
+
+  [
+    business?.categories,
+    business?.rubros,
+    business?.wa_rubros,
+    business?.business_categories,
+  ]?.forEach(items => {
+    if (Array.isArray(items)) {
+      items?.forEach(item => {
+        if (typeof item === 'string') {
+          categoryValues?.push(item);
+          return;
+        }
+        categoryValues?.push(
+          item?.category_key,
+          item?.name_key,
+          item?.slug,
+          item?.key,
+          item?.name,
+          item?.category?.category_key,
+          item?.category?.name_key,
+          item?.category?.slug,
+          item?.category?.key,
+          item?.category?.name
+        );
+      });
+    }
+  });
+
+  return categoryValues?.flatMap(value => {
+    const normalized = normalizeText(value);
+    if (!normalized) return [];
+    return [normalized, BUSINESS_CATEGORY_ALIASES?.[normalized]]?.filter(Boolean);
+  });
+}
+
+export function businessMatchesCategoryFilter(business, category) {
+  const filterKeys = normalizeBusinessCategoryFilter(category);
+  if (!filterKeys) return true;
+
+  const businessKeys = collectBusinessCategoryKeys(business);
+  return filterKeys?.some(key => businessKeys?.includes(key));
+}
+
 export const mapService = {
   async getBusinessesForMap({ search = '', category = '' } = {}) {
     try {
@@ -13,14 +151,13 @@ export const mapService = {
       if (search?.trim()) {
         query = query?.ilike('name', `%${search}%`);
       }
-      if (category && category !== 'all') {
-        query = query?.eq('category_key', category);
-      }
 
       const { data, error } = await query;
       if (error) throw error;
 
-      const normalized = (data || [])?.filter(b => b?.lat && b?.lng);
+      const normalized = (data || [])
+        ?.filter(b => b?.lat && b?.lng)
+        ?.filter(b => businessMatchesCategoryFilter(b, category));
 
       return { data: normalized, error: null };
     } catch (error) {

@@ -93,6 +93,7 @@ export default function InteractiveMapPage() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [flyTarget, setFlyTarget] = useState(null);
   const [upcomingPanelOpen, setUpcomingPanelOpen] = useState(true);
+  const [mapDebugStats, setMapDebugStats] = useState(null);
   const searchTimeout = useRef(null);
 
   const loadData = useCallback(async (searchVal, catVal) => {
@@ -108,6 +109,15 @@ export default function InteractiveMapPage() {
       setEvents(evResult?.data || []);
       setUpcomingEvents(upResult?.data || []);
       setCommunityPosts(communityResult?.data || []);
+      if (import.meta.env.DEV) {
+        setMapDebugStats({
+          ...(bizResult?.debugStats || {}),
+          loadedBusinesses: bizResult?.debugStats?.total || 0,
+          visibleBusinesses: bizResult?.data?.length || 0,
+          visibleEvents: evResult?.data?.length || 0,
+          visibleCommunity: communityResult?.data?.length || 0,
+        });
+      }
     } catch (e) {
       console.error('Map load error:', e);
     } finally {
@@ -231,6 +241,7 @@ export default function InteractiveMapPage() {
           onToggleCommunity={() => setShowCommunity(v => !v)}
           category={category}
           onCategoryChange={handleCategoryChange}
+          debugStats={mapDebugStats}
         />
 
         {/* Loading indicator */}
@@ -238,6 +249,12 @@ export default function InteractiveMapPage() {
           <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-2 px-3 py-1.5 rounded-full shadow-md text-xs font-medium" style={{ background: 'var(--color-card)', color: 'var(--color-foreground)' }}>
             <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
             Cargando...
+          </div>
+        )}
+
+        {!loading && showBusinesses && businesses?.length === 0 && (category !== 'all' || search?.trim()) && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[500] px-3 py-2 rounded-lg shadow-md border border-border bg-card text-xs text-foreground">
+            No hay negocios visibles en este rubro o busqueda.
           </div>
         )}
 

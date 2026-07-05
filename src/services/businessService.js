@@ -3,8 +3,7 @@ import { uploadFile } from './uploadService';
 import { getActiveCityConfig } from '../config/city';
 import {
   FALLBACK_BUSINESS_CATEGORY_TREE,
-  businessMatchesCategoryFilter,
-  businessMatchesSearchQuery,
+  filterMapItems,
   flattenBusinessCategoryTree,
   normalizeBusinessFilterText,
 } from '../utils/businessCategoryFilter';
@@ -72,9 +71,11 @@ export const businessService = {
       const { data, error } = await query;
       if (error) throw error;
 
-      const filtered = (data || [])
-        ?.filter(b => businessMatchesCategoryFilter(b, category))
-        ?.filter(b => businessMatchesSearchQuery(b, search));
+      const { items: filtered } = filterMapItems(data || [], {
+        activeType: 'business',
+        activeCategory: category,
+        searchTerm: search,
+      });
 
       const sorted = [...filtered]?.sort((a, b) => {
         if (sort === 'rating') return (b?.rating || 0) - (a?.rating || 0);

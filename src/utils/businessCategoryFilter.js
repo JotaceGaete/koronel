@@ -167,25 +167,28 @@ export function flattenBusinessCategoryTree(tree = FALLBACK_BUSINESS_CATEGORY_TR
   ]);
 }
 
-export function normalizeBusinessFilterText(value) {
+export function normalizeSearchText(value) {
   return String(value || '')
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
 }
 
+export const normalizeBusinessFilterText = normalizeSearchText;
+
 export function normalizeBusinessCategoryFilter(category) {
-  const normalized = normalizeBusinessFilterText(category);
+  const normalized = normalizeSearchText(category);
   if (!normalized || normalized === 'all') return null;
 
   const categoryKey = BUSINESS_CATEGORY_ALIASES?.[normalized] || normalized;
   const keys = BUSINESS_CATEGORY_CHILDREN?.[categoryKey] || [categoryKey];
 
-  return [...new Set(keys?.filter(Boolean))];
+  return [...new Set(keys?.map(normalizeSearchText)?.filter(Boolean))];
 }
 
-function collectBusinessCategoryKeys(business) {
+export function getBusinessCategoryKeys(business) {
   const categoryValues = [
     business?.category_key,
     typeof business?.category === 'string' ? business?.category : null,
@@ -229,22 +232,27 @@ function collectBusinessCategoryKeys(business) {
   });
 
   return categoryValues?.flatMap(value => {
-    const normalized = normalizeBusinessFilterText(value);
+    const normalized = normalizeSearchText(value);
     if (!normalized) return [];
     return [normalized, BUSINESS_CATEGORY_ALIASES?.[normalized]]?.filter(Boolean);
   });
+}
+
+export function getBusinessCategoryKey(business) {
+  const keys = getBusinessCategoryKeys(business);
+  return keys?.[1] || keys?.[0] || null;
 }
 
 export function businessMatchesCategoryFilter(business, category) {
   const filterKeys = normalizeBusinessCategoryFilter(category);
   if (!filterKeys) return true;
 
-  const businessKeys = collectBusinessCategoryKeys(business);
+  const businessKeys = getBusinessCategoryKeys(business);
   return filterKeys?.some(key => businessKeys?.includes(key));
 }
 
 export function businessMatchesSearchQuery(business, search) {
-  const terms = normalizeBusinessFilterText(search)
+  const terms = normalizeSearchText(search)
     ?.split(/\s+/)
     ?.filter(Boolean);
   if (!terms?.length) return true;
@@ -255,7 +263,85 @@ export function businessMatchesSearchQuery(business, search) {
     business?.category,
     business?.category_key,
     business?.description,
-  ]?.map(normalizeBusinessFilterText)?.join(' ');
+  ]?.map(normalizeSearchText)?.join(' ');
 
   return terms?.every(term => searchable?.includes(term));
+}
+
+function inferItemType(item) {
+  if (item?.type) return item.type;
+  if (item?.title && item?.sector) return 'community';
+  if (item?.title && (item?.start_datetime || item?.venue_name || item?.organizer_business_id)) return 'event';
+  return 'business';
+}
+
+function itemMatchesSearch(item, searchTerm, type) {
+  const terms = normalizeSearchText(searchTerm)
+    ?.split(/\s+/)
+    ?.filter(Boolean);
+  if (!terms?.length) return true;
+  if (type === 'business') return businessMatchesSearchQuery(item, searchTerm);
+
+  const searchable = [
+    item?.title,
+    item?.name,
+    item?.description,
+    item?.body,
+    item?.address,
+    item?.address_text,
+    item?.venue_name,
+    item?.sector,
+    item?.category,
+  ]?.map(normalizeSearchText)?.join(' ');
+
+  return terms?.every(term => searchable?.includes(term));
+}
+
+function itemMatchesCategory(item, activeCategory, type) {
+  if (!activeCategory || activeCategory === 'all') return true;
+  if (type === 'business') return businessMatchesCategoryFilter(item, activeCategory);
+  if (type === 'event') return normalizeSearchText(item?.category) === normalizeSearchText(activeCategory);
+  return true;
+}
+
+function buildDebugStats(items, visibleItems, filters) {
+  const businessItems = items?.filter(item => inferItemType(item) === 'business') || [];
+  const categoryCounts = businessItems?.reduce((acc, business) => {
+    const key = getBusinessCategoryKey(business) || '(sin categoria)';
+    acc[key] = (acc?.[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const categoriesWithoutBusinesses = flattenBusinessCategoryTree()
+    ?.filter(category => !businessItems?.some(business => businessMatchesCategoryFilter(business, category?.name_key)))
+    ?.map(category => category?.name_key);
+
+  return {
+    activeType: filters?.activeType || 'all',
+    activeCategory: filters?.activeCategory || 'all',
+    searchTerm: filters?.searchTerm || '',
+    total: items?.length || 0,
+    visible: visibleItems?.length || 0,
+    businessTotal: businessItems?.length || 0,
+    categoryCounts,
+    categoriesWithoutBusinesses,
+    businessesWithoutCategory: businessItems
+      ?.filter(business => !getBusinessCategoryKey(business))
+      ?.map(business => ({ id: business?.id, name: business?.name })),
+  };
+}
+
+export function filterMapItems(items = [], filters = {}) {
+  const activeType = filters?.activeType || 'all';
+  const visible = (items || [])?.filter(item => {
+    const type = inferItemType(item);
+    if (activeType !== 'all' && type !== activeType) return false;
+    if (!itemMatchesCategory(item, filters?.activeCategory, type)) return false;
+    return itemMatchesSearch(item, filters?.searchTerm, type);
+  });
+
+  return {
+    items: visible,
+    debugStats: buildDebugStats(items || [], visible, filters),
+  };
 }

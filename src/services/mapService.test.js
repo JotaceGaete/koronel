@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   businessMatchesCategoryFilter,
   businessMatchesSearchQuery,
+  filterMapItems,
+  getBusinessCategoryKey,
   normalizeBusinessCategoryFilter,
+  normalizeSearchText,
 } from '../utils/businessCategoryFilter';
 
 vi.mock('../lib/supabase', () => ({
@@ -10,15 +13,25 @@ vi.mock('../lib/supabase', () => ({
 }));
 
 describe('mapService category filtering', () => {
+  it('normalizes search text accents, case, trim, and spaces', () => {
+    expect(normalizeSearchText('  Restaurante   Peruano Mágico  ')).toBe('restaurante peruano magico');
+  });
+
   it('does not filter when category is all', () => {
     expect(normalizeBusinessCategoryFilter('all')).toBeNull();
     expect(businessMatchesCategoryFilter({ category_key: 'salud-farmacia' }, 'all')).toBe(true);
+    const { items } = filterMapItems([
+      { name: 'Farmacia Generica', category_key: 'farmacia' },
+      { name: 'La Casona de Mirla', category_key: 'restaurantes' },
+    ], { activeType: 'business', activeCategory: 'all' });
+    expect(items).toHaveLength(2);
   });
 
   it('normalizes Farmacias aliases to the real business category key', () => {
     expect(normalizeBusinessCategoryFilter('farmacias')).toEqual(['salud-farmacia']);
     expect(businessMatchesCategoryFilter({ category_key: 'salud-farmacia' }, 'farmacias')).toBe(true);
     expect(businessMatchesCategoryFilter({ category_key: 'farmacia' }, 'salud-farmacia')).toBe(true);
+    expect(getBusinessCategoryKey({ category_key: 'farmacia' })).toBe('salud-farmacia');
   });
 
   it('normalizes supermarket aliases and accented category labels', () => {
@@ -57,5 +70,55 @@ describe('mapService category filtering', () => {
     expect(businessMatchesSearchQuery(business, 'rest peru')).toBe(true);
     expect(businessMatchesSearchQuery(business, 'comida')).toBe(true);
     expect(businessMatchesSearchQuery(business, 'centro')).toBe(true);
+  });
+
+  it('filters map businesses by specific category and exact or partial name', () => {
+    const items = [
+      { name: 'Restaurante Peruano Magico', category_key: null, category: 'establishment' },
+      { name: 'Rincon Minero Restobar', category: 'bar' },
+      { name: 'Farmacia Generica', category_key: 'farmacia' },
+    ];
+
+    expect(filterMapItems(items, {
+      activeType: 'business',
+      activeCategory: 'restaurantes',
+      searchTerm: '',
+    }).items).toHaveLength(1);
+
+    expect(filterMapItems(items, {
+      activeType: 'business',
+      activeCategory: 'all',
+      searchTerm: 'Farmacia Generica',
+    }).items?.[0]?.name).toBe('Farmacia Generica');
+
+    expect(filterMapItems(items, {
+      activeType: 'business',
+      activeCategory: 'all',
+      searchTerm: 'resto',
+    }).items?.[0]?.name).toBe('Rincon Minero Restobar');
+  });
+
+  it('does not break event and community filters', () => {
+    const items = [
+      { type: 'event', title: 'Curso de verano', category: 'courses' },
+      { type: 'community', title: 'Pregunta de barrio', sector: 'Centro' },
+      { type: 'business', name: 'Farmacia Generica', category_key: 'farmacia' },
+    ];
+
+    expect(filterMapItems(items, { activeType: 'event', activeCategory: 'courses' }).items).toHaveLength(1);
+    expect(filterMapItems(items, { activeType: 'community', activeCategory: 'restaurantes' }).items).toHaveLength(1);
+  });
+
+  it('returns empty items and debug stats for nonexistent categories', () => {
+    const result = filterMapItems([
+      { name: 'Farmacia Generica', category_key: 'farmacia' },
+    ], {
+      activeType: 'business',
+      activeCategory: 'no-existe',
+    });
+
+    expect(result.items).toEqual([]);
+    expect(result.debugStats.visible).toBe(0);
+    expect(result.debugStats.total).toBe(1);
   });
 });

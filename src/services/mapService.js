@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { formatDate, formatTime } from '../utils/format';
 import { getActiveCityConfig } from '../config/city';
-import { businessMatchesCategoryFilter, businessMatchesSearchQuery } from '../utils/businessCategoryFilter';
+import { filterMapItems } from '../utils/businessCategoryFilter';
 
 export const mapService = {
   async getBusinessesForMap({ search = '', category = '' } = {}) {
@@ -14,12 +14,14 @@ export const mapService = {
       const { data, error } = await query;
       if (error) throw error;
 
-      const normalized = (data || [])
-        ?.filter(b => b?.lat && b?.lng)
-        ?.filter(b => businessMatchesSearchQuery(b, search))
-        ?.filter(b => businessMatchesCategoryFilter(b, category));
+      const withCoords = (data || [])?.filter(b => b?.lat && b?.lng);
+      const { items, debugStats } = filterMapItems(withCoords, {
+        activeType: 'business',
+        activeCategory: category,
+        searchTerm: search,
+      });
 
-      return { data: normalized, error: null };
+      return { data: items, debugStats, error: null };
     } catch (error) {
       console.error('mapService.getBusinessesForMap error:', error);
       return { data: [], error };

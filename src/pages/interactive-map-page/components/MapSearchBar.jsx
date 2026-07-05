@@ -41,6 +41,7 @@ export default function MapSearchBar({
   onToggleCommunity,
   category,
   onCategoryChange,
+  debugStats,
 }) {
   const categoryOptions = showBusinesses && !showEvents
     ? BUSINESS_CATEGORIES
@@ -137,6 +138,27 @@ export default function MapSearchBar({
           </button>
         ))}
       </div>
+
+      {import.meta.env.DEV && debugStats && (
+        <div className="mt-2 rounded-lg border border-border bg-card/95 px-3 py-2 text-[11px] text-muted-foreground shadow-sm">
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            <span>Total negocios: <strong className="text-foreground">{debugStats?.loadedBusinesses ?? debugStats?.businessTotal ?? 0}</strong></span>
+            <span>Visibles: <strong className="text-foreground">{debugStats?.visibleBusinesses ?? debugStats?.visible ?? 0}</strong></span>
+            <span>Filtro: <strong className="text-foreground">{debugStats?.activeCategory || 'all'}</strong></span>
+            <span>Busqueda: <strong className="text-foreground">{debugStats?.searchTerm || '-'}</strong></span>
+            <span>Eventos: <strong className="text-foreground">{debugStats?.visibleEvents ?? 0}</strong></span>
+            <span>Comunidad: <strong className="text-foreground">{debugStats?.visibleCommunity ?? 0}</strong></span>
+          </div>
+          <div className="mt-1 truncate">
+            Rubros: {Object.entries(debugStats?.categoryCounts || {})?.map(([key, count]) => `${key}:${count}`)?.join(', ') || '-'}
+          </div>
+          {debugStats?.businessesWithoutCategory?.length > 0 && (
+            <div className="mt-1 truncate">
+              Sin categoria efectiva: {debugStats.businessesWithoutCategory?.map(b => b?.name)?.join(', ')}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

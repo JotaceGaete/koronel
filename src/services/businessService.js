@@ -1,6 +1,13 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
 import { getActiveCityConfig } from '../config/city';
+import {
+  FALLBACK_BUSINESS_CATEGORY_TREE,
+  businessMatchesCategoryFilter,
+  businessMatchesSearchQuery,
+  flattenBusinessCategoryTree,
+  normalizeBusinessFilterText,
+} from '../utils/businessCategoryFilter';
 
 const BUSINESS_COLUMNS = new Set([
   'owner_id',
@@ -50,14 +57,11 @@ export const businessService = {
       // Check premium expiry before fetching
       await businessService?.checkPremiumExpiry();
 
-      let query = supabase?.from('businesses')?.select('*, business_images(storage_path, alt_text, is_primary)', { count: 'exact' })?.in('status', ['published', 'premium']);
+      let query = supabase
+        ?.from('businesses')
+        ?.select('*, business_images(storage_path, alt_text, is_primary)')
+        ?.in('status', ['published', 'premium']);
 
-      if (category && category !== 'all') {
-        query = query?.eq('category_key', category);
-      }
-      if (search?.trim()) {
-        query = query?.ilike('name', `%${search}%`);
-      }
       if (rating && rating !== 'all') {
         query = query?.gte('rating', parseFloat(rating));
       }
@@ -65,22 +69,23 @@ export const businessService = {
         query = query?.eq('is_open', true);
       }
 
-      if (sort === 'rating') {
-        query = query?.order('rating', { ascending: false });
-      } else if (sort === 'newest') {
-        query = query?.order('created_at', { ascending: false });
-      } else {
-        // Premium first, then featured, then rating
-        query = query?.order('featured', { ascending: false })?.order('rating', { ascending: false });
-      }
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const filtered = (data || [])
+        ?.filter(b => businessMatchesCategoryFilter(b, category))
+        ?.filter(b => businessMatchesSearchQuery(b, search));
+
+      const sorted = [...filtered]?.sort((a, b) => {
+        if (sort === 'rating') return (b?.rating || 0) - (a?.rating || 0);
+        if (sort === 'newest') return new Date(b?.created_at || 0) - new Date(a?.created_at || 0);
+        if ((b?.featured ? 1 : 0) !== (a?.featured ? 1 : 0)) return (b?.featured ? 1 : 0) - (a?.featured ? 1 : 0);
+        return (b?.rating || 0) - (a?.rating || 0);
+      });
 
       const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      query = query?.range(from, to);
-
-      const { data, error, count } = await query;
-      if (error) throw error;
-      return { data: data || [], count: count || 0, error: null };
+      const to = from + pageSize;
+      return { data: sorted?.slice(from, to), count: sorted?.length || 0, error: null };
     } catch (error) {
       console.error('businessService.getAll error:', error);
       return { data: [], count: 0, error };
@@ -156,9 +161,13 @@ export const businessService = {
 
   async getCategories() {
     try {
-      const { data, error } = await supabase?.from('categories')?.select('id, name, name_key')?.order('name', { ascending: true });
+      const { data, error } = await supabase
+        ?.from('categories')
+        ?.select('id, name, name_key')
+        ?.eq('category_type', 'business')
+        ?.order('name', { ascending: true });
       if (error) throw error;
-      return { data: data || [], error: null };
+      return { data: data?.length ? data : flattenBusinessCategoryTree(), error: null };
     } catch (error) {
       return { data: [], error };
     }
@@ -170,9 +179,17 @@ export const businessService = {
         ?.from('categories')
         ?.select('id, name, name_key, icon, color, parent_id, sort_order, is_active')
         ?.eq('is_active', true)
+        ?.eq('category_type', 'business')
         ?.order('sort_order', { ascending: true });
       if (error) throw error;
       const all = data || [];
+      if (all?.length === 0) {
+        return {
+          data: FALLBACK_BUSINESS_CATEGORY_TREE,
+          flat: flattenBusinessCategoryTree(),
+          error: null,
+        };
+      }
       const parents = all?.filter(c => !c?.parent_id);
       const children = all?.filter(c => !!c?.parent_id);
       const tree = parents?.map(p => ({
@@ -287,6 +304,7 @@ export const businessService = {
           ?.from('categories')
           ?.select('id, name, name_key, icon')
           ?.eq('is_active', true)
+          ?.eq('category_type', 'business')
           ?.or(`name.ilike.${pattern},name_key.ilike.${pattern}`)
           ?.limit(5),
       ]);
@@ -297,7 +315,12 @@ export const businessService = {
           : null;
         return { id: b?.id, name: b?.name, address: b?.address, category_key: b?.category_key, image };
       });
-      const categories = categoryRes?.data || [];
+      const normalizedQuery = normalizeBusinessFilterText(q);
+      const categories = categoryRes?.data?.length
+        ? categoryRes?.data
+        : flattenBusinessCategoryTree()
+          ?.filter(c => normalizeBusinessFilterText(`${c?.name} ${c?.name_key}`)?.includes(normalizedQuery))
+          ?.slice(0, 5);
       return { businesses, categories, error: businessRes?.error || categoryRes?.error };
     } catch (err) {
       console.error('businessService.searchSuggestions error:', err);

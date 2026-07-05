@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   businessMatchesCategoryFilter,
+  businessMatchesSearchQuery,
   normalizeBusinessCategoryFilter,
-} from './mapService';
+} from '../utils/businessCategoryFilter';
 
 vi.mock('../lib/supabase', () => ({
   supabase: {},
@@ -27,6 +28,10 @@ describe('mapService category filtering', () => {
 
   it('matches parent business categories against known child category keys', () => {
     expect(businessMatchesCategoryFilter({ category_key: 'restaurantes-pizzeria' }, 'restaurantes')).toBe(true);
+    expect(businessMatchesCategoryFilter({ category_key: 'bar' }, 'restaurantes')).toBe(true);
+    expect(businessMatchesCategoryFilter({ category_key: 'sushi' }, 'restaurantes')).toBe(true);
+    expect(businessMatchesCategoryFilter({ category_key: 'comida-peruana' }, 'restaurantes')).toBe(true);
+    expect(businessMatchesCategoryFilter({ category: 'Restobar' }, 'restaurantes')).toBe(true);
     expect(businessMatchesCategoryFilter({ category_key: 'salud-farmacia' }, 'restaurantes')).toBe(false);
   });
 
@@ -39,5 +44,18 @@ describe('mapService category filtering', () => {
     };
 
     expect(businessMatchesCategoryFilter(business, 'salud-farmacia')).toBe(true);
+  });
+
+  it('matches search by name, address, category, and category_key', () => {
+    const business = {
+      name: 'Restaurante Peruano Mágico',
+      address: 'Coronel centro',
+      category: 'Comida peruana',
+      category_key: 'comida-peruana',
+    };
+
+    expect(businessMatchesSearchQuery(business, 'rest peru')).toBe(true);
+    expect(businessMatchesSearchQuery(business, 'comida')).toBe(true);
+    expect(businessMatchesSearchQuery(business, 'centro')).toBe(true);
   });
 });

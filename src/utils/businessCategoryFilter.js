@@ -234,15 +234,10 @@ export function businessMatchesSearchQuery(business, search) {
 
 export function buildCategoryFacets(businesses = []) {
   const facetMap = new Map();
-  const nonNormalizedMap = new Map();
 
   (businesses || [])?.forEach(business => {
     const key = getBusinessCategoryKey(business);
-    if (!key || GENERIC_CATEGORY_KEYS.has(key)) {
-      const raw = toKey(business?.category || business?.category_key);
-      if (raw) nonNormalizedMap.set(raw, (nonNormalizedMap.get(raw) || 0) + 1);
-      return;
-    }
+    if (!key || GENERIC_CATEGORY_KEYS.has(key)) return;
 
     const facet = facetMap.get(key) || {
       key,
@@ -256,42 +251,19 @@ export function buildCategoryFacets(businesses = []) {
     facetMap.set(key, facet);
   });
 
-  return {
-    facets: [...facetMap.values()]
-      ?.map(facet => ({ ...facet, aliases: [...facet.aliases]?.sort() }))
-      ?.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
-    nonNormalizedCategories: [...nonNormalizedMap.entries()]
-      ?.map(([key, count]) => ({ key, label: humanizeKey(key), count }))
-      ?.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
-  };
+  return [...facetMap.values()]
+    ?.map(facet => ({ ...facet, aliases: [...facet.aliases]?.sort() }))
+    ?.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
 export function filterMapBusinesses(businesses = [], { activeCategory = 'all', searchTerm = '' } = {}) {
   const items = (businesses || [])
     ?.filter(business => businessMatchesCategoryFilter(business, activeCategory))
     ?.filter(business => businessMatchesSearchQuery(business, searchTerm));
-  const { facets, nonNormalizedCategories } = buildCategoryFacets(businesses);
-  const activeCategoryTotal = !activeCategory || activeCategory === 'all'
-    ? businesses?.length || 0
-    : (businesses || [])?.filter(business => businessMatchesCategoryFilter(business, activeCategory))?.length;
 
   return {
     items,
-    debugStats: {
-      activeCategory,
-      searchTerm,
-      total: businesses?.length || 0,
-      visible: items?.length || 0,
-      businessTotal: businesses?.length || 0,
-      activeCategoryTotal,
-      categoryFacets: facets,
-      categoryCounts: Object.fromEntries(facets?.map(facet => [facet.key, facet.count])),
-      nonNormalizedCategories,
-      chipsWithoutResults: facets?.filter(facet => facet.count === 0)?.map(facet => facet.key),
-      businessesWithoutCategory: (businesses || [])
-        ?.filter(business => !getBusinessCategoryKey(business))
-        ?.map(business => ({ id: business?.id, name: business?.name })),
-    },
+    categoryFacets: buildCategoryFacets(businesses),
   };
 }
 
@@ -336,21 +308,8 @@ export function filterMapItems(items = [], filters = {}) {
     return itemMatchesSearch(item, filters?.searchTerm, type);
   });
 
-  const businessItems = (items || [])?.filter(item => inferItemType(item) === 'business');
-  const businessStats = filterMapBusinesses(businessItems, {
-    activeCategory: filters?.activeCategory,
-    searchTerm: filters?.searchTerm,
-  })?.debugStats;
-
   return {
     items: visible,
-    debugStats: {
-      ...businessStats,
-      activeType,
-      activeCategory: filters?.activeCategory || 'all',
-      searchTerm: filters?.searchTerm || '',
-      total: items?.length || 0,
-      visible: visible?.length || 0,
-    },
+    categoryFacets: buildCategoryFacets((items || [])?.filter(item => inferItemType(item) === 'business')),
   };
 }

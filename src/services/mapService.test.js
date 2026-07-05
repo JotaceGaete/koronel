@@ -101,7 +101,7 @@ describe('mapService category filtering', () => {
   it('detects clothing store as a non-local alias for Ropa Segunda Seleccion', () => {
     const business = { name: 'Tienda de ropa', category: 'clothing store' };
     const candidates = getBusinessCategoryCandidates(business);
-    const { facets } = buildCategoryFacets([business]);
+    const facets = buildCategoryFacets([business]);
 
     expect(candidates).toContain('ropa-segunda-seleccion');
     expect(candidates).toContain('clothing-store');
@@ -152,7 +152,7 @@ describe('mapService category filtering', () => {
     expect(filterMapItems(items, { activeType: 'community', activeCategory: 'restaurantes' }).items).toHaveLength(1);
   });
 
-  it('returns empty items and debug stats for nonexistent categories', () => {
+  it('returns empty items for nonexistent categories', () => {
     const result = filterMapItems([
       { name: 'Farmacia Generica', category_key: 'farmacia' },
     ], {
@@ -161,11 +161,10 @@ describe('mapService category filtering', () => {
     });
 
     expect(result.items).toEqual([]);
-    expect(result.debugStats.visible).toBe(0);
-    expect(result.debugStats.total).toBe(1);
+    expect(result.categoryFacets?.[0]?.key).toBe('salud-farmacia');
   });
 
-  it('returns empty businesses and debug stats for nonexistent business categories', () => {
+  it('returns empty businesses for nonexistent business categories', () => {
     const result = filterMapBusinesses([
       { name: 'Farmacia Generica', category_key: 'farmacia' },
     ], {
@@ -173,7 +172,6 @@ describe('mapService category filtering', () => {
     });
 
     expect(result.items).toEqual([]);
-    expect(result.debugStats.visible).toBe(0);
-    expect(result.debugStats.businessTotal).toBe(1);
+    expect(result.categoryFacets?.[0]?.key).toBe('salud-farmacia');
   });
 });

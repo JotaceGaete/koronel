@@ -93,7 +93,7 @@ export default function InteractiveMapPage() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [flyTarget, setFlyTarget] = useState(null);
   const [upcomingPanelOpen, setUpcomingPanelOpen] = useState(true);
-  const [mapDebugStats, setMapDebugStats] = useState(null);
+  const [businessCategoryFacets, setBusinessCategoryFacets] = useState([]);
   const searchTimeout = useRef(null);
 
   const loadData = useCallback(async (searchVal, catVal) => {
@@ -109,15 +109,7 @@ export default function InteractiveMapPage() {
       setEvents(evResult?.data || []);
       setUpcomingEvents(upResult?.data || []);
       setCommunityPosts(communityResult?.data || []);
-      if (import.meta.env.DEV) {
-        setMapDebugStats({
-          ...(bizResult?.debugStats || {}),
-          loadedBusinesses: bizResult?.debugStats?.total || 0,
-          visibleBusinesses: bizResult?.data?.length || 0,
-          visibleEvents: evResult?.data?.length || 0,
-          visibleCommunity: communityResult?.data?.length || 0,
-        });
-      }
+      setBusinessCategoryFacets(bizResult?.categoryFacets || []);
     } catch (e) {
       console.error('Map load error:', e);
     } finally {
@@ -247,8 +239,7 @@ export default function InteractiveMapPage() {
           onToggleCommunity={() => setShowCommunity(v => !v)}
           category={category}
           onCategoryChange={handleCategoryChange}
-          businessCategoryFacets={mapDebugStats?.categoryFacets || []}
-          debugStats={mapDebugStats}
+          businessCategoryFacets={businessCategoryFacets}
         />
 
         {/* Loading indicator */}

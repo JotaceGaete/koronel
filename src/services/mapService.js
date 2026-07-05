@@ -15,13 +15,13 @@ export const mapService = {
       if (error) throw error;
 
       const withCoords = (data || [])?.filter(b => b?.lat && b?.lng);
-      const { items, debugStats } = filterMapItems(withCoords, {
+      const { items, categoryFacets } = filterMapItems(withCoords, {
         activeType: 'business',
         activeCategory: category,
         searchTerm: search,
       });
 
-      return { data: items, debugStats, error: null };
+      return { data: items, categoryFacets, error: null };
     } catch (error) {
       console.error('mapService.getBusinessesForMap error:', error);
       return { data: [], error };

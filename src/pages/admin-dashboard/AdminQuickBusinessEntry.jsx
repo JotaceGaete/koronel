@@ -15,6 +15,9 @@ import { PHONE_PLACEHOLDER } from '../../utils/phone';
 const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
 const MIN_TOUCH = 44;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const asCategoryId = (value) => (UUID_RE.test(String(value || '')) ? value : null);
 
 function isAdminUser(user, userProfile) {
   if (!user) return false;
@@ -128,7 +131,7 @@ export default function AdminQuickBusinessEntry() {
         name: form.name.trim(),
         category: form.category_name || 'Sin categoría',
         category_key: form.category_key || null,
-        category_id: form.category_id || null,
+        category_id: asCategoryId(form.category_id),
         phone: form.phone?.trim() || null,
         whatsapp: form.whatsapp?.trim() || null,
         address: form.address?.trim() || null,

@@ -22,6 +22,9 @@ const DAYS = [
 ];
 
 const SOCIAL_TYPES = ['Facebook', 'Instagram', 'TikTok', 'YouTube', 'X (Twitter)', 'WhatsApp', 'Otra'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const asCategoryId = (value) => (UUID_RE.test(String(value || '')) ? value : null);
 
 const SOCIAL_ICONS = {
   Facebook: 'Facebook',
@@ -347,7 +350,7 @@ export default function PublishBusinessForm() {
         ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)?.toISOString()
         : null;
 
-      const finalCategoryId = form?.categoria_id || form?.parent_category_id;
+      const finalCategoryId = asCategoryId(form?.categoria_id || form?.parent_category_id);
       const finalCategoryName = form?.categoria_nombre || form?.parent_category_name;
       const finalCategoryKey = form?.categoria_key || '';
 

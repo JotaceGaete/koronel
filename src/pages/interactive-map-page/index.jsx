@@ -126,20 +126,26 @@ export default function InteractiveMapPage() {
   }, []);
 
   useEffect(() => {
-    loadData('', 'all');
-  }, [loadData]);
+    const hasSearch = search?.trim()?.length > 0;
+    if (hasSearch && category !== 'all') {
+      setCategory('all');
+      return undefined;
+    }
+
+    clearTimeout(searchTimeout?.current);
+    searchTimeout.current = setTimeout(() => {
+      loadData(search, hasSearch ? 'all' : category);
+    }, hasSearch ? 400 : 0);
+
+    return () => clearTimeout(searchTimeout?.current);
+  }, [search, category, loadData]);
 
   const handleSearchChange = (val) => {
     setSearch(val);
-    clearTimeout(searchTimeout?.current);
-    searchTimeout.current = setTimeout(() => {
-      loadData(val, category);
-    }, 400);
   };
 
   const handleCategoryChange = (cat) => {
     setCategory(cat);
-    loadData(search, cat);
   };
 
   const handleBusinessClick = (business) => {
@@ -241,6 +247,7 @@ export default function InteractiveMapPage() {
           onToggleCommunity={() => setShowCommunity(v => !v)}
           category={category}
           onCategoryChange={handleCategoryChange}
+          businessCategoryFacets={mapDebugStats?.categoryFacets || []}
           debugStats={mapDebugStats}
         />
 

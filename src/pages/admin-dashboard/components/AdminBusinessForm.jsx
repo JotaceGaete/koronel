@@ -19,6 +19,9 @@ const DAYS = [
 ];
 
 const SOCIAL_TYPES = ['Facebook', 'Instagram', 'TikTok', 'YouTube', 'X (Twitter)', 'WhatsApp', 'Otra'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const asCategoryId = (value) => (UUID_RE.test(String(value || '')) ? value : null);
 
 const buildDefaultHours = () => ({
   monday:    { closed: false, slots: [{ open: '09:00', close: '18:00' }] },
@@ -253,7 +256,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
     setNewCatSaving(true);
     setNewCatError(null);
     try {
-      const { data, error } = await supabase?.from('categories')?.insert({ name: newCatName?.trim(), name_key: newCatSlug?.trim() || toSlug(newCatName?.trim()), parent_id: null, is_active: true, sort_order: 0 })?.select()?.single();
+      const { data, error } = await supabase?.from('categories')?.insert({ name: newCatName?.trim(), name_key: newCatSlug?.trim() || toSlug(newCatName?.trim()), category_type: 'business', parent_id: null, is_active: true, sort_order: 0 })?.select()?.single();
       if (error) throw error;
       // Refresh tree
       const { data: tree } = await businessService?.getHierarchicalCategories();
@@ -293,10 +296,14 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
 
   const handleSaveNewSubcategory = async () => {
     if (!newSubName?.trim()) { setNewSubError('El nombre es obligatorio.'); return; }
+    if (!asCategoryId(form?.parent_category_id)) {
+      setNewSubError('Debes crear o seleccionar una categoria real antes de agregar subcategoria.');
+      return;
+    }
     setNewSubSaving(true);
     setNewSubError(null);
     try {
-      const { data, error } = await supabase?.from('categories')?.insert({ name: newSubName?.trim(), name_key: newSubSlug?.trim() || toSlug(newSubName?.trim()), parent_id: form?.parent_category_id, is_active: true, sort_order: 0 })?.select()?.single();
+      const { data, error } = await supabase?.from('categories')?.insert({ name: newSubName?.trim(), name_key: newSubSlug?.trim() || toSlug(newSubName?.trim()), category_type: 'business', parent_id: form?.parent_category_id, is_active: true, sort_order: 0 })?.select()?.single();
       if (error) throw error;
       // Refresh tree
       const { data: tree } = await businessService?.getHierarchicalCategories();
@@ -543,7 +550,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
     setSaving(true);
     setSaveError(null);
     try {
-      const finalCategoryId = form?.category_id || form?.parent_category_id;
+      const finalCategoryId = asCategoryId(form?.category_id || form?.parent_category_id);
       const payload = {
         name: form?.name?.trim(),
         category: form?.category,

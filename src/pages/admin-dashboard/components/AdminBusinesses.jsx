@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
 import AdminBusinessForm from './AdminBusinessForm';
-import { adminBusinessService, adminCategoryService } from '../../../services/adminService';
+import { adminBusinessService } from '../../../services/adminService';
 import { businessService } from '../../../services/businessService';
 
 const STATUS_BADGE = {
@@ -37,10 +37,10 @@ export default function AdminBusinesses() {
     try {
       const [biz, cats] = await Promise.all([
         adminBusinessService?.getAll({ search, category: filterCategory, status: activeTab === 'pending' ? 'pending' : filterStatus }),
-        adminCategoryService?.getAll(),
+        businessService?.getHierarchicalCategories(),
       ]);
       setBusinesses(biz);
-      setCategories(cats);
+      setCategories(cats?.flat || []);
       if (activeTab !== 'pending') {
         const pending = await adminBusinessService?.getAll({ status: 'pending' });
         setPendingCount(pending?.length || 0);

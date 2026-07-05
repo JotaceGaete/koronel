@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildCategoryFacets,
   businessMatchesCategoryFilter,
   businessMatchesSearchQuery,
   filterMapItems,
+  filterMapBusinesses,
+  getBusinessCategoryCandidates,
   getBusinessCategoryKey,
+  getBusinessSearchText,
+  normalizeCategoryKey,
   normalizeBusinessCategoryFilter,
   normalizeSearchText,
 } from '../utils/businessCategoryFilter';
@@ -29,9 +34,18 @@ describe('mapService category filtering', () => {
 
   it('normalizes Farmacias aliases to the real business category key', () => {
     expect(normalizeBusinessCategoryFilter('farmacias')).toEqual(['salud-farmacia']);
+    expect(normalizeCategoryKey('Farmacia')).toBe('salud-farmacia');
+    expect(normalizeCategoryKey('Farmacias')).toBe('salud-farmacia');
     expect(businessMatchesCategoryFilter({ category_key: 'salud-farmacia' }, 'farmacias')).toBe(true);
     expect(businessMatchesCategoryFilter({ category_key: 'farmacia' }, 'salud-farmacia')).toBe(true);
     expect(getBusinessCategoryKey({ category_key: 'farmacia' })).toBe('salud-farmacia');
+  });
+
+  it('normalizes Restaurante and Restaurantes to the same business category', () => {
+    expect(normalizeCategoryKey('Restaurante')).toBe('restaurantes');
+    expect(normalizeCategoryKey('Restaurantes')).toBe('restaurantes');
+    expect(businessMatchesCategoryFilter({ category_key: 'restaurant' }, 'restaurantes')).toBe(true);
+    expect(businessMatchesCategoryFilter({ category: 'Restobar' }, 'restaurante')).toBe(true);
   });
 
   it('normalizes supermarket aliases and accented category labels', () => {
@@ -70,6 +84,35 @@ describe('mapService category filtering', () => {
     expect(businessMatchesSearchQuery(business, 'rest peru')).toBe(true);
     expect(businessMatchesSearchQuery(business, 'comida')).toBe(true);
     expect(businessMatchesSearchQuery(business, 'centro')).toBe(true);
+  });
+
+  it('matches Aube by business name and ropa by normalized category aliases', () => {
+    const business = {
+      name: 'Aube Bonita Casualidad',
+      category: 'clothing store',
+      category_key: null,
+    };
+
+    expect(businessMatchesSearchQuery(business, 'Aube')).toBe(true);
+    expect(businessMatchesSearchQuery(business, 'ropa')).toBe(true);
+    expect(getBusinessSearchText(business)).toContain('ropa segunda seleccion');
+  });
+
+  it('detects clothing store as a non-local alias for Ropa Segunda Seleccion', () => {
+    const business = { name: 'Tienda de ropa', category: 'clothing store' };
+    const candidates = getBusinessCategoryCandidates(business);
+    const { facets } = buildCategoryFacets([business]);
+
+    expect(candidates).toContain('ropa-segunda-seleccion');
+    expect(candidates).toContain('clothing-store');
+    expect(facets?.[0]?.key).toBe('ropa-segunda-seleccion');
+    expect(facets?.[0]?.aliases).toContain('clothing-store');
+  });
+
+  it('collapses Iglesia and Iglesias into the same category key', () => {
+    expect(normalizeCategoryKey('Iglesia')).toBe('iglesias-templos');
+    expect(normalizeCategoryKey('Iglesias')).toBe('iglesias-templos');
+    expect(businessMatchesCategoryFilter({ category: 'Iglesia' }, 'iglesias')).toBe(true);
   });
 
   it('filters map businesses by specific category and exact or partial name', () => {
@@ -120,5 +163,17 @@ describe('mapService category filtering', () => {
     expect(result.items).toEqual([]);
     expect(result.debugStats.visible).toBe(0);
     expect(result.debugStats.total).toBe(1);
+  });
+
+  it('returns empty businesses and debug stats for nonexistent business categories', () => {
+    const result = filterMapBusinesses([
+      { name: 'Farmacia Generica', category_key: 'farmacia' },
+    ], {
+      activeCategory: 'no-existe',
+    });
+
+    expect(result.items).toEqual([]);
+    expect(result.debugStats.visible).toBe(0);
+    expect(result.debugStats.businessTotal).toBe(1);
   });
 });

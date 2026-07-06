@@ -3,13 +3,22 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { useCity } from 'contexts/CityContext';
-import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
+import { useAuth } from '../../../contexts/AuthContext';
+import {
+  buildBusinessClaimUrl,
+  buildWalinkaCreateCatalogUrl,
+  canCreateWalinkaCatalog,
+  getBusinessCatalogUrl,
+} from '../../../utils/walinkaCatalog';
 
 export default function BusinessCard({ business }) {
   const CITY_CONFIG = useCity();
+  const { user } = useAuth();
   const category = business?.parentCategoryName || business?.subCategoryName || business?.category || '';
   const hasContact = business?.phone || business?.whatsapp;
   const catalogUrl = getBusinessCatalogUrl(business);
+  const canCreateCatalog = canCreateWalinkaCatalog(business, user);
+  const claimUrl = buildBusinessClaimUrl(business);
   const createCatalogUrl = buildWalinkaCreateCatalogUrl({
     ...business,
     city: business?.city || CITY_CONFIG?.name,
@@ -54,7 +63,7 @@ export default function BusinessCard({ business }) {
               <Icon name="ShoppingBag" size={16} color="currentColor" />
               Ver catálogo
             </a>
-          ) : (
+          ) : canCreateCatalog ? (
             <a
               href={createCatalogUrl}
               target="_blank"
@@ -63,6 +72,13 @@ export default function BusinessCard({ business }) {
             >
               Crear catálogo Walinka
             </a>
+          ) : (
+            <Link
+              to={claimUrl}
+              className="text-center text-xs font-caption text-muted-foreground hover:text-primary transition-colors"
+            >
+              ¿Es tu negocio? Reclámalo
+            </Link>
           )}
           {hasContact && (
             <div className="flex gap-2 min-w-0">

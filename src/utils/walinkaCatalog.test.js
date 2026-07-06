@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildWalinkaCreateCatalogUrl,
+  canCreateWalinkaCatalog,
+  buildBusinessClaimUrl,
   getBusinessCatalogUrl,
   isWalinkaCatalogUrl,
 } from './walinkaCatalog';
@@ -44,5 +46,16 @@ describe('walinka catalog helpers', () => {
     expect(getBusinessCatalogUrl({ catalog_url: 'https://go.ventalink.app/catalogo/a' })).toBe('https://go.ventalink.app/catalogo/a');
     expect(getBusinessCatalogUrl({ website: 'https://go.ventalink.app/catalogo/b' })).toBe('https://go.ventalink.app/catalogo/b');
     expect(getBusinessCatalogUrl({ website: 'https://example.com' })).toBeNull();
+  });
+
+  it('allows catalog creation only for the claimed owner', () => {
+    expect(canCreateWalinkaCatalog({ claimed: true, owner_id: 'u1' }, { id: 'u1' })).toBe(true);
+    expect(canCreateWalinkaCatalog({ claimed: false, owner_id: 'u1' }, { id: 'u1' })).toBe(false);
+    expect(canCreateWalinkaCatalog({ claimed: true, owner_id: 'u1' }, { id: 'u2' })).toBe(false);
+    expect(canCreateWalinkaCatalog({ claimed: true, owner_id: 'u1' }, null)).toBe(false);
+  });
+
+  it('builds the existing claim flow URL for public CTAs', () => {
+    expect(buildBusinessClaimUrl({ id: 'biz 123' })).toBe('/business-profile-page?id=biz%20123');
   });
 });

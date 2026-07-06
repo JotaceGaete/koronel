@@ -3,8 +3,14 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { useCity } from 'contexts/CityContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { getDirectionsUrl } from '../../../utils/nearbyLocation';
-import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
+import {
+  buildBusinessClaimUrl,
+  buildWalinkaCreateCatalogUrl,
+  canCreateWalinkaCatalog,
+  getBusinessCatalogUrl,
+} from '../../../utils/walinkaCatalog';
 
 const CATEGORY_CONFIG = {
   supermercados: { label: 'Supermercados', color: '#0891b2', bg: '#e0f2fe' },
@@ -16,11 +22,14 @@ const CATEGORY_CONFIG = {
 
 export default function BusinessBottomSheet({ business, onClose }) {
   const CITY_CONFIG = useCity();
+  const { user } = useAuth();
   if (!business) return null;
 
   const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: business?.category || '', color: '#6b7280', bg: '#f3f4f6' };
   const directionsUrl = business?.directionsUrl || getDirectionsUrl(business?.lat, business?.lng);
   const catalogUrl = getBusinessCatalogUrl(business);
+  const canCreateCatalog = canCreateWalinkaCatalog(business, user);
+  const claimUrl = buildBusinessClaimUrl(business);
   const createCatalogUrl = buildWalinkaCreateCatalogUrl({
     ...business,
     city: business?.city || CITY_CONFIG?.name,
@@ -143,7 +152,7 @@ export default function BusinessBottomSheet({ business, onClose }) {
             </a>
           )}
         </div>
-        {!catalogUrl && (
+        {!catalogUrl && canCreateCatalog && (
           <a
             href={createCatalogUrl}
             target="_blank"
@@ -152,6 +161,14 @@ export default function BusinessBottomSheet({ business, onClose }) {
           >
             ¿Eres el propietario? Crea tu catálogo gratis
           </a>
+        )}
+        {!catalogUrl && !canCreateCatalog && (
+          <Link
+            to={claimUrl}
+            className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            ¿Es tu negocio? Reclámalo
+          </Link>
         )}
       </div>
     </div>

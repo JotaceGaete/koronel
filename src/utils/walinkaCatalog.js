@@ -29,6 +29,20 @@ export function getBusinessCatalogUrl(business = {}) {
   return isWalinkaCatalogUrl(candidate) ? candidate.trim() : null;
 }
 
+export function isBusinessOwner(business = {}, user = null) {
+  const ownerId = business?.owner_id || business?.ownerId;
+  return Boolean(ownerId && user?.id && ownerId === user.id);
+}
+
+export function canCreateWalinkaCatalog(business = {}, user = null) {
+  return Boolean(business?.claimed === true && isBusinessOwner(business, user));
+}
+
+export function buildBusinessClaimUrl(business = {}) {
+  const id = business?.id ? encodeURIComponent(String(business.id)) : '';
+  return `/business-profile-page${id ? `?id=${id}` : ''}`;
+}
+
 export function buildWalinkaCreateCatalogUrl(business = {}) {
   const params = {
     source: 'koronel',

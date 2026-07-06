@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { formatDate } from '../utils/format';
 
 export const messageService = {
   // Send a message to an ad owner (or reply to a thread)
@@ -169,7 +170,7 @@ export const messageService = {
     if (diffH < 24) return `Hace ${diffH} hora${diffH > 1 ? 's' : ''}`;
     if (diffD === 1) return 'Ayer';
     if (diffD < 7) return `Hace ${diffD} días`;
-    return date?.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+    return formatDate(date, { day: '2-digit', month: 'short' });
   },
 
   formatLastSeen(dateStr) {
@@ -184,7 +185,7 @@ export const messageService = {
     if (diffH < 24) return `Hace ${diffH} hora${diffH > 1 ? 's' : ''}`;
     if (diffD === 1) return 'Ayer';
     if (diffD < 7) return `Hace ${diffD} días`;
-    return date?.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
+    return formatDate(date, { day: '2-digit', month: 'short', year: 'numeric' });
   },
 
   // Subscribe to new incoming messages for a user (real-time)

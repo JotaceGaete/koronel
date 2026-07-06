@@ -1,26 +1,27 @@
 import { supabase } from '../lib/supabase';
+import { formatDate, formatTime } from '../utils/format';
+import { getActiveCityConfig } from '../config/city';
+import { filterMapItems } from '../utils/businessCategoryFilter';
 
 export const mapService = {
   async getBusinessesForMap({ search = '', category = '' } = {}) {
     try {
       let query = supabase
         ?.from('businesses')
-        ?.select('id, name, category, category_key, address, phone, lat, lng, featured, verified')
+        ?.select('id, name, category, category_key, address, phone, whatsapp, website, lat, lng, featured, verified')
         ?.not('lat', 'is', null);
-
-      if (search?.trim()) {
-        query = query?.ilike('name', `%${search}%`);
-      }
-      if (category && category !== 'all') {
-        query = query?.eq('category_key', category);
-      }
 
       const { data, error } = await query;
       if (error) throw error;
 
-      const normalized = (data || [])?.filter(b => b?.lat && b?.lng);
+      const withCoords = (data || [])?.filter(b => b?.lat && b?.lng);
+      const { items, categoryFacets } = filterMapItems(withCoords, {
+        activeType: 'business',
+        activeCategory: category,
+        searchTerm: search,
+      });
 
-      return { data: normalized, error: null };
+      return { data: items, categoryFacets, error: null };
     } catch (error) {
       console.error('mapService.getBusinessesForMap error:', error);
       return { data: [], error };
@@ -37,8 +38,7 @@ export const mapService = {
         ?.single();
       if (error || !data) return null;
       if (data?.storage_path?.startsWith('http')) return data?.storage_path;
-      const base = import.meta.env?.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl';
-      return `${base}/${data?.storage_path}`;
+      return `${getActiveCityConfig().mediaBaseUrl}/${data?.storage_path}`;
     } catch {
       return null;
     }
@@ -108,16 +108,14 @@ export const mapService = {
   formatEventDate(dtStr) {
     if (!dtStr) return '';
     try {
-      return new Date(dtStr)?.toLocaleDateString('es-CL', {
-        weekday: 'short', day: 'numeric', month: 'short',
-      });
+      return formatDate(dtStr, { weekday: 'short', day: 'numeric', month: 'short' });
     } catch { return ''; }
   },
 
   formatEventTime(dtStr) {
     if (!dtStr) return '';
     try {
-      return new Date(dtStr)?.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      return formatTime(dtStr);
     } catch { return ''; }
   },
 };

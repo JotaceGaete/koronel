@@ -1,12 +1,15 @@
 import React from "react";
 import Routes from "./Routes";
 import { AuthProvider } from "./contexts/AuthContext";
+import { CityProvider } from "./contexts/CityContext";
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes />
-    </AuthProvider>
+    <CityProvider>
+      <AuthProvider>
+        <Routes />
+      </AuthProvider>
+    </CityProvider>
   );
 }
 

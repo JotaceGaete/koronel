@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import { useAuth } from '../../../contexts/AuthContext';
 import { businessService } from '../../../services/businessService';
+import { formatDate as formatDateBase } from '../../../utils/format';
 
 function StarRating({ rating, size = 14 }) {
   return (
@@ -244,7 +245,7 @@ export default function ReviewsSection({ businessId, ownerId }) {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    return new Date(dateStr)?.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return formatDateBase(dateStr, { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const getInitials = (name) => name?.split(' ')?.map((n) => n?.[0])?.slice(0, 2)?.join('')?.toUpperCase() || '?';

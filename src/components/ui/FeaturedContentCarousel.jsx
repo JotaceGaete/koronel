@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { formatCurrency } from 'utils/format';
+import { useCity } from 'contexts/CityContext';
 
 export default function FeaturedContentCarousel({
   items = [],
@@ -144,6 +146,7 @@ export default function FeaturedContentCarousel({
 }
 
 function BusinessCard({ item }) {
+  const CITY_CONFIG = useCity();
   const hasContact = item?.phone || item?.whatsapp;
   return (
     <article className="flex flex-col h-full bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -172,7 +175,7 @@ function BusinessCard({ item }) {
       </div>
       <div className="p-3 flex flex-col flex-1 min-w-0">
         <h3 className="font-heading font-semibold text-base text-card-foreground line-clamp-1 mb-0.5">{item?.name}</h3>
-        <p className="text-xs text-muted-foreground mb-3">Coronel</p>
+        <p className="text-xs text-muted-foreground mb-3">{CITY_CONFIG.name}</p>
         <div className="mt-auto flex flex-col gap-2">
           <Link
             to={`/business-profile-page?id=${item?.id}`}
@@ -231,7 +234,7 @@ function ClassifiedCard({ item }) {
       </div>
       <div className="p-3">
         <h3 className="font-heading font-semibold text-base text-card-foreground line-clamp-2 mb-0.5">{item?.title}</h3>
-        <p className="text-xs text-muted-foreground">{item?.price ? `$${item?.price?.toLocaleString('es-CL')}` : 'Precio a convenir'}</p>
+        <p className="text-xs text-muted-foreground">{item?.price ? formatCurrency(item?.price) : 'Precio a convenir'}</p>
       </div>
     </Link>
   );

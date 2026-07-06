@@ -6,10 +6,12 @@ import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
+import { walinkaLinkService } from '../../services/walinkaLinkService';
 import { supabase } from '../../lib/supabase';
 import OwnerBusinessCard from './components/OwnerBusinessCard';
 import EditBusinessModal from '../user-business-dashboard/components/EditBusinessModal';
 import ReviewsTab from './components/ReviewsTab';
+import { useCity } from '../../contexts/CityContext';
 import StatsTab from './components/StatsTab';
 import MessagesTab from './components/MessagesTab';
 
@@ -21,6 +23,7 @@ const TABS = [
 ];
 
 export default function BusinessOwnerDashboard() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('businesses');
@@ -30,6 +33,7 @@ export default function BusinessOwnerDashboard() {
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [unansweredCount, setUnansweredCount] = useState(0);
+  const [walinkaLinks, setWalinkaLinks] = useState({});
 
   useEffect(() => {
     if (!user) {
@@ -48,6 +52,9 @@ export default function BusinessOwnerDashboard() {
       setError('Error al cargar tus negocios. Intenta de nuevo.');
     } else {
       setBusinesses(data || []);
+      const businessIds = (data || [])?.map(b => b?.id)?.filter(Boolean);
+      const { data: links } = await walinkaLinkService?.getLinksForBusinesses(businessIds);
+      setWalinkaLinks(links || {});
       // Load unanswered reviews count
       if (data?.length > 0) {
         const ids = data?.map(b => b?.id);
@@ -172,7 +179,7 @@ export default function BusinessOwnerDashboard() {
                         <Icon name="Building2" size={32} color="var(--color-muted-foreground)" />
                       </div>
                       <h3 className="font-heading font-semibold text-foreground mb-2">Aún no tienes negocios registrados</h3>
-                      <p className="text-sm text-muted-foreground mb-6">Publica tu negocio en el directorio de Coronel y llega a más clientes.</p>
+                      <p className="text-sm text-muted-foreground mb-6">Publica tu negocio en el directorio de {CITY_CONFIG.name} y llega a más clientes.</p>
                       <Link
                         to="/publicar-negocio"
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-medium transition-colors"
@@ -188,6 +195,7 @@ export default function BusinessOwnerDashboard() {
                         <OwnerBusinessCard
                           key={biz?.id}
                           business={biz}
+                          walinkaLink={walinkaLinks?.[biz?.id] || null}
                           onEdit={() => setEditingBusiness(biz)}
                         />
                       ))}

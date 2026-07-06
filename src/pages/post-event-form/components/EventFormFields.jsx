@@ -1,6 +1,8 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
+import { formatLocalPhoneInput, PHONE_PLACEHOLDER } from 'utils/phone';
+import { useCity } from 'contexts/CityContext';
 
 const BASE_CATEGORIES = [
   { value: '', label: 'Selecciona una categoría' },
@@ -12,16 +14,11 @@ const BASE_CATEGORIES = [
 ];
 
 export default function EventFormFields({ formData, errors, onChange, userBusinesses }) {
+  const CITY_CONFIG = useCity();
   const handleChange = (field, value) => onChange(field, value);
 
   const handleWhatsAppChange = (e) => {
-    let val = e?.target?.value?.replace(/\D/g, '');
-    if (val?.startsWith('56')) val = val?.slice(2);
-    val = val?.slice(0, 9);
-    let formatted = val;
-    if (val?.length > 1) formatted = val?.slice(0, 1) + ' ' + val?.slice(1);
-    if (val?.length > 5) formatted = val?.slice(0, 1) + ' ' + val?.slice(1, 5) + ' ' + val?.slice(5);
-    handleChange('contactWhatsapp', formatted ? '+56 ' + formatted : '');
+    handleChange('contactWhatsapp', formatLocalPhoneInput(e?.target?.value));
   };
 
   return (
@@ -31,7 +28,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
         <Input
           label="Título del evento"
           type="text"
-          placeholder="Ej: Feria Gastronómica de Coronel"
+          placeholder={`Ej: Feria Gastronómica de ${CITY_CONFIG.name}`}
           value={formData?.title || ''}
           onChange={(e) => handleChange('title', e?.target?.value)}
           required
@@ -107,7 +104,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
       <Input
         label="Nombre del lugar"
         type="text"
-        placeholder="Ej: Plaza de Armas de Coronel"
+        placeholder={`Ej: Plaza de Armas de ${CITY_CONFIG.name}`}
         value={formData?.venueName || ''}
         onChange={(e) => handleChange('venueName', e?.target?.value)}
         required
@@ -118,7 +115,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
       <Input
         label="Dirección"
         type="text"
-        placeholder="Ej: Av. Capitán Ávalos 1245, Coronel"
+        placeholder={`Ej: Av. Capitán Ávalos 1245, ${CITY_CONFIG.name}`}
         value={formData?.address || ''}
         onChange={(e) => handleChange('address', e?.target?.value)}
         required
@@ -157,7 +154,7 @@ export default function EventFormFields({ formData, errors, onChange, userBusine
         <Input
           label="WhatsApp de contacto"
           type="tel"
-          placeholder="+56 9 1234 5678"
+          placeholder={PHONE_PLACEHOLDER}
           value={formData?.contactWhatsapp || ''}
           onChange={handleWhatsAppChange}
           error={errors?.contactWhatsapp}

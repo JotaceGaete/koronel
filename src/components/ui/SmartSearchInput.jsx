@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { businessService } from '../../services/businessService';
+import { useCity } from '../../contexts/CityContext';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -19,6 +20,7 @@ export default function SmartSearchInput({
   onChange,
   onSearch,
 }) {
+  const CITY_CONFIG = useCity();
   const navigate = useNavigate();
   const [internalQuery, setInternalQuery] = useState('');
   const isControlled = value !== undefined && onChange !== undefined;
@@ -236,7 +238,7 @@ export default function SmartSearchInput({
                       <div className="flex-1 min-w-0">
                         <p className="font-caption font-semibold text-foreground truncate">{b?.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {b?.category_key ? humanizeCategory(b.category_key) : 'Negocio'} · Coronel
+                          {b?.category_key ? humanizeCategory(b.category_key) : 'Negocio'} · {CITY_CONFIG.name}
                         </p>
                       </div>
                       <Icon name="ChevronRight" size={16} color="var(--color-muted-foreground)" className="shrink-0" />

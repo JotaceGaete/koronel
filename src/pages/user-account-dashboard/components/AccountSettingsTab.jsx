@@ -5,6 +5,8 @@ import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
+import { formatDate } from '../../../utils/format';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 
 export default function AccountSettingsTab() {
   const { user, userProfile, updateProfile } = useAuth();
@@ -33,7 +35,7 @@ export default function AccountSettingsTab() {
   }, [userProfile, user]);
 
   const memberSince = user?.created_at
-    ? new Date(user?.created_at)?.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+    ? formatDate(user?.created_at, { month: 'long', year: 'numeric' })
     : 'Recientemente';
 
   const handleSave = async (e) => {
@@ -125,7 +127,7 @@ export default function AccountSettingsTab() {
               type="tel"
               value={form?.phone}
               onChange={(e) => setForm((f) => ({ ...f, phone: e?.target?.value }))}
-              placeholder="+56 9 XXXX XXXX" />
+              placeholder={PHONE_PLACEHOLDER} />
             <Input
               label="Ubicación"
               type="text"

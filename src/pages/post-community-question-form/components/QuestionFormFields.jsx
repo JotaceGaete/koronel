@@ -1,7 +1,5 @@
 import React from 'react';
-
-
-const SECTORS = ['Centro', 'Lagunillas', 'Schwager', 'Puchoco', 'Las Higueras', 'Punta de Parra', 'Otro'];
+import { COMMUNITY_SECTORS as SECTORS } from 'config/sectors';
 
 export default function QuestionFormFields({ values, errors, onChange, titleCount, bodyCount }) {
   return (

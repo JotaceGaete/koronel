@@ -1,13 +1,8 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
-
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
-  courses: { label: 'Cursos', color: '#0891b2', bg: '#e0f2fe' },
-  meetups: { label: 'Encuentros', color: '#059669', bg: '#d1fae5' },
-  other: { label: 'Otro', color: '#d97706', bg: '#fef3c7' },
-};
+import { formatDate as formatDateBase, formatTime as formatTimeBase } from 'utils/format';
+import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from 'config/eventCategories';
 
 export default function EventPreviewPanel({ formData, photo }) {
   const cat = CATEGORY_CONFIG?.[formData?.category];
@@ -15,16 +10,14 @@ export default function EventPreviewPanel({ formData, photo }) {
   const formatDate = (dtStr) => {
     if (!dtStr) return null;
     try {
-      const d = new Date(dtStr);
-      return d?.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' });
+      return formatDateBase(dtStr, { weekday: 'short', day: 'numeric', month: 'short' });
     } catch { return null; }
   };
 
   const formatTime = (dtStr) => {
     if (!dtStr) return null;
     try {
-      const d = new Date(dtStr);
-      return d?.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+      return formatTimeBase(dtStr);
     } catch { return null; }
   };
 

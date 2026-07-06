@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import { adminPopupService } from '../../../services/adminService';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
+import { formatDate } from 'utils/format';
 
 const EMPTY_FORM = { title: '', message: '', button_text: 'Explorar negocios', button_link: '/business-directory-listing', image_url: '', active: false, starts_at: '', ends_at: '' };
 
@@ -118,8 +119,8 @@ export default function AdminPopups() {
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${p?.active ? 'text-white' : 'bg-muted text-muted-foreground'}`} style={p?.active ? { background: '#22c55e' } : {}}>
                     {p?.active ? 'Activo' : 'Inactivo'}
                   </span>
-                  {p?.starts_at && <span className="text-xs text-muted-foreground">Desde: {new Date(p.starts_at)?.toLocaleDateString('es-CL')}</span>}
-                  {p?.ends_at && <span className="text-xs text-muted-foreground">Hasta: {new Date(p.ends_at)?.toLocaleDateString('es-CL')}</span>}
+                  {p?.starts_at && <span className="text-xs text-muted-foreground">Desde: {formatDate(p.starts_at)}</span>}
+                  {p?.ends_at && <span className="text-xs text-muted-foreground">Hasta: {formatDate(p.ends_at)}</span>}
                 </div>
                 <h4 className="font-medium text-foreground">{p?.title}</h4>
                 <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{p?.message}</p>

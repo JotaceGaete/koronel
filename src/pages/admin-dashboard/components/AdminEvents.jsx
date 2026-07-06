@@ -2,19 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
 import { eventService } from '../../../services/eventService';
+import { formatDate as formatDateBase } from 'utils/format';
+import { EVENT_CATEGORY_LABELS as CATEGORY_LABELS } from 'config/eventCategories';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', color: '#d97706', bg: '#fef3c7' },
   approved: { label: 'Aprobado', color: '#059669', bg: '#d1fae5' },
   rejected: { label: 'Rechazado', color: '#dc2626', bg: '#fee2e2' },
   active: { label: 'Activo', color: '#059669', bg: '#d1fae5' },
-};
-
-const CATEGORY_LABELS = {
-  church: 'Iglesia',
-  courses: 'Cursos',
-  meetups: 'Encuentros',
-  other: 'Otro',
 };
 
 export default function AdminEvents() {
@@ -90,7 +85,7 @@ export default function AdminEvents() {
   const formatDate = (dtStr) => {
     if (!dtStr) return '—';
     try {
-      return new Date(dtStr)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
+      return formatDateBase(dtStr, { day: 'numeric', month: 'short', year: 'numeric' });
     } catch { return '—'; }
   };
 

@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { formatDate, formatCurrency } from '../utils/format';
 
 const CATEGORIES = ['Tecnología', 'Salud', 'Comercio', 'Construcción', 'Educación', 'Gastronomía', 'Administración', 'Otro'];
 const MODALITIES = ['Presencial', 'Remoto', 'Híbrido'];
@@ -310,7 +311,7 @@ export const jobService = {
 
   formatSalary(min, max) {
     if (!min && !max) return null;
-    const fmt = (n) => n ? `$${Number(n)?.toLocaleString('es-CL')}` : null;
+    const fmt = (n) => n ? formatCurrency(n) : null;
     if (min && max) return `${fmt(min)} – ${fmt(max)}`;
     if (min) return `Desde ${fmt(min)}`;
     return `Hasta ${fmt(max)}`;
@@ -318,6 +319,6 @@ export const jobService = {
 
   formatDate(dateStr) {
     if (!dateStr) return '';
-    return new Date(dateStr)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+    return formatDate(dateStr, { day: 'numeric', month: 'long', year: 'numeric' });
   },
 };

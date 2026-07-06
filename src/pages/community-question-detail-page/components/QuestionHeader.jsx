@@ -2,23 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { communityService } from '../../../services/communityService';
-
-const SECTOR_COLORS = {
-  Centro: { bg: '#dbeafe', color: '#1d4ed8' },
-  Lagunillas: { bg: '#d1fae5', color: '#065f46' },
-  Schwager: { bg: '#fef3c7', color: '#92400e' },
-  Puchoco: { bg: '#f3e8ff', color: '#6b21a8' },
-  'Las Higueras': { bg: '#fee2e2', color: '#991b1b' },
-  'Punta de Parra': { bg: '#e0f2fe', color: '#0369a1' },
-  Otro: { bg: '#f3f4f6', color: '#374151' },
-};
+import { SECTOR_COLORS_PALETTE_A as SECTOR_COLORS } from 'config/sectors';
+import { formatDate as formatDateBase } from 'utils/format';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
-    return new Date(dateStr)?.toLocaleDateString('es-CL', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
+    return formatDateBase(dateStr, { day: 'numeric', month: 'long', year: 'numeric' });
   } catch { return ''; }
 }
 

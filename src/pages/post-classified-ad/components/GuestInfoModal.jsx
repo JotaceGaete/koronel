@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
+import { PHONE_PLACEHOLDER } from 'utils/phone';
 
 export default function GuestInfoModal({ onConfirm, onCancel, isSubmitting }) {
   const [name, setName] = useState('');
@@ -100,7 +101,7 @@ export default function GuestInfoModal({ onConfirm, onCancel, isSubmitting }) {
             <Input
               label="Teléfono"
               type="tel"
-              placeholder="+56 9 1234 5678"
+              placeholder={PHONE_PLACEHOLDER}
               value={phone}
               onChange={(e) => { setPhone(e?.target?.value); setErrors(p => ({ ...p, phone: undefined })); }}
               required

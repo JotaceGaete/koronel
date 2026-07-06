@@ -1,5 +1,7 @@
 import React from 'react';
 import { jobService } from '../../../services/jobService';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
+import { useCity } from '../../../contexts/CityContext';
 
 function FieldError({ msg }) {
   if (!msg) return null;
@@ -20,6 +22,7 @@ const inputCls = (hasError) =>
   }`;
 
 export default function JobFormFields({ form, errors, onChange }) {
+  const CITY_CONFIG = useCity();
   return (
     <div className="space-y-5">
       {/* Section: Información básica */}
@@ -117,7 +120,7 @@ export default function JobFormFields({ form, errors, onChange }) {
               type="text"
               value={form?.ubicacion}
               onChange={e => onChange('ubicacion', e?.target?.value)}
-              placeholder="Ej: Coronel, Biobío"
+              placeholder={`Ej: ${CITY_CONFIG.name}, ${CITY_CONFIG.region}`}
               className={inputCls(!!errors?.ubicacion)}
             />
             <FieldError msg={errors?.ubicacion} />
@@ -170,7 +173,7 @@ export default function JobFormFields({ form, errors, onChange }) {
               type="text"
               value={form?.whatsapp_contacto}
               onChange={e => onChange('whatsapp_contacto', e?.target?.value)}
-              placeholder="+56 9 1234 5678"
+              placeholder={PHONE_PLACEHOLDER}
               className={inputCls(false)}
             />
           </div>

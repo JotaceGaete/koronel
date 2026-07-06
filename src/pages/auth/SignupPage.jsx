@@ -5,8 +5,10 @@ import Logo from 'components/Logo';
 import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCity } from '../../contexts/CityContext';
 
 export default function SignupPage() {
+  const CITY_CONFIG = useCity();
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirm: '' });
@@ -40,7 +42,7 @@ export default function SignupPage() {
             <Logo variant="auth" />
           </div>
           <h1 className="font-heading font-bold text-2xl text-foreground">Crear Cuenta</h1>
-          <p className="text-sm font-caption text-muted-foreground mt-1">Únete a la comunidad de CoronelLocal</p>
+          <p className="text-sm font-caption text-muted-foreground mt-1">Únete a la comunidad de {CITY_CONFIG.siteName}</p>
         </div>
 
         {/* Form */}

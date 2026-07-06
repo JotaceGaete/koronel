@@ -1,14 +1,10 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
-
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: 'bg-purple-100 text-purple-700' },
-  courses: { label: 'Cursos', color: 'bg-blue-100 text-blue-700' },
-  meetups: { label: 'Encuentros', color: 'bg-green-100 text-green-700' },
-  other: { label: 'Otro', color: 'bg-gray-100 text-gray-600' },
-};
+import { useCity } from 'contexts/CityContext';
+import { EVENT_CATEGORY_TAILWIND as CATEGORY_CONFIG } from 'config/eventCategories';
 
 export default function EventHero({ event }) {
+  const CITY_CONFIG = useCity();
   const cat = CATEGORY_CONFIG?.[event?.category] || CATEGORY_CONFIG?.other;
 
   return (
@@ -16,7 +12,7 @@ export default function EventHero({ event }) {
       {event?.imageUrl ? (
         <img
           src={event?.imageUrl}
-          alt={`${event?.title} - evento en ${event?.venueName}, Coronel`}
+          alt={`${event?.title} - evento en ${event?.venueName}, ${CITY_CONFIG.name}`}
           className="w-full h-full object-cover"
           style={{ maxHeight: '420px', minHeight: '280px' }}
         />

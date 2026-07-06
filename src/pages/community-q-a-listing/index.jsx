@@ -6,6 +6,8 @@ import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDate as formatDateBase } from '../../utils/format';
+import { useCity } from '../../contexts/CityContext';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Más recientes' },
@@ -23,7 +25,7 @@ function formatRelativeDate(dateStr) {
     if (hrs < 24) return `hace ${hrs}h`;
     const days = Math.floor(hrs / 24);
     if (days < 7) return `hace ${days}d`;
-    return new Date(dateStr)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+    return formatDateBase(dateStr, { day: 'numeric', month: 'short' });
   } catch { return ''; }
 }
 
@@ -105,6 +107,7 @@ function QuestionCard({ post, coverImage }) {
 }
 
 export default function CommunityQAListing() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
@@ -164,7 +167,7 @@ export default function CommunityQAListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Comunidad" description="Preguntas, recomendaciones y conversaciones de la comunidad en Coronel." path={location.pathname + (location.search || '')} />
+      <PageMeta title="Comunidad" description={`Preguntas, recomendaciones y conversaciones de la comunidad en ${CITY_CONFIG.name}.`} path={location.pathname + (location.search || '')} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
@@ -176,7 +179,7 @@ export default function CommunityQAListing() {
                   <Icon name="MessageCircle" size={22} color="var(--color-primary)" />
                   <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Preguntas a la Comunidad</h1>
                 </div>
-                <p className="text-muted-foreground text-sm">Consultas y recomendaciones en Coronel</p>
+                <p className="text-muted-foreground text-sm">Consultas y recomendaciones en {CITY_CONFIG.name}</p>
               </div>
               <Button
                 variant="default"

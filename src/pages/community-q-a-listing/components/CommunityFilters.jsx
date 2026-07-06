@@ -1,7 +1,6 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
-
-const SECTORS = ['Centro', 'Lagunillas', 'Schwager', 'Puchoco', 'Las Higueras', 'Punta de Parra', 'Otro'];
+import { COMMUNITY_SECTORS as SECTORS } from 'config/sectors';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Más recientes' },

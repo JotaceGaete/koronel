@@ -2,8 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
+import { useCity } from 'contexts/CityContext';
 
 export default function PostAdCTA() {
+  const CITY_CONFIG = useCity();
   return (
     <>
       {/* Inline CTA Banner */}
@@ -19,7 +21,7 @@ export default function PostAdCTA() {
             ¿Tienes algo que vender o ofrecer?
           </h2>
           <p className="text-sm md:text-base mb-6" style={{ color: 'rgba(255,255,255,0.85)' }}>
-            Publica tu aviso gratis y llega a miles de personas en Coronel.
+            Publica tu aviso gratis y llega a miles de personas en {CITY_CONFIG.name}.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/post-classified-ad">

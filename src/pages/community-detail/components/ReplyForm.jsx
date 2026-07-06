@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import Icon from 'components/AppIcon';
 import { communityService } from '../../../services/communityService';
 import BusinessSearchDropdown from './BusinessSearchDropdown';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
+import { useCity } from '../../../contexts/CityContext';
 
 export default function ReplyForm({ postId, userId, onReplyAdded }) {
+  const CITY_CONFIG = useCity();
   const [body, setBody] = useState('');
   const [linkedBusiness, setLinkedBusiness] = useState(null);
   const [showSuggestForm, setShowSuggestForm] = useState(false);
@@ -118,7 +121,7 @@ export default function ReplyForm({ postId, userId, onReplyAdded }) {
                   type="text"
                   value={suggestData?.phone}
                   onChange={e => setSuggestData(p => ({ ...p, phone: e?.target?.value }))}
-                  placeholder="+56 9 XXXX XXXX"
+                  placeholder={PHONE_PLACEHOLDER}
                   className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -128,7 +131,7 @@ export default function ReplyForm({ postId, userId, onReplyAdded }) {
                   type="text"
                   value={suggestData?.address}
                   onChange={e => setSuggestData(p => ({ ...p, address: e?.target?.value }))}
-                  placeholder="Dirección en Coronel"
+                  placeholder={`Dirección en ${CITY_CONFIG.name}`}
                   className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>

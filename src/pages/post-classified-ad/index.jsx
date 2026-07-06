@@ -10,6 +10,8 @@ import SuccessModal from './components/SuccessModal';
 import GuestInfoModal from './components/GuestInfoModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { adService } from '../../services/adService';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
+import { useCity } from '../../contexts/CityContext';
 
 const INITIAL_FORM = {
   title: '',
@@ -31,7 +33,7 @@ function validate(formData) {
   if (!formData?.description?.trim()) errs.description = 'La descripción es obligatoria';
   else if (formData?.description?.trim()?.length < 20) errs.description = 'La descripción debe tener al menos 20 caracteres';
   if (!formData?.phone?.trim()) errs.phone = 'El teléfono de contacto es obligatorio';
-  else if (formData?.phone?.replace(/\D/g, '')?.length < 9) errs.phone = 'Ingresa un número chileno válido (+56 9 XXXX XXXX)';
+  else if (formData?.phone?.replace(/\D/g, '')?.length < 9) errs.phone = `Ingresa un número válido (${PHONE_PLACEHOLDER})`;
   return errs;
 }
 
@@ -55,6 +57,7 @@ function isAdminUser(user, userProfile) {
 }
 
 export default function PostClassifiedAd() {
+  const CITY_CONFIG = useCity();
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   const [formData, setFormData] = useState(INITIAL_FORM);
@@ -249,7 +252,7 @@ export default function PostClassifiedAd() {
                   Publicar aviso
                 </h1>
                 <p className="text-sm md:text-base font-body text-muted-foreground mt-1">
-                  Llega a miles de vecinos de Coronel con tu aviso clasificado
+                  Llega a miles de vecinos de {CITY_CONFIG.name} con tu aviso clasificado
                 </p>
               </div>
               <button

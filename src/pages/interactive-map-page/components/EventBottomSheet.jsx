@@ -3,15 +3,11 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { mapService } from '../../../services/mapService';
-
-const CATEGORY_CONFIG = {
-  church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
-  courses: { label: 'Cursos', color: '#0891b2', bg: '#e0f2fe' },
-  meetups: { label: 'Encuentros', color: '#059669', bg: '#d1fae5' },
-  other: { label: 'Otro', color: '#d97706', bg: '#fef3c7' },
-};
+import { useCity } from '../../../contexts/CityContext';
+import { EVENT_CATEGORY_CONFIG as CATEGORY_CONFIG } from '../../../config/eventCategories';
 
 export default function EventBottomSheet({ event, onClose }) {
+  const CITY_CONFIG = useCity();
   if (!event) return null;
 
   const cat = CATEGORY_CONFIG?.[event?.category] || { label: event?.category || '', color: '#6b7280', bg: '#f3f4f6' };
@@ -19,7 +15,7 @@ export default function EventBottomSheet({ event, onClose }) {
   const handleWhatsApp = () => {
     if (!event?.contact_whatsapp) return;
     const phone = event?.contact_whatsapp?.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en CoronelLocal y me gustaría más información.`);
+    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en ${CITY_CONFIG.siteName} y me gustaría más información.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 

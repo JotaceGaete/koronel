@@ -3,16 +3,20 @@ import { Link } from 'react-router-dom';
 import Button from 'components/ui/Button';
 import FeaturedContentCarousel from 'components/ui/FeaturedContentCarousel';
 import { adService } from '../../../services/adService';
+import { useCity } from '../../../contexts/CityContext';
 
-const FALLBACK_ADS = [
-  { id: 1, title: 'Toyota Corolla 2019 - Excelente estado', price: 9500000, category: 'Vehículos', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1868ff5f6-1772638689088.png', imageAlt: 'Silver Toyota Corolla 2019 sedan in excellent condition parked on street in Coronel Chile', timeAgo: 'Hace 2 horas', featured: true },
-  { id: 2, title: 'Departamento 2D/1B en arriendo - Centro Coronel', price: 280000, category: 'Inmuebles', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1c2c53dd8-1772638690545.png', imageAlt: 'Modern two bedroom apartment interior with natural light and contemporary furnishings in Coronel center', timeAgo: 'Hace 5 horas', featured: true },
-  { id: 3, title: 'iPhone 13 Pro 256GB - Como nuevo', price: 650000, category: 'Electrónica', image: 'https://images.unsplash.com/photo-1664114780064-41d0dd873e92', imageAlt: 'iPhone 13 Pro in pristine condition with original box and accessories displayed on white background', timeAgo: 'Hace 1 día', featured: false },
-  { id: 4, title: 'Bicicleta de montaña Trek - Poco uso', price: 180000, category: 'Deportes', image: 'https://images.unsplash.com/photo-1668793392852-c7280b553aa6', imageAlt: 'Trek mountain bike in good condition with minimal use leaning against wall outdoors in Coronel', timeAgo: 'Hace 2 días', featured: false },
-];
+function buildFallbackAds(CITY_CONFIG) {
+  return [
+    { id: 1, title: 'Toyota Corolla 2019 - Excelente estado', price: 9500000, category: 'Vehículos', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1868ff5f6-1772638689088.png', imageAlt: `Silver Toyota Corolla 2019 sedan in excellent condition parked on street in ${CITY_CONFIG.name} ${CITY_CONFIG.country}`, timeAgo: 'Hace 2 horas', featured: true },
+    { id: 2, title: `Departamento 2D/1B en arriendo - Centro ${CITY_CONFIG.name}`, price: 280000, category: 'Inmuebles', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1c2c53dd8-1772638690545.png', imageAlt: `Modern two bedroom apartment interior with natural light and contemporary furnishings in ${CITY_CONFIG.name} center`, timeAgo: 'Hace 5 horas', featured: true },
+    { id: 3, title: 'iPhone 13 Pro 256GB - Como nuevo', price: 650000, category: 'Electrónica', image: 'https://images.unsplash.com/photo-1664114780064-41d0dd873e92', imageAlt: 'iPhone 13 Pro in pristine condition with original box and accessories displayed on white background', timeAgo: 'Hace 1 día', featured: false },
+    { id: 4, title: 'Bicicleta de montaña Trek - Poco uso', price: 180000, category: 'Deportes', image: 'https://images.unsplash.com/photo-1668793392852-c7280b553aa6', imageAlt: `Trek mountain bike in good condition with minimal use leaning against wall outdoors in ${CITY_CONFIG.name}`, timeAgo: 'Hace 2 días', featured: false },
+  ];
+}
 
 export default function RecentClassifiedAds() {
-  const [ads, setAds] = useState(FALLBACK_ADS);
+  const CITY_CONFIG = useCity();
+  const [ads, setAds] = useState(() => buildFallbackAds(CITY_CONFIG));
 
   useEffect(() => {
     let mounted = true;

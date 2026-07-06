@@ -1,27 +1,6 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 
-const CATEGORIES = [
-  { value: 'all', label: 'Todas' },
-  { value: 'supermercados', label: 'Supermercados' },
-  { value: 'farmacias', label: 'Farmacias' },
-  { value: 'restaurantes', label: 'Restaurantes' },
-  { value: 'iglesias-templos', label: 'Iglesias' },
-  { value: 'church', label: 'Iglesia' },
-  { value: 'courses', label: 'Cursos' },
-  { value: 'meetups', label: 'Encuentros' },
-  { value: 'other', label: 'Otro' },
-];
-
-const BUSINESS_CATEGORIES = [
-  { value: 'all', label: 'Todas' },
-  { value: 'supermercados', label: 'Supermercados' },
-  { value: 'farmacias', label: 'Farmacias' },
-  { value: 'restaurantes', label: 'Restaurantes' },
-  { value: 'iglesias-templos', label: 'Iglesias' },
-  { value: 'ferreterias', label: 'Ferreterías' },
-];
-
 const EVENT_CATEGORIES = [
   { value: 'all', label: 'Todas' },
   { value: 'church', label: 'Iglesia' },
@@ -41,19 +20,28 @@ export default function MapSearchBar({
   onToggleCommunity,
   category,
   onCategoryChange,
+  businessCategoryFacets = [],
 }) {
-  const categoryOptions = showBusinesses && !showEvents
-    ? BUSINESS_CATEGORIES
-    : !showBusinesses && showEvents
+  const businessCategories = [
+    { value: 'all', label: 'Todas' },
+    ...(businessCategoryFacets || [])?.map(facet => ({
+      value: facet?.key,
+      label: facet?.label,
+      count: facet?.count,
+    })),
+  ];
+
+  const categoryOptions = showBusinesses
+    ? businessCategories
+    : showEvents
     ? EVENT_CATEGORIES
-    : CATEGORIES;
+    : [{ value: 'all', label: 'Todas' }];
 
   return (
     <div
       className="absolute top-0 left-0 right-0 z-[400] px-3 pt-3 pb-2"
       style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.98) 80%, transparent)' }}
     >
-      {/* Search Input */}
       <div className="relative mb-2">
         <Icon
           name="Search"
@@ -78,9 +66,7 @@ export default function MapSearchBar({
         )}
       </div>
 
-      {/* Layer Toggles + Category Filter */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {/* Negocios toggle */}
         <button
           onClick={onToggleBusinesses}
           className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
@@ -93,7 +79,6 @@ export default function MapSearchBar({
           Negocios
         </button>
 
-        {/* Eventos toggle */}
         <button
           onClick={onToggleEvents}
           className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
@@ -106,7 +91,6 @@ export default function MapSearchBar({
           Eventos
         </button>
 
-        {/* Comunidad toggle */}
         <button
           onClick={onToggleCommunity}
           className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
@@ -119,10 +103,8 @@ export default function MapSearchBar({
           Comunidad
         </button>
 
-        {/* Divider */}
         <div className="w-px h-5 bg-border flex-shrink-0" />
 
-        {/* Category chips */}
         {categoryOptions?.map(cat => (
           <button
             key={cat?.value}
@@ -133,10 +115,11 @@ export default function MapSearchBar({
             }`}
             style={category === cat?.value ? { background: 'var(--color-primary)' } : {}}
           >
-            {cat?.label}
+            {cat?.label}{cat?.count != null ? ` (${cat.count})` : ''}
           </button>
         ))}
       </div>
+
     </div>
   );
 }

@@ -5,6 +5,9 @@ import { businessService } from '../../../services/businessService';
 import { supabase } from '../../../lib/supabase';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../../services/geocodingService';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
+import { useCity } from '../../../contexts/CityContext';
+import { getBusinessCatalogUrl, isWalinkaCatalogUrl } from '../../../utils/walinkaCatalog';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -17,6 +20,9 @@ const DAYS = [
 ];
 
 const SOCIAL_TYPES = ['Facebook', 'Instagram', 'TikTok', 'YouTube', 'X (Twitter)', 'WhatsApp', 'Otra'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const asCategoryId = (value) => (UUID_RE.test(String(value || '')) ? value : null);
 
 const buildDefaultHours = () => ({
   monday:    { closed: false, slots: [{ open: '09:00', close: '18:00' }] },
@@ -73,6 +79,7 @@ const EMPTY_FORM = {
   whatsapp: '',
   email: '',
   website: '',
+  catalog_url: '',
   verified: false,
   featured: false,
   status: 'published',
@@ -82,6 +89,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
+  const CITY_CONFIG = useCity();
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -135,6 +143,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
 
   useEffect(() => {
     if (editItem) {
+      const existingCatalogUrl = getBusinessCatalogUrl(editItem);
       // Detect parent/sub category
       const catId = editItem?.category_id || '';
       setForm({
@@ -152,7 +161,8 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         phone: editItem?.phone || '',
         whatsapp: editItem?.whatsapp || '',
         email: editItem?.email || '',
-        website: editItem?.website || '',
+        website: existingCatalogUrl ? '' : editItem?.website || '',
+        catalog_url: existingCatalogUrl || '',
         verified: editItem?.verified || false,
         featured: editItem?.featured || false,
         status: editItem?.status || 'published',
@@ -250,7 +260,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
     setNewCatSaving(true);
     setNewCatError(null);
     try {
-      const { data, error } = await supabase?.from('categories')?.insert({ name: newCatName?.trim(), name_key: newCatSlug?.trim() || toSlug(newCatName?.trim()), parent_id: null, is_active: true, sort_order: 0 })?.select()?.single();
+      const { data, error } = await supabase?.from('categories')?.insert({ name: newCatName?.trim(), name_key: newCatSlug?.trim() || toSlug(newCatName?.trim()), category_type: 'business', parent_id: null, is_active: true, sort_order: 0 })?.select()?.single();
       if (error) throw error;
       // Refresh tree
       const { data: tree } = await businessService?.getHierarchicalCategories();
@@ -290,10 +300,14 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
 
   const handleSaveNewSubcategory = async () => {
     if (!newSubName?.trim()) { setNewSubError('El nombre es obligatorio.'); return; }
+    if (!asCategoryId(form?.parent_category_id)) {
+      setNewSubError('Debes crear o seleccionar una categoria real antes de agregar subcategoria.');
+      return;
+    }
     setNewSubSaving(true);
     setNewSubError(null);
     try {
-      const { data, error } = await supabase?.from('categories')?.insert({ name: newSubName?.trim(), name_key: newSubSlug?.trim() || toSlug(newSubName?.trim()), parent_id: form?.parent_category_id, is_active: true, sort_order: 0 })?.select()?.single();
+      const { data, error } = await supabase?.from('categories')?.insert({ name: newSubName?.trim(), name_key: newSubSlug?.trim() || toSlug(newSubName?.trim()), category_type: 'business', parent_id: form?.parent_category_id, is_active: true, sort_order: 0 })?.select()?.single();
       if (error) throw error;
       // Refresh tree
       const { data: tree } = await businessService?.getHierarchicalCategories();
@@ -501,11 +515,14 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
     if (form?.website?.trim()) {
       try { new URL(form.website.trim()); } catch { errs.website = 'URL del sitio web no válida.'; }
     }
+    if (form?.catalog_url?.trim() && !isWalinkaCatalogUrl(form.catalog_url.trim())) {
+      errs.catalog_url = 'Ingresa una URL válida de Walinka/Ventalink.';
+    }
     socialLinks?.forEach((s, i) => {
       if (!s?.url?.trim()) { errs[`social_${i}`] = 'La URL es obligatoria.'; return; }
       if (s?.type === 'WhatsApp') {
         const waOk = /^(https?:\/\/(wa\.me|api\.whatsapp\.com)|\+\d{7,15})/?.test(s?.url?.trim());
-        if (!waOk) errs[`social_${i}`] = 'Para WhatsApp usa https://wa.me/... o +56...';
+        if (!waOk) errs[`social_${i}`] = `Para WhatsApp usa https://wa.me/... o +${CITY_CONFIG.phoneCountryCode}...`;
       } else {
         try { new URL(s.url.trim()); } catch { errs[`social_${i}`] = 'URL no válida.'; }
       }
@@ -540,7 +557,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
     setSaving(true);
     setSaveError(null);
     try {
-      const finalCategoryId = form?.category_id || form?.parent_category_id;
+      const finalCategoryId = asCategoryId(form?.category_id || form?.parent_category_id);
       const payload = {
         name: form?.name?.trim(),
         category: form?.category,
@@ -554,7 +571,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         phone: form?.phone?.trim(),
         whatsapp: form?.whatsapp?.trim() || null,
         email: form?.email?.trim() || null,
-        website: form?.website?.trim() || null,
+        website: form?.catalog_url?.trim() || form?.website?.trim() || null,
         verified: form?.verified,
         featured: form?.featured,
         status: form?.status,
@@ -817,7 +834,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                   type="tel"
                   value={form?.phone}
                   onChange={e => { setForm(f => ({ ...f, phone: e?.target?.value })); if (errors?.phone) setErrors(p => ({ ...p, phone: null })); }}
-                  placeholder="Ej: +56 9 1234 5678"
+                  placeholder={`Ej: ${PHONE_PLACEHOLDER}`}
                   className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.phone ? 'border-red-400' : 'border-border'}`}
                 />
                 {errors?.phone && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.phone}</p>}
@@ -830,7 +847,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                   type="text"
                   value={form?.address}
                   onChange={e => { setForm(f => ({ ...f, address: e?.target?.value })); if (errors?.address) setErrors(p => ({ ...p, address: null })); }}
-                  placeholder="Ej: Av. Los Carrera 123, Coronel"
+                  placeholder={`Ej: Av. Los Carrera 123, ${CITY_CONFIG.name}`}
                   className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.address ? 'border-red-400' : 'border-border'}`}
                 />
                 {errors?.address && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.address}</p>}
@@ -850,7 +867,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                       type="text"
                       value={form?.address_text}
                       onChange={e => { setForm(f => ({ ...f, address_text: e?.target?.value })); setGeocodeError(null); }}
-                      placeholder="Ej: Las Encinas 80, Coronel"
+                      placeholder={`Ej: Las Encinas 80, ${CITY_CONFIG.name}`}
                       className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <button
@@ -1051,7 +1068,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                   type="text"
                   value={form?.whatsapp}
                   onChange={e => setForm(f => ({ ...f, whatsapp: e?.target?.value }))}
-                  placeholder="Ej: +56 9 1234 5678"
+                  placeholder={`Ej: ${PHONE_PLACEHOLDER}`}
                   className="w-full px-3 py-2.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -1081,6 +1098,19 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                 {errors?.website && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.website}</p>}
               </div>
 
+              {/* Catálogo Walinka */}
+              <div data-error={!!errors?.catalog_url}>
+                <label className="block text-sm font-medium text-foreground mb-1">URL del catálogo Walinka</label>
+                <input
+                  type="url"
+                  value={form?.catalog_url}
+                  onChange={e => { setForm(f => ({ ...f, catalog_url: e?.target?.value })); if (errors?.catalog_url) setErrors(p => ({ ...p, catalog_url: null })); }}
+                  placeholder="https://go.ventalink.app/catalogo/mi-negocio"
+                  className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.catalog_url ? 'border-red-400' : 'border-border'}`}
+                />
+                {errors?.catalog_url && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.catalog_url}</p>}
+              </div>
+
               {/* Redes sociales */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Redes sociales</label>
@@ -1099,7 +1129,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                           type="text"
                           value={s?.url}
                           onChange={e => updateSocialLink(i, 'url', e?.target?.value)}
-                          placeholder={s?.type === 'WhatsApp' ? 'https://wa.me/56912345678 o +56...' : 'https://...'}
+                          placeholder={s?.type === 'WhatsApp' ? `https://wa.me/${CITY_CONFIG.phoneCountryCode}912345678 o +${CITY_CONFIG.phoneCountryCode}...` : 'https://...'}
                           className={`w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.[`social_${i}`] ? 'border-red-400' : 'border-border'}`}
                         />
                         {errors?.[`social_${i}`] && <p className="text-xs mt-0.5" style={{ color: 'var(--color-error)' }}>{errors?.[`social_${i}`]}</p>}

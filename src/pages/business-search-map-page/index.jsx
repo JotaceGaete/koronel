@@ -5,10 +5,12 @@ import Icon from 'components/AppIcon';
 import { businessService } from '../../services/businessService';
 import SearchMapLeftPanel from './components/SearchMapLeftPanel';
 import SearchMapRightPanel from './components/SearchMapRightPanel';
+import { useCity } from '../../contexts/CityContext';
 
 const LIMIT = 50;
 
 export default function BusinessSearchMapPage() {
+  const CITY_CONFIG = useCity();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -35,6 +37,11 @@ export default function BusinessSearchMapPage() {
     const { data, flat } = await businessService?.getHierarchicalCategories();
     setCategoryTree(data || []);
     setFlatCategories(flat || []);
+    const catParam = getParams()?.get('cat') || 'all';
+    if (catParam !== 'all' && data?.length) {
+      const found = data?.find(cat => cat?.id === catParam || cat?.name_key === catParam);
+      if (found) setSelectedParent(found?.id);
+    }
   };
 
   const syncUrl = useCallback(
@@ -56,7 +63,7 @@ export default function BusinessSearchMapPage() {
     setLoading(true);
     let categoryFilter = 'all';
     if (selectedParent !== 'all') {
-      const parent = categoryTree?.find((p) => p?.id === selectedParent);
+      const parent = categoryTree?.find((p) => p?.id === selectedParent || p?.name_key === selectedParent);
       if (parent) categoryFilter = parent?.name_key;
     }
     const { data, error } = await businessService?.getAll({
@@ -105,7 +112,7 @@ export default function BusinessSearchMapPage() {
       return {
         ...b,
         image,
-        imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en Coronel`,
+        imageAlt: primaryImg?.alt_text || `${b?.name} - negocio en ${CITY_CONFIG.name}`,
         parentCategoryName,
         subCategoryName,
         lat: rawLat != null ? parseFloat(rawLat) : null,

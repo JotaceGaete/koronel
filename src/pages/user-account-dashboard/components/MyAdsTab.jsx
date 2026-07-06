@@ -4,6 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { adService } from '../../../services/adService';
+import { formatCurrency } from '../../../utils/format';
 
 const statusConfig = {
   active: { label: 'Activo', color: 'var(--color-success)', bg: '#38A16918' },
@@ -133,7 +134,7 @@ export default function MyAdsTab({ userId }) {
                       </td>
                       <td className="px-4 py-3 font-caption text-muted-foreground">{ad?.category}</td>
                       <td className="px-4 py-3 font-data text-foreground whitespace-nowrap">
-                        {ad?.price ? `$${Number(ad?.price)?.toLocaleString('es-CL')}` : 'A convenir'}
+                        {ad?.price ? formatCurrency(ad?.price) : 'A convenir'}
                       </td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-1 rounded-sm text-xs font-caption font-medium" style={{ background: sc?.bg, color: sc?.color }}>
@@ -181,7 +182,7 @@ export default function MyAdsTab({ userId }) {
                     </div>
                     <p className="text-xs font-caption text-muted-foreground mt-1">{ad?.category}</p>
                     <p className="text-sm font-data font-medium text-foreground mt-1">
-                      {ad?.price ? `$${Number(ad?.price)?.toLocaleString('es-CL')}` : 'A convenir'}
+                      {ad?.price ? formatCurrency(ad?.price) : 'A convenir'}
                     </p>
                     <div className="flex items-center gap-3 mt-2">
                       <button

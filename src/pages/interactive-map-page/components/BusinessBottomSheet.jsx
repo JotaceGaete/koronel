@@ -2,6 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { useCity } from 'contexts/CityContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { getDirectionsUrl } from '../../../utils/nearbyLocation';
+import {
+  buildBusinessClaimUrl,
+  buildWalinkaCreateCatalogUrl,
+  canCreateWalinkaCatalog,
+  getBusinessCatalogUrl,
+} from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 const CATEGORY_CONFIG = {
   supermercados: { label: 'Supermercados', color: '#0891b2', bg: '#e0f2fe' },
@@ -12,14 +22,24 @@ const CATEGORY_CONFIG = {
 };
 
 export default function BusinessBottomSheet({ business, onClose }) {
+  const CITY_CONFIG = useCity();
+  const { user } = useAuth();
   if (!business) return null;
 
-  const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: business?.category || '', color: '#6b7280', bg: '#f3f4f6' };
+  const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: getCategoryLabel(business?.category, ''), color: '#6b7280', bg: '#f3f4f6' };
+  const directionsUrl = business?.directionsUrl || getDirectionsUrl(business?.lat, business?.lng);
+  const catalogUrl = getBusinessCatalogUrl(business);
+  const canCreateCatalog = canCreateWalinkaCatalog(business, user);
+  const claimUrl = buildBusinessClaimUrl(business);
+  const createCatalogUrl = buildWalinkaCreateCatalogUrl({
+    ...business,
+    city: business?.city || CITY_CONFIG?.name,
+  });
 
   const handleWhatsApp = () => {
     if (!business?.phone) return;
     const phone = business?.phone?.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola, vi ${business?.name} en CoronelLocal y me gustaría más información.`);
+    const msg = encodeURIComponent(`Hola, vi ${business?.name} en ${CITY_CONFIG.siteName} y me gustaría más información.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 
@@ -73,6 +93,12 @@ export default function BusinessBottomSheet({ business, onClose }) {
             <span className="text-sm text-muted-foreground">{business?.address}</span>
           </div>
         )}
+        {business?.distanceLabel && (
+          <div className="flex items-center gap-2">
+            <Icon name="Navigation" size={14} color="var(--color-primary)" />
+            <span className="text-sm text-muted-foreground">{business?.distanceLabel}</span>
+          </div>
+        )}
         {business?.phone && (
           <div className="flex items-center gap-2">
             <Icon name="Phone" size={14} color="var(--color-primary)" />
@@ -84,24 +110,67 @@ export default function BusinessBottomSheet({ business, onClose }) {
       </div>
 
       {/* Actions */}
-      <div className="px-4 pt-3 pb-4 flex gap-2">
-        {business?.phone && (
-          <button
-            onClick={handleWhatsApp}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white transition-colors"
-            style={{ background: '#25d366' }}
+      <div className="px-4 pt-3 pb-4 space-y-2">
+        {catalogUrl && (
+          <a
+            href={catalogUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+            style={{ background: 'var(--color-primary)' }}
           >
-            <Icon name="MessageCircle" size={15} color="white" />
-            WhatsApp
-          </button>
+            <Icon name="ShoppingBag" size={15} color="currentColor" />
+            Ver catálogo
+          </a>
         )}
-        <Link
-          to={`/negocios/${business?.id}`}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
-        >
-          <Icon name="ExternalLink" size={15} color="currentColor" />
-          Ver detalles
-        </Link>
+        <div className="flex gap-2">
+          {business?.phone && (
+            <button
+              onClick={handleWhatsApp}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+              style={{ background: '#25d366' }}
+            >
+              <Icon name="MessageCircle" size={15} color="white" />
+              WhatsApp
+            </button>
+          )}
+          <Link
+            to={`/negocios/${business?.id}`}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
+          >
+            <Icon name="ExternalLink" size={15} color="currentColor" />
+            Ver detalles
+          </Link>
+          {directionsUrl && (
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
+            >
+              <Icon name="Route" size={15} color="currentColor" />
+              Cómo llegar
+            </a>
+          )}
+        </div>
+        {!catalogUrl && canCreateCatalog && (
+          <a
+            href={createCatalogUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            ¿Eres el propietario? Crea tu catálogo gratis
+          </a>
+        )}
+        {!catalogUrl && !canCreateCatalog && (
+          <Link
+            to={claimUrl}
+            className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            ¿Es tu negocio? Reclámalo
+          </Link>
+        )}
       </div>
     </div>
   );

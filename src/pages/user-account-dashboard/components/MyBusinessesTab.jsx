@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { businessService } from '../../../services/businessService';
+import { formatDate } from '../../../utils/format';
+import { useCity } from '../../../contexts/CityContext';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -19,6 +22,7 @@ const CLAIM_STATUS_CONFIG = {
 };
 
 export default function MyBusinessesTab({ userId }) {
+  const CITY_CONFIG = useCity();
   const [businesses, setBusinesses] = useState([]);
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,14 +64,15 @@ export default function MyBusinessesTab({ userId }) {
     const image = getImage(biz);
     const status = biz?.status || 'pending';
     const sc = STATUS_CONFIG?.[status] || STATUS_CONFIG?.pending;
+    const categoryLabel = getCategoryLabel(biz?.category, 'Sin categoria');
     const premiumUntil = biz?.premium_until
-      ? new Date(biz.premium_until)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })
+      ? formatDate(biz.premium_until, { day: 'numeric', month: 'long' })
       : null;
     return (
       <div key={biz?.id} className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
         <div className="h-36 overflow-hidden bg-muted flex items-center justify-center relative">
           {image ? (
-            <Image src={image} alt={`${biz?.name} - negocio en Coronel`} className="w-full h-full object-cover" />
+            <Image src={image} alt={`${biz?.name} - negocio en ${CITY_CONFIG.name}`} className="w-full h-full object-cover" />
           ) : (
             <Icon name="Building2" size={40} color="var(--color-muted-foreground)" />
           )}
@@ -78,7 +83,7 @@ export default function MyBusinessesTab({ userId }) {
         </div>
         <div className="p-4">
           <h3 className="font-heading font-semibold text-foreground text-base line-clamp-1 mb-0.5">{biz?.name}</h3>
-          <p className="text-xs font-caption text-muted-foreground mb-1">{biz?.category} · {biz?.address}</p>
+          <p className="text-xs font-caption text-muted-foreground mb-1">{categoryLabel} - {biz?.address}</p>
           {status === 'premium' && premiumUntil && (
             <p className="text-xs font-medium mb-2" style={{ color: '#5b21b6' }}>Premium hasta el {premiumUntil}</p>
           )}
@@ -139,11 +144,12 @@ export default function MyBusinessesTab({ userId }) {
             {claims?.map((c) => {
               const csc = CLAIM_STATUS_CONFIG?.[c?.claim_status] || CLAIM_STATUS_CONFIG?.pending;
               const biz = c?.business;
+              const categoryLabel = getCategoryLabel(biz?.category, 'Sin categoria');
               return (
                 <div key={c?.id} className="bg-card border border-border rounded-md p-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-medium text-foreground truncate">{biz?.name || 'Negocio'}</p>
-                    <p className="text-xs font-caption text-muted-foreground">{biz?.category} · {biz?.address}</p>
+                    <p className="text-xs font-caption text-muted-foreground">{categoryLabel} - {biz?.address}</p>
                     <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: csc?.bg, color: csc?.color }}>
                       <Icon name={csc?.icon} size={11} color="currentColor" />
                       {csc?.label}
@@ -152,7 +158,7 @@ export default function MyBusinessesTab({ userId }) {
                       <p className="text-xs font-caption text-muted-foreground mt-1">Motivo: {c?.admin_notes}</p>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground">{new Date(c?.created_at)?.toLocaleDateString('es-CL')}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(c?.created_at)}</span>
                   {biz?.id && (
                     <Link to={`/business-profile-page?id=${biz?.id}`}>
                       <Button variant="ghost" size="sm">Ver ficha</Button>
@@ -193,3 +199,4 @@ export default function MyBusinessesTab({ userId }) {
     </div>
   );
 }
+

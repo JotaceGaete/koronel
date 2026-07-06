@@ -1,26 +1,21 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Input from 'components/ui/Input';
+import { classifiedAdSectorOptions } from 'config/sectors';
+import { formatNumber } from 'utils/format';
+import { formatLocalPhoneInput, PHONE_PLACEHOLDER } from 'utils/phone';
+import { useCity } from 'contexts/CityContext';
 
-const LOCATIONS = [
-  { value: '', label: 'Selecciona un sector' },
-  { value: 'Centro', label: 'Centro' },
-  { value: 'Coronel Norte', label: 'Coronel Norte' },
-  { value: 'Coronel Sur', label: 'Coronel Sur' },
-  { value: 'Boca Sur', label: 'Boca Sur' },
-  { value: 'Lagunillas', label: 'Lagunillas' },
-  { value: 'Palomares', label: 'Palomares' },
-  { value: 'Schwager', label: 'Schwager' },
-  { value: 'Otro sector', label: 'Otro sector' },
-];
+const LOCATIONS = classifiedAdSectorOptions();
 
 export default function AdForm({ formData, errors, onChange, categories = [], categoriesLoading = false, categoriesError = null }) {
+  const CITY_CONFIG = useCity();
   const handleChange = (field, value) => onChange(field, value);
 
   const formatPrice = (raw) => {
     const digits = raw?.replace(/\D/g, '');
     if (!digits) return '';
-    return Number(digits)?.toLocaleString('es-CL');
+    return formatNumber(Number(digits));
   };
 
   const handlePriceChange = (e) => {
@@ -29,13 +24,7 @@ export default function AdForm({ formData, errors, onChange, categories = [], ca
   };
 
   const handlePhoneChange = (e) => {
-    let val = e?.target?.value?.replace(/\D/g, '');
-    if (val?.startsWith('56')) val = val?.slice(2);
-    val = val?.slice(0, 9);
-    let formatted = val;
-    if (val?.length > 1) formatted = val?.slice(0, 1) + ' ' + val?.slice(1);
-    if (val?.length > 5) formatted = val?.slice(0, 1) + ' ' + val?.slice(1, 5) + ' ' + val?.slice(5);
-    handleChange('phone', formatted ? '+56 ' + formatted : '');
+    handleChange('phone', formatLocalPhoneInput(e?.target?.value));
   };
 
   const renderCategorySelect = () => {
@@ -172,7 +161,7 @@ export default function AdForm({ formData, errors, onChange, categories = [], ca
         <Input
           label="Teléfono de contacto"
           type="tel"
-          placeholder="+56 9 1234 5678"
+          placeholder={PHONE_PLACEHOLDER}
           value={formData?.phone}
           onChange={handlePhoneChange}
           required
@@ -195,7 +184,7 @@ export default function AdForm({ formData, errors, onChange, categories = [], ca
       {/* Location */}
       <div>
         <label className="block text-sm font-caption font-semibold text-foreground mb-1.5">
-          Sector en Coronel
+          Sector en {CITY_CONFIG.name}
         </label>
         <div className="relative">
           <select

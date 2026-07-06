@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { formatNumber } from 'utils/format';
 
 const CATEGORY_LABELS = {
   vehicles: 'Vehículos', 'real-estate': 'Inmuebles', electronics: 'Electrónica',
@@ -63,7 +64,7 @@ export default function AdPreviewPanel({ formData, photos }) {
           {/* Price */}
           {formData?.price && (
             <p className="font-data font-semibold text-lg mb-2" style={{ color: 'var(--color-primary)' }}>
-              ${Number(formData?.price?.replace(/\D/g, ''))?.toLocaleString('es-CL')}
+              ${formatNumber(Number(formData?.price?.replace(/\D/g, '')))}
             </p>
           )}
 

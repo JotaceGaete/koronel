@@ -8,6 +8,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../services/geocodingService';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
+import { useCity } from '../../contexts/CityContext';
+import { isWalinkaCatalogUrl } from '../../utils/walinkaCatalog';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -20,6 +23,9 @@ const DAYS = [
 ];
 
 const SOCIAL_TYPES = ['Facebook', 'Instagram', 'TikTok', 'YouTube', 'X (Twitter)', 'WhatsApp', 'Otra'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const asCategoryId = (value) => (UUID_RE.test(String(value || '')) ? value : null);
 
 const SOCIAL_ICONS = {
   Facebook: 'Facebook',
@@ -57,9 +63,11 @@ const INITIAL_FORM = {
   descripcion: '',
   whatsapp: '',
   website_url: '',
+  catalog_url: '',
 };
 
 export default function PublishBusinessForm() {
+  const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -304,11 +312,14 @@ export default function PublishBusinessForm() {
     if (form?.website_url?.trim()) {
       try { new URL(form.website_url.trim()); } catch { newErrors.website_url = 'URL del sitio web no válida.'; }
     }
+    if (form?.catalog_url?.trim() && !isWalinkaCatalogUrl(form.catalog_url.trim())) {
+      newErrors.catalog_url = 'Ingresa una URL válida de Walinka/Ventalink.';
+    }
     socialLinks?.forEach((s, i) => {
       if (!s?.url?.trim()) { newErrors[`social_${i}`] = 'La URL es obligatoria.'; return; }
       if (s?.type === 'WhatsApp') {
         const waOk = /^(https?:\/\/(wa\.me|api\.whatsapp\.com)|\+\d{7,15})/?.test(s?.url?.trim());
-        if (!waOk) newErrors[`social_${i}`] = 'Para WhatsApp usa formato https://wa.me/... o +56...';
+        if (!waOk) newErrors[`social_${i}`] = `Para WhatsApp usa formato https://wa.me/... o +${CITY_CONFIG.phoneCountryCode}...`;
       } else {
         try { new URL(s.url.trim()); } catch { newErrors[`social_${i}`] = 'URL no válida.'; }
       }
@@ -344,7 +355,7 @@ export default function PublishBusinessForm() {
         ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)?.toISOString()
         : null;
 
-      const finalCategoryId = form?.categoria_id || form?.parent_category_id;
+      const finalCategoryId = asCategoryId(form?.categoria_id || form?.parent_category_id);
       const finalCategoryName = form?.categoria_nombre || form?.parent_category_name;
       const finalCategoryKey = form?.categoria_key || '';
 
@@ -360,7 +371,7 @@ export default function PublishBusinessForm() {
         lng: form?.lng ?? null,
         description: form?.descripcion?.trim(),
         whatsapp: form?.whatsapp?.trim() || null,
-        website: form?.website_url?.trim() || null,
+        website: form?.catalog_url?.trim() || form?.website_url?.trim() || null,
         opening_hours: buildOpeningHours(),
         social_links: socialLinks?.filter(s => s?.url?.trim()),
         owner_id: user?.id,
@@ -467,7 +478,7 @@ export default function PublishBusinessForm() {
               </Link>
               <h1 className="font-heading font-bold text-xl text-white">Publicar mi negocio</h1>
             </div>
-            <p className="text-white/80 text-sm font-caption ml-8">Completa el formulario para agregar tu negocio al directorio de Coronel</p>
+            <p className="text-white/80 text-sm font-caption ml-8">Completa el formulario para agregar tu negocio al directorio de {CITY_CONFIG.name}</p>
           </div>
         </div>
 
@@ -568,7 +579,7 @@ export default function PublishBusinessForm() {
                     name="telefono"
                     value={form?.telefono}
                     onChange={handleChange}
-                    placeholder="Ej: +56 9 1234 5678"
+                    placeholder={`Ej: ${PHONE_PLACEHOLDER}`}
                     className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.telefono ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors?.telefono && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.telefono}</p>}
@@ -582,7 +593,7 @@ export default function PublishBusinessForm() {
                     name="direccion"
                     value={form?.direccion}
                     onChange={handleChange}
-                    placeholder="Ej: Av. Los Carrera 123, Coronel"
+                    placeholder={`Ej: Av. Los Carrera 123, ${CITY_CONFIG.name}`}
                     className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.direccion ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors?.direccion && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.direccion}</p>}
@@ -601,7 +612,7 @@ export default function PublishBusinessForm() {
                         type="text"
                         value={form?.address_text}
                         onChange={e => { setForm(prev => ({ ...prev, address_text: e?.target?.value })); setGeocodeError(null); }}
-                        placeholder="Ej: Las Encinas 80, Coronel"
+                        placeholder={`Ej: Las Encinas 80, ${CITY_CONFIG.name}`}
                         className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                       <button
@@ -814,7 +825,7 @@ export default function PublishBusinessForm() {
                     name="whatsapp"
                     value={form?.whatsapp}
                     onChange={handleChange}
-                    placeholder="Ej: +56 9 1234 5678"
+                    placeholder={`Ej: ${PHONE_PLACEHOLDER}`}
                     className="w-full px-3 py-2.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
@@ -833,6 +844,20 @@ export default function PublishBusinessForm() {
                   {errors?.website_url && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.website_url}</p>}
                 </div>
 
+                {/* Catálogo Walinka */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">URL del catálogo Walinka</label>
+                  <input
+                    type="url"
+                    name="catalog_url"
+                    value={form?.catalog_url}
+                    onChange={handleChange}
+                    placeholder="https://go.ventalink.app/catalogo/mi-negocio"
+                    className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.catalog_url ? 'border-red-400' : 'border-border'}`}
+                  />
+                  {errors?.catalog_url && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.catalog_url}</p>}
+                </div>
+
                 {/* Redes sociales */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Redes sociales</label>
@@ -845,7 +870,7 @@ export default function PublishBusinessForm() {
                         </select>
                         <div className="flex-1">
                           <input type="text" value={s?.url} onChange={e => updateSocialLink(i, 'url', e?.target?.value)}
-                            placeholder={s?.type === 'WhatsApp' ? 'https://wa.me/56912345678 o +56...' : 'https://...'}
+                            placeholder={s?.type === 'WhatsApp' ? `https://wa.me/${CITY_CONFIG.phoneCountryCode}912345678 o +${CITY_CONFIG.phoneCountryCode}...` : 'https://...'}
                             className={`w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.[`social_${i}`] ? 'border-red-400' : 'border-border'}`} />
                           {errors?.[`social_${i}`] && <p className="text-xs mt-0.5" style={{ color: 'var(--color-error)' }}>{errors?.[`social_${i}`]}</p>}
                         </div>

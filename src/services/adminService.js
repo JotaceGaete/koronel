@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { filterMapBusinesses } from '../utils/businessCategoryFilter';
 
 const BUSINESS_COLUMNS = new Set([
   'owner_id',
@@ -46,14 +47,15 @@ function withoutBusinessOnlyFields(payload = {}) {
 export const adminBusinessService = {
   async getAll({ search = '', category = '', status = '' } = {}) {
     let query = supabase?.from('businesses')?.select('*, owner:user_profiles!businesses_owner_id_fkey(full_name, email)')?.order('created_at', { ascending: false });
-    if (search) query = query?.ilike('name', `%${search}%`);
-    if (category) query = query?.eq('category_key', category);
     if (status === 'featured') query = query?.eq('featured', true);
     else if (status === 'verified') query = query?.eq('verified', true);
     else if (status && ['pending', 'published', 'premium', 'rejected']?.includes(status)) query = query?.eq('status', status);
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return filterMapBusinesses(data || [], {
+      activeCategory: category || 'all',
+      searchTerm: search,
+    })?.items || [];
   },
 
   async create(payload) {
@@ -140,10 +142,15 @@ export const adminClaimService = {
 
 // ── Classified Ads ──────────────────────────────────────────
 export const adminAdService = {
-  async getAll({ search = '', status = '' } = {}) {
+  async getAll({ search = '', status = '', listingType = null } = {}) {
     let query = supabase?.from('classified_ads')?.select('*, owner:user_profiles(full_name, email), ad_images(storage_path, alt_text, is_primary)')?.order('created_at', { ascending: false });
     if (search) query = query?.ilike('title', `%${search}%`);
     if (status) query = query?.eq('ad_status', status);
+    if (listingType === 'profesionales') {
+      query = query?.eq('listing_type', 'oficio');
+    } else if (listingType === 'clasificados') {
+      query = query?.neq('listing_type', 'oficio');
+    }
     const { data, error } = await query;
     if (error) throw error;
     return data || [];

@@ -15,7 +15,10 @@ import ChurchDetails from './components/ChurchDetails';
 import ShareButtons from 'components/ui/ShareButtons';
 import BusinessJobs from './components/BusinessJobs';
 import { businessService } from '../../services/businessService';
+import { getCategoryLabel } from '../../utils/businessCategoryFilter';
+import { useCity } from '../../contexts/CityContext';
 
+function buildProfileMocks(CITY_CONFIG) {
 const BUSINESS = {
   id: 1,
   name: "Restaurante El Rincón Chileno",
@@ -23,14 +26,14 @@ const BUSINESS = {
   category_key: "restaurantes",
   rating: 4.3,
   reviewCount: 87,
-  address: "Av. Capitán Ávalos 1245, Coronel, Biobío, Chile",
-  phone: "+56 41 261 4500",
-  whatsapp: "+56 9 8765 4321",
+  address: `Av. Capitán Ávalos 1245, ${CITY_CONFIG.name}, ${CITY_CONFIG.region}, ${CITY_CONFIG.country}`,
+  phone: `+${CITY_CONFIG.phoneCountryCode} 41 261 4500`,
+  whatsapp: `+${CITY_CONFIG.phoneCountryCode} 9 8765 4321`,
   email: "contacto@rinconchileno.cl",
   website: "https://rinconchileno.cl",
-  description: `Bienvenidos a El Rincón Chileno, el restaurante familiar más tradicional de Coronel. Llevamos más de 20 años sirviendo la auténtica cocina chilena con ingredientes frescos y locales.\n\nNuestro menú incluye cazuela de vacuno, pastel de choclo, empanadas al horno, y los mejores mariscos frescos del Golfo de Arauco. Contamos con salón para eventos y celebraciones familiares.\n\nAceptamos reservas para grupos de más de 8 personas. Estacionamiento disponible en el local.`,
-  lat: -37.0297,
-  lng: -73.1597,
+  description: `Bienvenidos a El Rincón Chileno, el restaurante familiar más tradicional de ${CITY_CONFIG.name}. Llevamos más de 20 años sirviendo la auténtica cocina chilena con ingredientes frescos y locales.\n\nNuestro menú incluye cazuela de vacuno, pastel de choclo, empanadas al horno, y los mejores mariscos frescos de la región. Contamos con salón para eventos y celebraciones familiares.\n\nAceptamos reservas para grupos de más de 8 personas. Estacionamiento disponible en el local.`,
+  lat: CITY_CONFIG.center.lat,
+  lng: CITY_CONFIG.center.lng,
   hours: {
     monday: { open: '12:00', close: '22:00' },
     tuesday: { open: '12:00', close: '22:00' },
@@ -72,7 +75,7 @@ const REVIEWS = [
   avatarAlt: "Mujer chilena de mediana edad con cabello oscuro y sonrisa amable en foto de perfil",
   rating: 5,
   date: "15/02/2026",
-  comment: "Excelente atención y comida deliciosa. La cazuela de vacuno es la mejor que he probado en Coronel. Muy recomendado para almuerzo familiar."
+  comment: `Excelente atención y comida deliciosa. La cazuela de vacuno es la mejor que he probado en ${CITY_CONFIG.name}. Muy recomendado para almuerzo familiar.`
 },
 {
   id: 2,
@@ -123,7 +126,7 @@ const RELATED = [
 },
 {
   id: 3,
-  name: "Café Central Coronel",
+  name: `Café Central ${CITY_CONFIG.name}`,
   category: "Café y Pastelería",
   rating: 4.5,
   image: "https://images.unsplash.com/photo-1677306963569-1b488022cfff",
@@ -138,8 +141,13 @@ const RELATED = [
   imageAlt: "Plato de mariscos frescos con langostinos y choritos sobre mesa de restaurante con decoración marina"
 }];
 
+return { BUSINESS, REVIEWS, RELATED };
+}
+
 
 export default function BusinessProfilePage() {
+  const CITY_CONFIG = useCity();
+  const { BUSINESS, RELATED } = buildProfileMocks(CITY_CONFIG);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [shareToast, setShareToast] = useState(false);
@@ -158,8 +166,8 @@ export default function BusinessProfilePage() {
   }, [businessId]);
 
   // Build category labels from real hierarchy (category + parent from DB)
-  const catRow = business?.category;
-  const parentCatName = catRow?.parent?.name ?? (catRow?.name || business?.category) ?? null;
+  const catRow = business?.category_details;
+  const parentCatName = catRow?.parent?.name ?? (catRow?.name || getCategoryLabel(business?.category, null)) ?? null;
   const subCatName = catRow?.parent_id && catRow?.name ? catRow?.name : null;
 
   // Merge real data over mock for display
@@ -180,7 +188,7 @@ export default function BusinessProfilePage() {
     websiteUrl: business?.website || null,
     parentCategoryName: parentCatName,
     subCategoryName: subCatName,
-    category: parentCatName || business?.category,
+    category: parentCatName || getCategoryLabel(business?.category, null),
     reviewCount: business?.review_count ?? BUSINESS?.reviewCount,
   } : { ...BUSINESS, logoUrl: null, socialLinks: [], websiteUrl: BUSINESS?.website };
 
@@ -371,7 +379,7 @@ export default function BusinessProfilePage() {
                   {[
                   { icon: 'ShieldCheck', label: 'Resolución Sanitaria vigente', color: 'var(--color-success)' },
                   { icon: 'FileCheck', label: 'Patente Municipal 2026', color: 'var(--color-primary)' },
-                  { icon: 'Star', label: 'Negocio recomendado CoronelLocal', color: 'var(--color-accent)' }]?.
+                  { icon: 'Star', label: `Negocio recomendado ${CITY_CONFIG.siteName}`, color: 'var(--color-accent)' }]?.
                   map(({ icon, label, color }) =>
                   <div key={label} className="flex items-center gap-2.5">
                       <Icon name={icon} size={16} color={color} />
@@ -391,7 +399,7 @@ export default function BusinessProfilePage() {
                 
                 <Icon name="Tag" size={28} color="white" className="mx-auto mb-2" />
                 <h3 className="font-heading font-semibold text-base text-white mb-1">¿Tienes algo que vender?</h3>
-                <p className="text-xs font-caption text-white/80 mb-3">Publica tu aviso clasificado gratis en CoronelLocal</p>
+                <p className="text-xs font-caption text-white/80 mb-3">Publica tu aviso clasificado gratis en {CITY_CONFIG.siteName}</p>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -420,11 +428,13 @@ export default function BusinessProfilePage() {
                   <Icon name="MapPin" size={14} color="white" />
                 </div>
                 <span className="font-heading font-bold text-sm" style={{ color: 'var(--color-primary)' }}>
-                  Coronel<span style={{ color: 'var(--color-accent)' }}>Local</span>
+                  {CITY_CONFIG.siteName?.startsWith(CITY_CONFIG.name)
+                    ? <>{CITY_CONFIG.name}<span style={{ color: 'var(--color-accent)' }}>{CITY_CONFIG.siteName.slice(CITY_CONFIG.name.length)}</span></>
+                    : CITY_CONFIG.siteName}
                 </span>
               </div>
               <p className="text-xs font-caption text-muted-foreground text-center">
-                &copy; {new Date()?.getFullYear()} CoronelLocal. Todos los derechos reservados.
+                &copy; {new Date()?.getFullYear()} {CITY_CONFIG.siteName}. Todos los derechos reservados.
               </p>
               <div className="flex items-center gap-4">
                 <Link to="/business-directory-listing" className="text-xs font-caption text-muted-foreground hover:text-primary transition-colors duration-150">Negocios</Link>

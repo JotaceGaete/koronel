@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import { formatDate as formatDateBase } from 'utils/format';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
-    return new Date(dateStr)?.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
+    return formatDateBase(dateStr, { day: 'numeric', month: 'short', year: 'numeric' });
   } catch { return ''; }
 }
 

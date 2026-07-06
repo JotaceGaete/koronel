@@ -2,9 +2,22 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { useAuth } from '../../../contexts/AuthContext';
+import {
+  buildBusinessClaimUrl,
+  buildWalinkaCreateCatalogUrl,
+  canCreateWalinkaCatalog,
+  getBusinessCatalogUrl,
+} from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 export default function SearchMapBusinessCard({ business, isSelected, onClick, cardRef }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const catalogUrl = getBusinessCatalogUrl(business);
+  const canCreateCatalog = canCreateWalinkaCatalog(business, user);
+  const claimUrl = buildBusinessClaimUrl(business);
+  const createCatalogUrl = buildWalinkaCreateCatalogUrl(business);
 
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (
@@ -16,9 +29,9 @@ export default function SearchMapBusinessCard({ business, isSelected, onClick, c
       />
     ));
 
-  const hasBreadcrumb = business?.parentCategoryName || business?.category;
-  const breadcrumbParent = business?.parentCategoryName || business?.category;
-  const breadcrumbChild = business?.subCategoryName;
+  const breadcrumbParent = getCategoryLabel(business?.parentCategoryName || business?.category, null);
+  const breadcrumbChild = getCategoryLabel(business?.subCategoryName, null);
+  const hasBreadcrumb = breadcrumbParent || breadcrumbChild;
 
   return (
     <div
@@ -101,6 +114,25 @@ export default function SearchMapBusinessCard({ business, isSelected, onClick, c
             >
               <Icon name="MessageCircle" size={12} color="currentColor" />
             </a>
+          )}
+          {catalogUrl || canCreateCatalog ? (
+            <a
+              href={catalogUrl || createCatalogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e?.stopPropagation()}
+              className="text-xs font-caption font-medium px-2 py-1 rounded-md border border-border hover:bg-muted transition-colors text-foreground"
+            >
+              {catalogUrl ? 'Ver catálogo' : 'Crear catálogo'}
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => { e?.stopPropagation(); navigate(claimUrl); }}
+              className="text-xs font-caption font-medium px-2 py-1 rounded-md border border-border hover:bg-muted transition-colors text-foreground"
+            >
+              Reclámalo
+            </button>
           )}
         </div>
       </div>

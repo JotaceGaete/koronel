@@ -5,6 +5,7 @@ import Button from 'components/ui/Button';
 import Input from 'components/ui/Input';
 import { useAuth } from '../../../contexts/AuthContext';
 import { businessService } from '../../../services/businessService';
+import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 
 const PENDING_CLAIM_LABEL = {
   pending: { title: 'Solicitud en revisión', text: 'Ya enviaste una solicitud para reclamar este negocio. Te avisaremos por correo cuando el equipo la revise.' },
@@ -138,7 +139,7 @@ export default function ClaimBusiness({ businessId, businessName, claimed }) {
           <Input
             label="Teléfono"
             type="tel"
-            placeholder="+56 9 XXXX XXXX"
+            placeholder={PHONE_PLACEHOLDER}
             value={form?.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e?.target?.value }))}
           />

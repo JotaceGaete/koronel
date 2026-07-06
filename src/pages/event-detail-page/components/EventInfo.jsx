@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import { formatDateTime as formatDateTimeBase } from 'utils/format';
 
 function formatDateTime(dt) {
   if (!dt) return '';
-  const d = new Date(dt);
-  return d?.toLocaleString('es-CL', {
+  return formatDateTimeBase(dt, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import SmartSearchInput from 'components/ui/SmartSearchInput';
+import { useCity } from 'contexts/CityContext';
 
 const QUICK_CATEGORIES = [
   { label: 'Dentistas', term: 'Dentistas' },
@@ -12,6 +13,7 @@ const QUICK_CATEGORIES = [
 ];
 
 export default function HeroSection() {
+  const CITY_CONFIG = useCity();
   return (
     <section
       className="relative w-full py-3 px-4 sm:py-4 md:py-6 lg:py-8 md:px-6 lg:px-8 border-b border-border/60"
@@ -20,12 +22,12 @@ export default function HeroSection() {
       <div className="relative max-w-3xl mx-auto">
         {/* 1. Buscador inteligente: sugerencias en tiempo real */}
         <div className="w-full mb-3 sm:mb-4">
-          <SmartSearchInput placeholder="Buscar en Coronel: negocios, categorías o dirección..." />
+          <SmartSearchInput placeholder={`Buscar en ${CITY_CONFIG.name}: negocios, categorías o dirección...`} />
         </div>
 
         {/* 2. Título corto, discreto */}
         <h1 className="font-heading font-semibold text-sm sm:text-base text-muted-foreground text-center mb-3 sm:mb-4">
-          Negocios y servicios en Coronel
+          Negocios y servicios en {CITY_CONFIG.name}
         </h1>
 
         {/* 3. Categorías rápidas: 4 visibles en móvil, scroll horizontal */}

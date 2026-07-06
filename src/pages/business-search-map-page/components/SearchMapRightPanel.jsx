@@ -3,8 +3,16 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useCity } from '../../../contexts/CityContext';
+import {
+  buildBusinessClaimUrl,
+  buildWalinkaCreateCatalogUrl,
+  canCreateWalinkaCatalog,
+  getBusinessCatalogUrl,
+} from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
-const CORONEL_CENTER = [-37.0298, -73.1429];
 const DEFAULT_ZOOM = 13;
 
 // Inner component to expose map instance via ref
@@ -23,6 +31,9 @@ function MapController({ flyTarget, onMapReady }) {
 
 export default function SearchMapRightPanel({ businesses, selectedId, onMarkerClick, flyTarget, onMapReady }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const CITY_CONFIG = useCity();
+  const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
   const markerRefs = useRef({});
 
   // Open popup when selectedId changes
@@ -46,7 +57,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
   return (
     <div className="w-full h-full">
       <MapContainer
-        center={CORONEL_CENTER}
+        center={CITY_CENTER}
         zoom={DEFAULT_ZOOM}
         style={{ width: '100%', height: '100%' }}
         scrollWheelZoom={true}
@@ -60,6 +71,14 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
           const lat = parseFloat(business?.lat ?? business?.latitude);
           const lng = parseFloat(business?.lng ?? business?.longitude);
           const isActive = selectedId === business?.id;
+          const catalogUrl = getBusinessCatalogUrl(business);
+          const canCreateCatalog = canCreateWalinkaCatalog(business, user);
+          const claimUrl = buildBusinessClaimUrl(business);
+          const categoryLabel = getCategoryLabel(business?.parentCategoryName || business?.category, null);
+          const createCatalogUrl = buildWalinkaCreateCatalogUrl({
+            ...business,
+            city: business?.city || CITY_CONFIG?.name,
+          });
           return (
             <Marker
               key={business?.id}
@@ -75,7 +94,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                   <p style={{ fontWeight: '700', fontSize: '13px', marginBottom: '4px', lineHeight: '1.3' }}>
                     {business?.name}
                   </p>
-                  {(business?.parentCategoryName || business?.category) && (
+                  {categoryLabel && (
                     <span style={{
                       display: 'inline-block',
                       background: 'var(--color-primary, #2563EB)',
@@ -85,7 +104,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                       borderRadius: '999px',
                       marginBottom: '4px',
                     }}>
-                      {business?.parentCategoryName || business?.category}
+                      {categoryLabel}
                     </span>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginBottom: '6px' }}>
@@ -108,6 +127,51 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                   >
                     Ver negocio
                   </button>
+                  {catalogUrl || canCreateCatalog ? (
+                    <a
+                      href={catalogUrl || createCatalogUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        marginTop: '6px',
+                        padding: '5px 10px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '6px',
+                        color: '#111827',
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                      }}
+                    >
+                      {catalogUrl ? 'Ver catálogo' : 'Crear catálogo Walinka'}
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigate(claimUrl)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        marginTop: '6px',
+                        padding: '5px 10px',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '6px',
+                        color: '#111827',
+                        background: 'white',
+                        textAlign: 'center',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ¿Es tu negocio? Reclámalo
+                    </button>
+                  )}
                 </div>
               </Popup>
             </Marker>

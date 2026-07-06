@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import Header from 'components/ui/Header';
@@ -9,11 +9,17 @@ import MapSearchBar from './components/MapSearchBar';
 import BusinessBottomSheet from './components/BusinessBottomSheet';
 import EventBottomSheet from './components/EventBottomSheet';
 import UpcomingEventsPanel from './components/UpcomingEventsPanel';
-import { BusinessMarker, EventMarker, CommunityPostMarker } from './components/MapMarkers';
+import { BusinessMarker, EventMarker, CommunityPostMarker, UserLocationMarker } from './components/MapMarkers';
 import { Link } from 'react-router-dom';
+import { useCity } from '../../contexts/CityContext';
+import { SECTOR_COLORS_PALETTE_A } from '../../config/sectors';
+import {
+  calculateDistanceKm,
+  formatDistance,
+  getDirectionsUrl,
+  isValidCoordinate,
+} from '../../utils/nearbyLocation';
 
-// Coronel, Chile coordinates
-const CORONEL_CENTER = [-37.0298, -73.1429];
 const DEFAULT_ZOOM = 14;
 
 // Fix Leaflet default icon issue with bundlers
@@ -29,22 +35,14 @@ L?.Icon?.Default?.mergeOptions({
 function MapFlyTo({ target }) {
   const map = useMap();
   useEffect(() => {
-    if (target?.lat && target?.lng) {
-      map?.flyTo([target?.lat, target?.lng], 16, { duration: 1.2 });
+    if (isValidCoordinate(target?.lat, target?.lng)) {
+      map?.flyTo([Number(target?.lat), Number(target?.lng)], target?.zoom || 16, { duration: 1.2 });
     }
   }, [target, map]);
   return null;
 }
 
-const SECTOR_COLORS = {
-  Centro: { bg: '#dbeafe', color: '#1d4ed8' },
-  Lagunillas: { bg: '#d1fae5', color: '#065f46' },
-  Schwager: { bg: '#fef3c7', color: '#92400e' },
-  Puchoco: { bg: '#f3e8ff', color: '#6b21a8' },
-  'Las Higueras': { bg: '#fee2e2', color: '#991b1b' },
-  'Punta de Parra': { bg: '#e0f2fe', color: '#0369a1' },
-  Otro: { bg: '#f3f4f6', color: '#374151' },
-};
+const SECTOR_COLORS = SECTOR_COLORS_PALETTE_A;
 
 function CommunityPostBottomSheet({ post, onClose }) {
   if (!post) return null;
@@ -84,6 +82,8 @@ function CommunityPostBottomSheet({ post, onClose }) {
 }
 
 export default function InteractiveMapPage() {
+  const CITY_CONFIG = useCity();
+  const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
   const [businesses, setBusinesses] = useState([]);
   const [events, setEvents] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);
@@ -98,7 +98,11 @@ export default function InteractiveMapPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
   const [flyTarget, setFlyTarget] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [nearbyStatus, setNearbyStatus] = useState('idle');
+  const [nearbyError, setNearbyError] = useState('');
   const [upcomingPanelOpen, setUpcomingPanelOpen] = useState(true);
+  const [businessCategoryFacets, setBusinessCategoryFacets] = useState([]);
   const searchTimeout = useRef(null);
 
   const loadData = useCallback(async (searchVal, catVal) => {
@@ -114,6 +118,7 @@ export default function InteractiveMapPage() {
       setEvents(evResult?.data || []);
       setUpcomingEvents(upResult?.data || []);
       setCommunityPosts(communityResult?.data || []);
+      setBusinessCategoryFacets(bizResult?.categoryFacets || []);
     } catch (e) {
       console.error('Map load error:', e);
     } finally {
@@ -122,21 +127,92 @@ export default function InteractiveMapPage() {
   }, []);
 
   useEffect(() => {
-    loadData('', 'all');
-  }, [loadData]);
+    const hasSearch = search?.trim()?.length > 0;
+    if (hasSearch && category !== 'all') {
+      setCategory('all');
+      return undefined;
+    }
+
+    clearTimeout(searchTimeout?.current);
+    searchTimeout.current = setTimeout(() => {
+      loadData(search, hasSearch ? 'all' : category);
+    }, hasSearch ? 400 : 0);
+
+    return () => clearTimeout(searchTimeout?.current);
+  }, [search, category, loadData]);
 
   const handleSearchChange = (val) => {
     setSearch(val);
-    clearTimeout(searchTimeout?.current);
-    searchTimeout.current = setTimeout(() => {
-      loadData(val, category);
-    }, 400);
   };
 
   const handleCategoryChange = (cat) => {
     setCategory(cat);
-    loadData(search, cat);
   };
+
+  const businessesWithNearby = useMemo(() => {
+    return (businesses || []).map((business) => {
+      const directionsUrl = getDirectionsUrl(business?.lat, business?.lng);
+      if (!isValidCoordinate(business?.lat, business?.lng)) {
+        return business;
+      }
+      if (!userLocation) {
+        return { ...business, directionsUrl };
+      }
+
+      const distanceKm = calculateDistanceKm(
+        userLocation?.lat,
+        userLocation?.lng,
+        business?.lat,
+        business?.lng
+      );
+
+      return {
+        ...business,
+        directionsUrl,
+        distanceKm,
+        distanceLabel: formatDistance(distanceKm),
+      };
+    });
+  }, [businesses, userLocation]);
+
+  const selectedBusinessForDisplay = useMemo(() => {
+    if (!selectedBusiness) return null;
+    return businessesWithNearby?.find((business) => business?.id === selectedBusiness?.id) || selectedBusiness;
+  }, [businessesWithNearby, selectedBusiness]);
+
+  const handleNearbyClick = useCallback(() => {
+    if (!navigator?.geolocation) {
+      setNearbyError('Tu navegador no soporta geolocalización.');
+      setNearbyStatus('idle');
+      return;
+    }
+
+    setNearbyStatus('loading');
+    setNearbyError('');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextLocation = {
+          lat: position?.coords?.latitude,
+          lng: position?.coords?.longitude,
+        };
+
+        if (!isValidCoordinate(nextLocation?.lat, nextLocation?.lng)) {
+          setNearbyError('No pudimos obtener tu ubicación. Revisa los permisos del navegador.');
+          setNearbyStatus('idle');
+          return;
+        }
+
+        setUserLocation(nextLocation);
+        setFlyTarget({ ...nextLocation, zoom: 16 });
+        setNearbyStatus('idle');
+      },
+      () => {
+        setNearbyError('No pudimos obtener tu ubicación. Revisa los permisos del navegador.');
+        setNearbyStatus('idle');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }, []);
 
   const handleBusinessClick = (business) => {
     setSelectedBusiness(business);
@@ -181,7 +257,7 @@ export default function InteractiveMapPage() {
       <div className="relative flex-1" style={{ marginTop: '64px' }}>
         {/* Leaflet Map */}
         <MapContainer
-          center={CORONEL_CENTER}
+          center={CITY_CENTER}
           zoom={DEFAULT_ZOOM}
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}
@@ -195,7 +271,7 @@ export default function InteractiveMapPage() {
           {flyTarget && <MapFlyTo target={flyTarget} />}
 
           {/* Business Markers */}
-          {showBusinesses && businesses?.map(business => (
+          {showBusinesses && businessesWithNearby?.map(business => (
             <BusinessMarker
               key={business?.id}
               business={business}
@@ -223,6 +299,8 @@ export default function InteractiveMapPage() {
               onClick={handlePostClick}
             />
           ))}
+
+          <UserLocationMarker position={userLocation} />
         </MapContainer>
 
         {/* Sticky Search Bar (top overlay) */}
@@ -237,13 +315,37 @@ export default function InteractiveMapPage() {
           onToggleCommunity={() => setShowCommunity(v => !v)}
           category={category}
           onCategoryChange={handleCategoryChange}
+          businessCategoryFacets={businessCategoryFacets}
         />
+
+        <div className="absolute top-20 left-4 z-[500] flex flex-col items-start gap-2">
+          <button
+            type="button"
+            onClick={handleNearbyClick}
+            disabled={nearbyStatus === 'loading'}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg shadow-md border border-border bg-card text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-70"
+          >
+            <Icon name="LocateFixed" size={16} color="currentColor" />
+            {nearbyStatus === 'loading' ? 'Buscando tu ubicación...' : 'Cerca de mí'}
+          </button>
+          {nearbyError && (
+            <div className="max-w-[260px] px-3 py-2 rounded-lg shadow-md border border-border bg-card text-xs text-foreground">
+              {nearbyError}
+            </div>
+          )}
+        </div>
 
         {/* Loading indicator */}
         {loading && (
           <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-2 px-3 py-1.5 rounded-full shadow-md text-xs font-medium" style={{ background: 'var(--color-card)', color: 'var(--color-foreground)' }}>
             <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
             Cargando...
+          </div>
+        )}
+
+        {!loading && showBusinesses && businesses?.length === 0 && (category !== 'all' || search?.trim()) && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[500] px-3 py-2 rounded-lg shadow-md border border-border bg-card text-xs text-foreground">
+            No hay negocios visibles en este rubro o busqueda.
           </div>
         )}
 
@@ -285,7 +387,7 @@ export default function InteractiveMapPage() {
               style={{ maxHeight: '55vh', overflowY: 'auto' }}
             >
               {selectedBusiness && (
-                <BusinessBottomSheet business={selectedBusiness} onClose={handleCloseSheet} />
+                <BusinessBottomSheet business={selectedBusinessForDisplay} onClose={handleCloseSheet} />
               )}
               {selectedEvent && (
                 <EventBottomSheet event={selectedEvent} onClose={handleCloseSheet} />
@@ -316,7 +418,7 @@ export default function InteractiveMapPage() {
             style={{ width: '300px', maxHeight: 'calc(100vh - 160px)', overflowY: 'auto' }}
           >
             {selectedBusiness && (
-              <BusinessBottomSheet business={selectedBusiness} onClose={handleCloseSheet} />
+              <BusinessBottomSheet business={selectedBusinessForDisplay} onClose={handleCloseSheet} />
             )}
             {selectedEvent && (
               <EventBottomSheet event={selectedEvent} onClose={handleCloseSheet} />

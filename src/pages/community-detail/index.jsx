@@ -7,16 +7,7 @@ import { communityService } from '../../services/communityService';
 import ReplyCard from './components/ReplyCard';
 import ReplyForm from './components/ReplyForm';
 import ShareButtons from 'components/ui/ShareButtons';
-
-const SECTOR_COLORS = {
-  'Centro': { bg: '#dbeafe', color: '#1d4ed8' },
-  'Lagunillas': { bg: '#dcfce7', color: '#15803d' },
-  'Schwager': { bg: '#fef3c7', color: '#b45309' },
-  'Puchoco': { bg: '#fce7f3', color: '#be185d' },
-  'Las Higueras': { bg: '#ede9fe', color: '#7c3aed' },
-  'Punta de Parra': { bg: '#ffedd5', color: '#c2410c' },
-  'Otro': { bg: '#f1f5f9', color: '#475569' },
-};
+import { SECTOR_COLORS_PALETTE_B as SECTOR_COLORS } from 'config/sectors';
 
 export default function CommunityDetailPage() {
   const { id } = useParams();

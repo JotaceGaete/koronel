@@ -9,11 +9,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { adminBusinessService } from '../../services/adminService';
 import { businessService } from '../../services/businessService';
 import { geocode } from '../../services/geocodingService';
-import { CORONEL_DEFAULT } from '../../services/geocodingService';
+import { useCity } from '../../contexts/CityContext';
+import { PHONE_PLACEHOLDER } from '../../utils/phone';
 
 const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
 const MIN_TOUCH = 44;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const asCategoryId = (value) => (UUID_RE.test(String(value || '')) ? value : null);
 
 function isAdminUser(user, userProfile) {
   if (!user) return false;
@@ -37,6 +41,7 @@ const INITIAL = {
 };
 
 export default function AdminQuickBusinessEntry() {
+  const CITY_CONFIG = useCity();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -107,8 +112,8 @@ export default function AdminQuickBusinessEntry() {
     } else {
       setError('No se encontró la dirección. Ajusta el marcador en el mapa.');
       if (!form.lat) {
-        handleChange('lat', CORONEL_DEFAULT?.lat ?? -37.0167);
-        handleChange('lng', CORONEL_DEFAULT?.lng ?? -73.15);
+        handleChange('lat', CITY_CONFIG.center.lat);
+        handleChange('lng', CITY_CONFIG.center.lng);
       }
     }
   };
@@ -126,7 +131,7 @@ export default function AdminQuickBusinessEntry() {
         name: form.name.trim(),
         category: form.category_name || 'Sin categoría',
         category_key: form.category_key || null,
-        category_id: form.category_id || null,
+        category_id: asCategoryId(form.category_id),
         phone: form.phone?.trim() || null,
         whatsapp: form.whatsapp?.trim() || null,
         address: form.address?.trim() || null,
@@ -321,20 +326,20 @@ export default function AdminQuickBusinessEntry() {
             type="tel"
             value={form.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
-            placeholder="+56 41 234 5678"
+            placeholder={`+${CITY_CONFIG.phoneCountryCode} 41 234 5678`}
           />
           <Input
             label="WhatsApp"
             type="tel"
             value={form.whatsapp}
             onChange={(e) => handleChange('whatsapp', e.target.value)}
-            placeholder="+56 9 8765 4321"
+            placeholder={PHONE_PLACEHOLDER}
           />
           <Input
             label="Dirección"
             value={form.address}
             onChange={(e) => handleChange('address', e.target.value)}
-            placeholder="Calle y número, Coronel"
+            placeholder={`Calle y número, ${CITY_CONFIG.name}`}
           />
         </section>
 
@@ -369,8 +374,8 @@ export default function AdminQuickBusinessEntry() {
           </div>
           <div className="rounded-lg overflow-hidden border border-border" style={{ height: '220px' }}>
             <OSMMap
-              lat={form.lat ?? CORONEL_DEFAULT?.lat}
-              lng={form.lng ?? CORONEL_DEFAULT?.lng}
+              lat={form.lat ?? CITY_CONFIG.center.lat}
+              lng={form.lng ?? CITY_CONFIG.center.lng}
               height="220px"
               zoom={15}
               readonly={false}

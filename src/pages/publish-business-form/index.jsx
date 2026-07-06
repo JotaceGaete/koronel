@@ -10,6 +10,7 @@ import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../services/geocodingService';
 import { PHONE_PLACEHOLDER } from '../../utils/phone';
 import { useCity } from '../../contexts/CityContext';
+import { isWalinkaCatalogUrl } from '../../utils/walinkaCatalog';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -62,6 +63,7 @@ const INITIAL_FORM = {
   descripcion: '',
   whatsapp: '',
   website_url: '',
+  catalog_url: '',
 };
 
 export default function PublishBusinessForm() {
@@ -310,6 +312,9 @@ export default function PublishBusinessForm() {
     if (form?.website_url?.trim()) {
       try { new URL(form.website_url.trim()); } catch { newErrors.website_url = 'URL del sitio web no válida.'; }
     }
+    if (form?.catalog_url?.trim() && !isWalinkaCatalogUrl(form.catalog_url.trim())) {
+      newErrors.catalog_url = 'Ingresa una URL válida de Walinka/Ventalink.';
+    }
     socialLinks?.forEach((s, i) => {
       if (!s?.url?.trim()) { newErrors[`social_${i}`] = 'La URL es obligatoria.'; return; }
       if (s?.type === 'WhatsApp') {
@@ -366,7 +371,7 @@ export default function PublishBusinessForm() {
         lng: form?.lng ?? null,
         description: form?.descripcion?.trim(),
         whatsapp: form?.whatsapp?.trim() || null,
-        website: form?.website_url?.trim() || null,
+        website: form?.catalog_url?.trim() || form?.website_url?.trim() || null,
         opening_hours: buildOpeningHours(),
         social_links: socialLinks?.filter(s => s?.url?.trim()),
         owner_id: user?.id,
@@ -837,6 +842,20 @@ export default function PublishBusinessForm() {
                     className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.website_url ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors?.website_url && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.website_url}</p>}
+                </div>
+
+                {/* Catálogo Walinka */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">URL del catálogo Walinka</label>
+                  <input
+                    type="url"
+                    name="catalog_url"
+                    value={form?.catalog_url}
+                    onChange={handleChange}
+                    placeholder="https://go.ventalink.app/catalogo/mi-negocio"
+                    className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.catalog_url ? 'border-red-400' : 'border-border'}`}
+                  />
+                  {errors?.catalog_url && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.catalog_url}</p>}
                 </div>
 
                 {/* Redes sociales */}

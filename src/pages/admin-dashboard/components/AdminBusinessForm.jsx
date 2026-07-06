@@ -7,6 +7,7 @@ import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../../services/geocodingService';
 import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 import { useCity } from '../../../contexts/CityContext';
+import { getBusinessCatalogUrl, isWalinkaCatalogUrl } from '../../../utils/walinkaCatalog';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -78,6 +79,7 @@ const EMPTY_FORM = {
   whatsapp: '',
   email: '',
   website: '',
+  catalog_url: '',
   verified: false,
   featured: false,
   status: 'published',
@@ -141,6 +143,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
 
   useEffect(() => {
     if (editItem) {
+      const existingCatalogUrl = getBusinessCatalogUrl(editItem);
       // Detect parent/sub category
       const catId = editItem?.category_id || '';
       setForm({
@@ -158,7 +161,8 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         phone: editItem?.phone || '',
         whatsapp: editItem?.whatsapp || '',
         email: editItem?.email || '',
-        website: editItem?.website || '',
+        website: existingCatalogUrl ? '' : editItem?.website || '',
+        catalog_url: existingCatalogUrl || '',
         verified: editItem?.verified || false,
         featured: editItem?.featured || false,
         status: editItem?.status || 'published',
@@ -511,6 +515,9 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
     if (form?.website?.trim()) {
       try { new URL(form.website.trim()); } catch { errs.website = 'URL del sitio web no válida.'; }
     }
+    if (form?.catalog_url?.trim() && !isWalinkaCatalogUrl(form.catalog_url.trim())) {
+      errs.catalog_url = 'Ingresa una URL válida de Walinka/Ventalink.';
+    }
     socialLinks?.forEach((s, i) => {
       if (!s?.url?.trim()) { errs[`social_${i}`] = 'La URL es obligatoria.'; return; }
       if (s?.type === 'WhatsApp') {
@@ -564,7 +571,7 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
         phone: form?.phone?.trim(),
         whatsapp: form?.whatsapp?.trim() || null,
         email: form?.email?.trim() || null,
-        website: form?.website?.trim() || null,
+        website: form?.catalog_url?.trim() || form?.website?.trim() || null,
         verified: form?.verified,
         featured: form?.featured,
         status: form?.status,
@@ -1089,6 +1096,19 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
                   className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.website ? 'border-red-400' : 'border-border'}`}
                 />
                 {errors?.website && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.website}</p>}
+              </div>
+
+              {/* Catálogo Walinka */}
+              <div data-error={!!errors?.catalog_url}>
+                <label className="block text-sm font-medium text-foreground mb-1">URL del catálogo Walinka</label>
+                <input
+                  type="url"
+                  value={form?.catalog_url}
+                  onChange={e => { setForm(f => ({ ...f, catalog_url: e?.target?.value })); if (errors?.catalog_url) setErrors(p => ({ ...p, catalog_url: null })); }}
+                  placeholder="https://go.ventalink.app/catalogo/mi-negocio"
+                  className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.catalog_url ? 'border-red-400' : 'border-border'}`}
+                />
+                {errors?.catalog_url && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.catalog_url}</p>}
               </div>
 
               {/* Redes sociales */}

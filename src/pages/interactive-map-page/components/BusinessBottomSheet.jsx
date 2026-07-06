@@ -4,6 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { useCity } from 'contexts/CityContext';
 import { getDirectionsUrl } from '../../../utils/nearbyLocation';
+import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 
 const CATEGORY_CONFIG = {
   supermercados: { label: 'Supermercados', color: '#0891b2', bg: '#e0f2fe' },
@@ -19,6 +20,11 @@ export default function BusinessBottomSheet({ business, onClose }) {
 
   const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: business?.category || '', color: '#6b7280', bg: '#f3f4f6' };
   const directionsUrl = business?.directionsUrl || getDirectionsUrl(business?.lat, business?.lng);
+  const catalogUrl = getBusinessCatalogUrl(business);
+  const createCatalogUrl = buildWalinkaCreateCatalogUrl({
+    ...business,
+    city: business?.city || CITY_CONFIG?.name,
+  });
 
   const handleWhatsApp = () => {
     if (!business?.phone) return;
@@ -94,33 +100,57 @@ export default function BusinessBottomSheet({ business, onClose }) {
       </div>
 
       {/* Actions */}
-      <div className="px-4 pt-3 pb-4 flex gap-2">
-        {business?.phone && (
-          <button
-            onClick={handleWhatsApp}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white transition-colors"
-            style={{ background: '#25d366' }}
-          >
-            <Icon name="MessageCircle" size={15} color="white" />
-            WhatsApp
-          </button>
-        )}
-        <Link
-          to={`/negocios/${business?.id}`}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
-        >
-          <Icon name="ExternalLink" size={15} color="currentColor" />
-          Ver detalles
-        </Link>
-        {directionsUrl && (
+      <div className="px-4 pt-3 pb-4 space-y-2">
+        {catalogUrl && (
           <a
-            href={directionsUrl}
+            href={catalogUrl}
             target="_blank"
             rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            <Icon name="ShoppingBag" size={15} color="currentColor" />
+            Ver catálogo
+          </a>
+        )}
+        <div className="flex gap-2">
+          {business?.phone && (
+            <button
+              onClick={handleWhatsApp}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+              style={{ background: '#25d366' }}
+            >
+              <Icon name="MessageCircle" size={15} color="white" />
+              WhatsApp
+            </button>
+          )}
+          <Link
+            to={`/negocios/${business?.id}`}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
           >
-            <Icon name="Route" size={15} color="currentColor" />
-            Cómo llegar
+            <Icon name="ExternalLink" size={15} color="currentColor" />
+            Ver detalles
+          </Link>
+          {directionsUrl && (
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
+            >
+              <Icon name="Route" size={15} color="currentColor" />
+              Cómo llegar
+            </a>
+          )}
+        </div>
+        {!catalogUrl && (
+          <a
+            href={createCatalogUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            ¿Eres el propietario? Crea tu catálogo gratis
           </a>
         )}
       </div>

@@ -8,7 +8,7 @@ export const mapService = {
     try {
       let query = supabase
         ?.from('businesses')
-        ?.select('id, name, category, category_key, address, phone, lat, lng, featured, verified')
+        ?.select('id, name, category, category_key, address, phone, whatsapp, website, lat, lng, featured, verified')
         ?.not('lat', 'is', null);
 
       const { data, error } = await query;

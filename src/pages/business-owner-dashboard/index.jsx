@@ -14,8 +14,10 @@ import ReviewsTab from './components/ReviewsTab';
 import { useCity } from '../../contexts/CityContext';
 import StatsTab from './components/StatsTab';
 import MessagesTab from './components/MessagesTab';
+import SummaryTab from './components/SummaryTab';
 
 const TABS = [
+  { id: 'summary', label: 'Resumen', icon: 'Sparkles' },
   { id: 'businesses', label: 'Mis Negocios', icon: 'Building2' },
   { id: 'reviews', label: 'Reseñas', icon: 'Star' },
   { id: 'stats', label: 'Estadísticas', icon: 'BarChart2' },
@@ -26,7 +28,7 @@ export default function BusinessOwnerDashboard() {
   const CITY_CONFIG = useCity();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('businesses');
+  const [activeTab, setActiveTab] = useState('summary');
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -159,6 +161,18 @@ export default function BusinessOwnerDashboard() {
 
             {/* Main Content */}
             <main className="flex-1 min-w-0">
+              {/* Tab: Resumen */}
+              {activeTab === 'summary' && (
+                loading ? (
+                  <div className="py-16 text-center">
+                    <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+                    <p className="text-sm text-muted-foreground">Cargando tu resumen...</p>
+                  </div>
+                ) : (
+                  <SummaryTab businesses={businesses} walinkaLinks={walinkaLinks} onGoToTab={setActiveTab} />
+                )
+              )}
+
               {/* Tab: Mis Negocios */}
               {activeTab === 'businesses' && (
                 <div>

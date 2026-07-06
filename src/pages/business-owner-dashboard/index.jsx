@@ -6,6 +6,7 @@ import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
+import { walinkaLinkService } from '../../services/walinkaLinkService';
 import { supabase } from '../../lib/supabase';
 import OwnerBusinessCard from './components/OwnerBusinessCard';
 import EditBusinessModal from '../user-business-dashboard/components/EditBusinessModal';
@@ -32,6 +33,7 @@ export default function BusinessOwnerDashboard() {
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [unansweredCount, setUnansweredCount] = useState(0);
+  const [walinkaLinks, setWalinkaLinks] = useState({});
 
   useEffect(() => {
     if (!user) {
@@ -50,6 +52,9 @@ export default function BusinessOwnerDashboard() {
       setError('Error al cargar tus negocios. Intenta de nuevo.');
     } else {
       setBusinesses(data || []);
+      const businessIds = (data || [])?.map(b => b?.id)?.filter(Boolean);
+      const { data: links } = await walinkaLinkService?.getLinksForBusinesses(businessIds);
+      setWalinkaLinks(links || {});
       // Load unanswered reviews count
       if (data?.length > 0) {
         const ids = data?.map(b => b?.id);
@@ -190,6 +195,7 @@ export default function BusinessOwnerDashboard() {
                         <OwnerBusinessCard
                           key={biz?.id}
                           business={biz}
+                          walinkaLink={walinkaLinks?.[biz?.id] || null}
                           onEdit={() => setEditingBusiness(biz)}
                         />
                       ))}

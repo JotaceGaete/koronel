@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
+import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 
 const STATUS_CONFIG = {
   published: { label: 'Publicado', color: '#16a34a', bg: '#dcfce7' },
@@ -10,10 +11,30 @@ const STATUS_CONFIG = {
   rejected: { label: 'Rechazado', color: '#dc2626', bg: '#fee2e2' },
 };
 
-export default function OwnerBusinessCard({ business, onEdit }) {
+const WALINKA_STATUS_CONFIG = {
+  none: { label: 'Sin catálogo', color: '#6b7280', bg: '#f3f4f6', icon: 'ShoppingBag' },
+  pending: { label: 'Pendiente', color: '#92400e', bg: '#fef3c7', icon: 'Clock' },
+  connected: { label: 'Conectado', color: '#166534', bg: '#dcfce7', icon: 'BadgeCheck' },
+};
+
+export default function OwnerBusinessCard({ business, walinkaLink, onEdit }) {
   const primaryImage = business?.business_images?.find(img => img?.is_primary) || business?.business_images?.[0];
   const imageUrl = primaryImage ? businessService?.getImageUrl(primaryImage?.storage_path) : null;
   const status = STATUS_CONFIG?.[business?.status] || STATUS_CONFIG?.pending;
+  const catalogUrl = getBusinessCatalogUrl(business);
+  const walinkaStatusKey = walinkaLink?.status === 'connected'
+    ? 'connected'
+    : walinkaLink?.status === 'pending'
+      ? 'pending'
+      : 'none';
+  const walinkaStatus = WALINKA_STATUS_CONFIG?.[walinkaStatusKey] || WALINKA_STATUS_CONFIG.none;
+  const createCatalogUrl = buildWalinkaCreateCatalogUrl(business);
+  const walinkaActionUrl = catalogUrl || createCatalogUrl;
+  const walinkaActionLabel = catalogUrl
+    ? 'Ver catálogo'
+    : walinkaStatusKey === 'pending'
+      ? 'Continuar en Walinka'
+      : 'Crear catálogo Walinka';
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -44,6 +65,13 @@ export default function OwnerBusinessCard({ business, onEdit }) {
           {business?.address && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{business?.address}</p>
           )}
+          <div
+            className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium"
+            style={{ background: walinkaStatus?.bg, color: walinkaStatus?.color }}
+          >
+            <Icon name={walinkaStatus?.icon} size={11} color="currentColor" />
+            {walinkaStatus?.label}
+          </div>
         </div>
       </div>
 
@@ -92,6 +120,19 @@ export default function OwnerBusinessCard({ business, onEdit }) {
           </Link>
         )}
       </div>
+      {(walinkaStatusKey !== 'connected' || catalogUrl) && (
+        <div className="px-3 pb-3">
+          <a
+            href={walinkaActionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium border border-border rounded-lg hover:bg-muted transition-colors"
+          >
+            <Icon name="ShoppingBag" size={14} color="currentColor" />
+            {walinkaActionLabel}
+          </a>
+        </div>
+      )}
     </div>
   );
 }

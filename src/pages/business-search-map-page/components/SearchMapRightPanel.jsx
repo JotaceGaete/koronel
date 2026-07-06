@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useCity } from '../../../contexts/CityContext';
+import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 
 const DEFAULT_ZOOM = 13;
 
@@ -62,6 +63,11 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
           const lat = parseFloat(business?.lat ?? business?.latitude);
           const lng = parseFloat(business?.lng ?? business?.longitude);
           const isActive = selectedId === business?.id;
+          const catalogUrl = getBusinessCatalogUrl(business);
+          const createCatalogUrl = buildWalinkaCreateCatalogUrl({
+            ...business,
+            city: business?.city || CITY_CONFIG?.name,
+          });
           return (
             <Marker
               key={business?.id}
@@ -110,6 +116,27 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                   >
                     Ver negocio
                   </button>
+                  <a
+                    href={catalogUrl || createCatalogUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      marginTop: '6px',
+                      padding: '5px 10px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '6px',
+                      color: '#111827',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                    }}
+                  >
+                    {catalogUrl ? 'Ver catálogo' : 'Crear catálogo Walinka'}
+                  </a>
                 </div>
               </Popup>
             </Marker>

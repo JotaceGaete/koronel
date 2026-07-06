@@ -3,11 +3,17 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { useCity } from 'contexts/CityContext';
+import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 
 export default function BusinessCard({ business }) {
   const CITY_CONFIG = useCity();
   const category = business?.parentCategoryName || business?.subCategoryName || business?.category || '';
   const hasContact = business?.phone || business?.whatsapp;
+  const catalogUrl = getBusinessCatalogUrl(business);
+  const createCatalogUrl = buildWalinkaCreateCatalogUrl({
+    ...business,
+    city: business?.city || CITY_CONFIG?.name,
+  });
 
   return (
     <article className={`flex flex-col h-full bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${business?.featured ? 'border-accent/50' : 'border-border'}`}>
@@ -38,6 +44,26 @@ export default function BusinessCard({ business }) {
           >
             Ver negocio
           </Link>
+          {catalogUrl ? (
+            <a
+              href={catalogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[40px] w-full inline-flex items-center justify-center gap-2 px-4 rounded-xl text-sm font-caption font-semibold border border-border text-foreground hover:bg-muted transition-colors"
+            >
+              <Icon name="ShoppingBag" size={16} color="currentColor" />
+              Ver catálogo
+            </a>
+          ) : (
+            <a
+              href={createCatalogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-center text-xs font-caption text-muted-foreground hover:text-primary transition-colors"
+            >
+              Crear catálogo Walinka
+            </a>
+          )}
           {hasContact && (
             <div className="flex gap-2 min-w-0">
               {business?.phone && (

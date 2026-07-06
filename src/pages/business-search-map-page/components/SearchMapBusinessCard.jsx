@@ -2,9 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
+import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 
 export default function SearchMapBusinessCard({ business, isSelected, onClick, cardRef }) {
   const navigate = useNavigate();
+  const catalogUrl = getBusinessCatalogUrl(business);
+  const createCatalogUrl = buildWalinkaCreateCatalogUrl(business);
 
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (
@@ -102,6 +105,15 @@ export default function SearchMapBusinessCard({ business, isSelected, onClick, c
               <Icon name="MessageCircle" size={12} color="currentColor" />
             </a>
           )}
+          <a
+            href={catalogUrl || createCatalogUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e?.stopPropagation()}
+            className="text-xs font-caption font-medium px-2 py-1 rounded-md border border-border hover:bg-muted transition-colors text-foreground"
+          >
+            {catalogUrl ? 'Ver catálogo' : 'Crear catálogo'}
+          </a>
         </div>
       </div>
     </div>

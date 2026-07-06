@@ -2,7 +2,9 @@
 
 ## Alcance revisado
 
-Koronel modela los negocios en la tabla `public.businesses` de Supabase. No se encontro codigo de Walinka/Ventalink en este repo ni un segundo cliente/base de datos para ese producto. El frontend usa un unico cliente Supabase en `src/lib/supabase.js`.
+Koronel y Walinka/Ventalink comparten la misma base Supabase, pero usan tablas distintas. Koronel modela los negocios locales en `public.businesses`, `business_images`, `business_claims`, etc. Walinka/Ventalink usa tablas propias como `wa_businesses`, `wa_products` y `billing_subscriptions`.
+
+El frontend de Koronel usa un unico cliente Supabase en `src/lib/supabase.js`. En esta fase no se consultan ni modifican tablas `wa_*`; el cambio solo agrega puntos visibles para llevar al negocio desde Koronel hacia el alta o catalogo de Walinka.
 
 ## Campos actuales encontrados
 
@@ -40,16 +42,27 @@ Las imagenes se modelan aparte en `business_images`, con `storage_path`, `alt_te
 
 No se encontro un campo dedicado como `catalog_url`, `catalog_provider`, `catalog_connected_at`, `external_catalog_slug` o similar.
 
-Si se decide separar explicitamente el catalogo del sitio web, la migracion no destructiva sugerida es:
+El commit inicial uso `website` como puente temporal. Eso es reversible, pero no representa todavia el vinculo real entre entidades Koronel/Walinka.
+
+Opciones no destructivas para la siguiente fase, a revisar antes de aplicar:
 
 ```sql
 ALTER TABLE public.businesses
-  ADD COLUMN IF NOT EXISTS catalog_url TEXT,
-  ADD COLUMN IF NOT EXISTS catalog_provider TEXT DEFAULT 'walinka',
-  ADD COLUMN IF NOT EXISTS catalog_connected_at TIMESTAMPTZ;
+  ADD COLUMN IF NOT EXISTS walinka_business_id UUID;
 ```
 
-Esta migracion no fue aplicada en esta fase.
+o bien una tabla puente:
+
+```sql
+CREATE TABLE public.business_walinka_links (
+  koronel_business_id UUID NOT NULL REFERENCES public.businesses(id),
+  walinka_business_id UUID NOT NULL REFERENCES public.wa_businesses(id),
+  connected_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (koronel_business_id, walinka_business_id)
+);
+```
+
+Tambien puede evaluarse `wa_businesses.koronel_business_id` si el dominio Walinka debe conocer directamente el origen Koronel. Ninguna migracion fue aplicada en esta fase.
 
 ## Login, propietario y reclamo
 
@@ -79,13 +92,29 @@ Formulario/admin de negocio:
 - `src/services/businessService.js`
 - `src/services/adminService.js`
 
+Cards/listados/perfil revisados:
+
+- `src/pages/business-directory-listing/components/BusinessCard.jsx`
+- `src/pages/business-search-map-page/components/SearchMapBusinessCard.jsx`
+- `src/pages/business-search-map-page/components/SearchMapRightPanel.jsx`
+- `src/pages/business-profile-page/components/BusinessInfo.jsx`
+
+## Diagnostico de visibilidad
+
+El CTA del commit inicial quedo visible solo dentro de `BusinessBottomSheet`, es decir, despues de seleccionar un marcador del mapa interactivo. No aparecia en el directorio, la ficha de perfil, las cards del buscador con mapa ni el popup del mapa de `/buscar`. Por eso la integracion existia en helpers/tests, pero no era evidente para un visitante normal.
+
 ## Decision tomada
 
-Para mantener el cambio incremental y reversible, Fase 1 usa el campo existente `website` como entrypoint de catalogo solo cuando contiene una URL permitida de Walinka/Ventalink.
+Para mantener el cambio incremental y reversible, esta fase conserva `website` como entrypoint temporal de catalogo solo cuando contiene una URL permitida de Walinka/Ventalink.
 
 La UI agrega el campo opcional "URL del catalogo Walinka" en publicacion y admin. Si el campo se completa con una URL valida de Walinka/Ventalink, se persiste en `website`. Si se deja vacio, no bloquea el guardado y el sitio web normal sigue funcionando.
 
 El helper `getBusinessCatalogUrl` ya soporta `catalog_url` ademas de `website`, para que una migracion futura pueda adoptarse sin reescribir la ficha.
+
+La UI ahora muestra:
+
+- `Ver catalogo` cuando existe URL Walinka/Ventalink valida.
+- `Crear catalogo Walinka` o `Crear catalogo gratis` cuando el negocio no tiene catalogo conectado.
 
 ## Archivos tocados
 
@@ -94,6 +123,12 @@ El helper `getBusinessCatalogUrl` ya soporta `catalog_url` ademas de `website`, 
 - `src/services/mapService.js`
 - `src/pages/interactive-map-page/components/BusinessBottomSheet.jsx`
 - `src/pages/interactive-map-page/components/BusinessBottomSheet.test.jsx`
+- `src/pages/business-directory-listing/components/BusinessCard.jsx`
+- `src/pages/business-directory-listing/components/BusinessCard.test.jsx`
+- `src/pages/business-search-map-page/components/SearchMapBusinessCard.jsx`
+- `src/pages/business-search-map-page/components/SearchMapRightPanel.jsx`
+- `src/pages/business-profile-page/components/BusinessInfo.jsx`
+- `src/pages/business-profile-page/components/BusinessInfo.test.jsx`
 - `src/pages/publish-business-form/index.jsx`
 - `src/pages/admin-dashboard/components/AdminBusinessForm.jsx`
 - `.env.example`
@@ -107,8 +142,8 @@ El helper `getBusinessCatalogUrl` ya soporta `catalog_url` ademas de `website`, 
 
 ## Siguiente fase sugerida
 
-1. Confirmar dominio publico definitivo de Walinka/Ventalink y ajustar `VITE_WALINKA_APP_URL` si corresponde.
-2. Aplicar migracion dedicada `catalog_url`, `catalog_provider`, `catalog_connected_at`.
-3. Mover catalogos existentes desde `website` a `catalog_url` solo para URLs Walinka/Ventalink.
-4. Agregar UI de conexion para propietarios reclamados, sin crear sincronizacion bidireccional.
-5. Evaluar API de creacion automatica de catalogo en una fase posterior.
+1. Confirmar modelo de vinculo real: `businesses.walinka_business_id`, `wa_businesses.koronel_business_id` o tabla puente.
+2. Confirmar el flujo de alta en Walinka usando la misma Supabase y tablas `wa_*`.
+3. Agregar UI de conexion para propietarios reclamados, sin sincronizacion bidireccional.
+4. Migrar URLs Walinka/Ventalink existentes desde `website` al vinculo real solo despues de aprobar la migracion.
+5. Evaluar creacion automatica de `wa_businesses` via API o RPC en una fase posterior.

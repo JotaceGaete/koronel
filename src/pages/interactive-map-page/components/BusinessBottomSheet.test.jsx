@@ -83,7 +83,7 @@ describe('BusinessBottomSheet nearby and catalog details', () => {
     expect(screen.queryByRole('link', { name: /crear/i })).not.toBeInTheDocument();
   });
 
-  it('shows claim CTA for public users when the business has no catalog URL', () => {
+  it('does not show public Walinka CTA when the business has no catalog URL', () => {
     render(
       <MemoryRouter>
         <BusinessBottomSheet
@@ -100,13 +100,10 @@ describe('BusinessBottomSheet nearby and catalog details', () => {
     );
 
     expect(screen.queryByRole('link', { name: /crea tu cat.logo gratis/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /recl.malo/i })).toHaveAttribute(
-      'href',
-      '/business-profile-page?id=business-4'
-    );
+    expect(screen.queryByRole('link', { name: /recl.malo/i })).not.toBeInTheDocument();
   });
 
-  it('shows create catalog CTA only for the claimed owner', () => {
+  it('does not show create catalog CTA in the public bottom sheet for claimed owners', () => {
     mockUseAuth.mockReturnValue({ user: { id: 'owner-1' } });
 
     render(
@@ -126,8 +123,7 @@ describe('BusinessBottomSheet nearby and catalog details', () => {
       </MemoryRouter>
     );
 
-    const cta = screen.getByRole('link', { name: /crea tu cat.logo gratis/i });
-    expect(cta).toHaveAttribute('href', expect.stringContaining('/business-registration?'));
+    expect(screen.queryByRole('link', { name: /crea tu cat.logo gratis/i })).not.toBeInTheDocument();
   });
 
   it('does not break render when the catalog URL is invalid', () => {
@@ -146,6 +142,6 @@ describe('BusinessBottomSheet nearby and catalog details', () => {
     );
 
     expect(screen.queryByRole('link', { name: /ver cat.logo/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /recl.malo/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /recl.malo/i })).not.toBeInTheDocument();
   });
 });

@@ -1,16 +1,10 @@
-import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+﻿import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useAuth } from '../../../contexts/AuthContext';
 import { useCity } from '../../../contexts/CityContext';
-import {
-  buildBusinessClaimUrl,
-  buildWalinkaCreateCatalogUrl,
-  canCreateWalinkaCatalog,
-  getBusinessCatalogUrl,
-} from '../../../utils/walinkaCatalog';
+import { getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 const DEFAULT_ZOOM = 13;
@@ -31,7 +25,6 @@ function MapController({ flyTarget, onMapReady }) {
 
 export default function SearchMapRightPanel({ businesses, selectedId, onMarkerClick, flyTarget, onMapReady }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const CITY_CONFIG = useCity();
   const CITY_CENTER = [CITY_CONFIG.center.lat, CITY_CONFIG.center.lng];
   const markerRefs = useRef({});
@@ -51,7 +44,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
 
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (
-      <span key={i} style={{ color: i < Math.floor(rating || 0) ? '#F59E0B' : '#D1D5DB', fontSize: '12px' }}>★</span>
+      <span key={i} style={{ color: i < Math.floor(rating || 0) ? '#F59E0B' : '#D1D5DB', fontSize: '12px' }}>â˜…</span>
     ));
 
   return (
@@ -72,13 +65,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
           const lng = parseFloat(business?.lng ?? business?.longitude);
           const isActive = selectedId === business?.id;
           const catalogUrl = getBusinessCatalogUrl(business);
-          const canCreateCatalog = canCreateWalinkaCatalog(business, user);
-          const claimUrl = buildBusinessClaimUrl(business);
           const categoryLabel = getCategoryLabel(business?.parentCategoryName || business?.category, null);
-          const createCatalogUrl = buildWalinkaCreateCatalogUrl({
-            ...business,
-            city: business?.city || CITY_CONFIG?.name,
-          });
           return (
             <Marker
               key={business?.id}
@@ -109,7 +96,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginBottom: '6px' }}>
                     {renderStars(business?.rating)}
-                    <span style={{ fontSize: '11px', marginLeft: '3px', color: '#6B7280' }}>{business?.rating || '—'}</span>
+                    <span style={{ fontSize: '11px', marginLeft: '3px', color: '#6B7280' }}>{business?.rating || 'â€”'}</span>
                   </div>
                   <button
                     onClick={() => navigate(`/negocios/${business?.id}`)}
@@ -127,9 +114,9 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                   >
                     Ver negocio
                   </button>
-                  {catalogUrl || canCreateCatalog ? (
+                  {catalogUrl ? (
                     <a
-                      href={catalogUrl || createCatalogUrl}
+                      href={catalogUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -147,31 +134,9 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                         fontWeight: '600',
                       }}
                     >
-                      {catalogUrl ? 'Ver catálogo' : 'Crear catálogo Walinka'}
+                      Ver productos
                     </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => navigate(claimUrl)}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        marginTop: '6px',
-                        padding: '5px 10px',
-                        border: '1px solid #E5E7EB',
-                        borderRadius: '6px',
-                        color: '#111827',
-                        background: 'white',
-                        textAlign: 'center',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      ¿Es tu negocio? Reclámalo
-                    </button>
-                  )}
+                  ) : null}
                 </div>
               </Popup>
             </Marker>

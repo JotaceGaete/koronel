@@ -10,7 +10,7 @@ import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../services/geocodingService';
 import { PHONE_PLACEHOLDER } from '../../utils/phone';
 import { useCity } from '../../contexts/CityContext';
-import { isWalinkaCatalogUrl } from '../../utils/walinkaCatalog';
+import { buildWalinkaRegisterUrl, getBusinessCatalogUrl, isWalinkaCatalogUrl } from '../../utils/walinkaCatalog';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -99,6 +99,8 @@ export default function PublishBusinessForm() {
   // Geocoding state
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState(null);
+  const formCatalogUrl = getBusinessCatalogUrl({ catalog_url: form?.catalog_url });
+  const walinkaRegisterUrl = buildWalinkaRegisterUrl();
 
   useEffect(() => {
     if (!user) {
@@ -842,6 +844,63 @@ export default function PublishBusinessForm() {
                     className={`w-full px-3 py-2.5 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${errors?.website_url ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors?.website_url && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.website_url}</p>}
+                </div>
+
+                <div className="rounded-lg border border-border bg-muted/40 p-4">
+                  <div className="flex items-start gap-3">
+                    <Icon name="ShoppingBag" size={20} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-heading font-semibold text-sm text-foreground">
+                        {formCatalogUrl ? 'Catálogo Walinka conectado' : 'Crea tu catálogo online'}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {formCatalogUrl
+                          ? 'Tu negocio ya tiene un catálogo online asociado.'
+                          : 'Muestra productos, precios y fotos, y recibe pedidos por WhatsApp.'}
+                      </p>
+                      {!formCatalogUrl && (
+                        <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                          <li className="flex items-start gap-2">
+                            <Icon name="Check" size={14} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+                            <span>Comparte tu catálogo por WhatsApp</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Icon name="Check" size={14} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+                            <span>Publica productos con fotos y precios</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <Icon name="Check" size={14} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+                            <span>Recibe pedidos más ordenados</span>
+                          </li>
+                        </ul>
+                      )}
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                        {formCatalogUrl ? (
+                          <a
+                            href={formCatalogUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors"
+                            style={{ background: 'var(--color-primary)' }}
+                          >
+                            <Icon name="ExternalLink" size={15} color="white" />
+                            Ver catálogo
+                          </a>
+                        ) : (
+                          <a
+                            href={walinkaRegisterUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors"
+                            style={{ background: 'var(--color-primary)' }}
+                          >
+                            <Icon name="ExternalLink" size={15} color="white" />
+                            Crear catálogo gratis
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Catálogo Walinka */}

@@ -1,8 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
-import { buildWalinkaCreateCatalogUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
+import { buildWalinkaRegisterUrl, getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 
 const STATUS_CONFIG = {
   published: { label: 'Publicado', color: '#16a34a', bg: '#dcfce7' },
@@ -28,13 +28,7 @@ export default function OwnerBusinessCard({ business, walinkaLink, onEdit }) {
       ? 'pending'
       : 'none';
   const walinkaStatus = WALINKA_STATUS_CONFIG?.[walinkaStatusKey] || WALINKA_STATUS_CONFIG.none;
-  const createCatalogUrl = buildWalinkaCreateCatalogUrl(business);
-  const walinkaActionUrl = catalogUrl || createCatalogUrl;
-  const walinkaActionLabel = catalogUrl
-    ? 'Ver catálogo'
-    : walinkaStatusKey === 'pending'
-      ? 'Continuar en Walinka'
-      : 'Crear catálogo Walinka';
+  const createCatalogUrl = buildWalinkaRegisterUrl();
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -94,7 +88,7 @@ export default function OwnerBusinessCard({ business, walinkaLink, onEdit }) {
         <div className="flex-1 flex flex-col items-center py-3">
           <div className="flex items-center gap-1" style={{ color: '#f59e0b' }}>
             <Icon name="Star" size={14} color="currentColor" />
-            <span className="font-heading font-bold text-sm">{business?.rating ? parseFloat(business?.rating)?.toFixed(1) : '—'}</span>
+            <span className="font-heading font-bold text-sm">{business?.rating ? parseFloat(business?.rating)?.toFixed(1) : 'â€”'}</span>
           </div>
           <span className="text-xs text-muted-foreground mt-0.5">{business?.review_count || 0} reseñas</span>
         </div>
@@ -120,19 +114,74 @@ export default function OwnerBusinessCard({ business, walinkaLink, onEdit }) {
           </Link>
         )}
       </div>
-      {(walinkaStatusKey !== 'connected' || catalogUrl) && (
-        <div className="px-3 pb-3">
-          <a
-            href={walinkaActionUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium border border-border rounded-lg hover:bg-muted transition-colors"
-          >
-            <Icon name="ShoppingBag" size={14} color="currentColor" />
-            {walinkaActionLabel}
-          </a>
+      <div className="px-3 pb-3">
+        <div className="rounded-lg border border-border bg-muted/40 p-3">
+          <div className="flex items-start gap-2">
+            <Icon name="ShoppingBag" size={18} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h4 className="font-heading font-semibold text-sm text-foreground">
+                {catalogUrl ? 'Catálogo Walinka conectado' : 'Crea tu catálogo online'}
+              </h4>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {catalogUrl
+                  ? 'Tu negocio ya tiene un catálogo online asociado.'
+                  : 'Muestra productos, precios y fotos, y recibe pedidos por WhatsApp.'}
+              </p>
+              {!catalogUrl && (
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li className="flex items-start gap-1.5">
+                    <Icon name="Check" size={12} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+                    <span>Comparte tu catálogo por WhatsApp</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <Icon name="Check" size={12} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+                    <span>Publica productos con fotos y precios</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <Icon name="Check" size={12} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+                    <span>Recibe pedidos más ordenados</span>
+                  </li>
+                </ul>
+              )}
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                {catalogUrl ? (
+                  <>
+                    <a
+                      href={catalogUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+                      style={{ background: 'var(--color-primary)' }}
+                    >
+                      <Icon name="ExternalLink" size={14} color="white" />
+                      Ver catálogo
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => onEdit(business)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 text-sm font-medium border border-border rounded-lg hover:bg-background transition-colors"
+                    >
+                      <Icon name="Pencil" size={14} color="currentColor" />
+                      Editar URL
+                    </button>
+                  </>
+                ) : (
+                  <a
+                    href={createCatalogUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-lg text-white transition-colors"
+                    style={{ background: 'var(--color-primary)' }}
+                  >
+                    <Icon name="ExternalLink" size={14} color="white" />
+                    Crear catálogo gratis
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

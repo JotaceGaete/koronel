@@ -34,13 +34,13 @@ describe('BusinessCard Walinka CTA', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('link', { name: /ver cat.logo/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /ver productos/i })).toHaveAttribute(
       'href',
       'https://go.ventalink.app/catalogo/negocio'
     );
   });
 
-  it('shows claim CTA when a public business has no catalog URL', () => {
+  it('does not show a public catalog CTA when a business has no catalog URL', () => {
     render(
       <MemoryRouter>
         <BusinessCard
@@ -56,10 +56,8 @@ describe('BusinessCard Walinka CTA', () => {
     );
 
     expect(screen.queryByRole('link', { name: /crear cat.logo walinka/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /recl.malo/i })).toHaveAttribute(
-      'href',
-      '/business-profile-page?id=business-card-2'
-    );
+    expect(screen.queryByRole('link', { name: /recl.malo/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ver productos/i })).not.toBeInTheDocument();
   });
 
   it('renders category objects as labels', () => {
@@ -85,7 +83,7 @@ describe('BusinessCard Walinka CTA', () => {
     expect(screen.getByText('Imprenta y grafica')).toBeInTheDocument();
   });
 
-  it('shows Crear catalogo Walinka only for the claimed owner', () => {
+  it('does not show create catalog CTA in public listing cards for claimed owners', () => {
     mockUseAuth.mockReturnValue({ user: { id: 'owner-1' } });
 
     render(
@@ -104,7 +102,7 @@ describe('BusinessCard Walinka CTA', () => {
       </MemoryRouter>
     );
 
-    const cta = screen.getByRole('link', { name: /crear cat.logo walinka/i });
-    expect(cta).toHaveAttribute('href', expect.stringContaining('/business-registration?'));
+    expect(screen.queryByRole('link', { name: /crear cat.logo walinka/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ver productos/i })).not.toBeInTheDocument();
   });
 });

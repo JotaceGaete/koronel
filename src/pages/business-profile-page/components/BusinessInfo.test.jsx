@@ -25,7 +25,7 @@ describe('BusinessInfo Walinka CTA', () => {
     mockUseAuth.mockReturnValue({ user: null });
   });
 
-  it('shows Ver catalogo in the profile action buttons when connected', () => {
+  it('shows the online catalog block when connected', () => {
     render(
       <BusinessInfo
         business={{
@@ -41,13 +41,15 @@ describe('BusinessInfo Walinka CTA', () => {
       />
     );
 
+    expect(screen.getByRole('heading', { name: /cat.logo online/i })).toBeInTheDocument();
+    expect(screen.getByText(/publica sus productos en un cat.logo online/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /ver cat.logo/i })).toHaveAttribute(
       'href',
       'https://go.ventalink.app/catalogo/perfil'
     );
   });
 
-  it('shows claim CTA in the profile action buttons for public users', () => {
+  it('does not show a public catalog CTA when the business has no catalog URL', () => {
     render(
       <BusinessInfo
         business={{
@@ -62,14 +64,12 @@ describe('BusinessInfo Walinka CTA', () => {
       />
     );
 
+    expect(screen.queryByText(/cat.logo online/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /crear cat.logo walinka/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /recl.malo/i })).toHaveAttribute(
-      'href',
-      '/business-profile-page?id=profile-2'
-    );
+    expect(screen.queryByRole('link', { name: /recl.malo/i })).not.toBeInTheDocument();
   });
 
-  it('shows Crear catalogo Walinka only for the claimed owner', () => {
+  it('does not show create catalog CTA in the public profile for claimed owners', () => {
     mockUseAuth.mockReturnValue({ user: { id: 'owner-1' } });
 
     render(
@@ -88,7 +88,6 @@ describe('BusinessInfo Walinka CTA', () => {
       />
     );
 
-    const cta = screen.getByRole('link', { name: /crear cat.logo walinka/i });
-    expect(cta).toHaveAttribute('href', expect.stringContaining('/business-registration?'));
+    expect(screen.queryByRole('link', { name: /crear cat.logo walinka/i })).not.toBeInTheDocument();
   });
 });

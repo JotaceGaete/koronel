@@ -3,30 +3,17 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { useCity } from 'contexts/CityContext';
-import { useAuth } from '../../../contexts/AuthContext';
-import {
-  buildBusinessClaimUrl,
-  buildWalinkaCreateCatalogUrl,
-  canCreateWalinkaCatalog,
-  getBusinessCatalogUrl,
-} from '../../../utils/walinkaCatalog';
+import { getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 export default function BusinessCard({ business }) {
   const CITY_CONFIG = useCity();
-  const { user } = useAuth();
   const category = getCategoryLabel(
     business?.parentCategoryName || business?.subCategoryName || business?.category,
     ''
   );
   const hasContact = business?.phone || business?.whatsapp;
   const catalogUrl = getBusinessCatalogUrl(business);
-  const canCreateCatalog = canCreateWalinkaCatalog(business, user);
-  const claimUrl = buildBusinessClaimUrl(business);
-  const createCatalogUrl = buildWalinkaCreateCatalogUrl({
-    ...business,
-    city: business?.city || CITY_CONFIG?.name,
-  });
 
   return (
     <article className={`flex flex-col h-full bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${business?.featured ? 'border-accent/50' : 'border-border'}`}>
@@ -65,25 +52,9 @@ export default function BusinessCard({ business }) {
               className="min-h-[40px] w-full inline-flex items-center justify-center gap-2 px-4 rounded-xl text-sm font-caption font-semibold border border-border text-foreground hover:bg-muted transition-colors"
             >
               <Icon name="ShoppingBag" size={16} color="currentColor" />
-              Ver catálogo
+              Ver productos
             </a>
-          ) : canCreateCatalog ? (
-            <a
-              href={createCatalogUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-center text-xs font-caption text-muted-foreground hover:text-primary transition-colors"
-            >
-              Crear catálogo Walinka
-            </a>
-          ) : (
-            <Link
-              to={claimUrl}
-              className="text-center text-xs font-caption text-muted-foreground hover:text-primary transition-colors"
-            >
-              ¿Es tu negocio? Reclámalo
-            </Link>
-          )}
+          ) : null}
           {hasContact && (
             <div className="flex gap-2 min-w-0">
               {business?.phone && (

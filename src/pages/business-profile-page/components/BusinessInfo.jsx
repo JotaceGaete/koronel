@@ -1,14 +1,7 @@
 import React from 'react';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
-import { useCity } from '../../../contexts/CityContext';
-import { useAuth } from '../../../contexts/AuthContext';
-import {
-  buildBusinessClaimUrl,
-  buildWalinkaCreateCatalogUrl,
-  canCreateWalinkaCatalog,
-  getBusinessCatalogUrl,
-} from '../../../utils/walinkaCatalog';
+import { getBusinessCatalogUrl } from '../../../utils/walinkaCatalog';
 import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 function StarRating({ rating, reviewCount }) {
@@ -31,8 +24,6 @@ function StarRating({ rating, reviewCount }) {
 }
 
 export default function BusinessInfo({ business, onCall, onWhatsApp, onDirections, onShare }) {
-  const CITY_CONFIG = useCity();
-  const { user } = useAuth();
   // Build category breadcrumb
   const parentCat = getCategoryLabel(
     business?.parentCategoryName || (business?.categories?.[0]) || business?.category,
@@ -43,12 +34,6 @@ export default function BusinessInfo({ business, onCall, onWhatsApp, onDirection
     null
   );
   const catalogUrl = getBusinessCatalogUrl(business);
-  const canCreateCatalog = canCreateWalinkaCatalog(business, user);
-  const claimUrl = buildBusinessClaimUrl(business);
-  const createCatalogUrl = buildWalinkaCreateCatalogUrl({
-    ...business,
-    city: business?.city || CITY_CONFIG?.name,
-  });
 
   return (
     <div className="space-y-4">
@@ -121,30 +106,25 @@ export default function BusinessInfo({ business, onCall, onWhatsApp, onDirection
         <Button variant="outline" iconName="Navigation" iconPosition="left" iconSize={16} onClick={onDirections}>
           Cómo llegar
         </Button>
-        {(catalogUrl || canCreateCatalog) ? (
-          <Button
-            asChild
-            variant={catalogUrl ? 'default' : 'outline'}
-            iconName="ShoppingBag"
-            iconPosition="left"
-            iconSize={16}
-          >
-            <a href={catalogUrl || createCatalogUrl} target="_blank" rel="noopener noreferrer">
-              {catalogUrl ? 'Ver catálogo' : 'Crear catálogo Walinka'}
-            </a>
-          </Button>
-        ) : (
-          <Button
-            asChild
-            variant="outline"
-            iconName="Flag"
-            iconPosition="left"
-            iconSize={16}
-          >
-            <a href={claimUrl}>¿Es tu negocio? Reclámalo</a>
-          </Button>
-        )}
       </div>
+      {catalogUrl && (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Icon name="ShoppingBag" size={18} color="var(--color-primary)" />
+                <h2 className="font-heading font-semibold text-base text-foreground">Catálogo online</h2>
+              </div>
+              <p className="mt-1 text-sm font-caption text-muted-foreground">
+                Este negocio publica sus productos en un catálogo online.
+              </p>
+            </div>
+            <Button asChild variant="default" iconName="ExternalLink" iconPosition="left" iconSize={16}>
+              <a href={catalogUrl} target="_blank" rel="noopener noreferrer">Ver catálogo</a>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

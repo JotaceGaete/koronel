@@ -28,17 +28,20 @@ function renderCard(props = {}) {
 }
 
 describe('OwnerBusinessCard Walinka link status', () => {
-  it('shows Sin catálogo and fallback CTA when there is no link', () => {
+  it('shows Sin catalogo and the create catalog card when there is no link', () => {
     renderCard();
 
     expect(screen.getByText('Sin catálogo')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /crear catálogo walinka/i })).toHaveAttribute(
+    expect(screen.getByText(/crea tu catálogo online/i)).toBeInTheDocument();
+    expect(screen.getByText(/muestra productos, precios y fotos/i)).toBeInTheDocument();
+    expect(screen.getByText(/comparte tu catálogo por whatsapp/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /crear catálogo gratis/i })).toHaveAttribute(
       'href',
-      expect.stringContaining('/business-registration?')
+      'https://go.ventalink.app/register'
     );
   });
 
-  it('shows Pendiente and continue CTA for pending links', () => {
+  it('shows Pendiente and keeps the create catalog card for pending links without URL', () => {
     renderCard({
       walinkaLink: {
         status: 'pending',
@@ -47,10 +50,10 @@ describe('OwnerBusinessCard Walinka link status', () => {
     });
 
     expect(screen.getByText('Pendiente')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /continuar en walinka/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /crear catálogo gratis/i })).toBeInTheDocument();
   });
 
-  it('keeps existing catalog URL as a visible fallback CTA', () => {
+  it('keeps existing catalog URL as a visible catalog card', () => {
     renderCard({
       business: {
         ...business,
@@ -58,14 +61,16 @@ describe('OwnerBusinessCard Walinka link status', () => {
       },
     });
 
-    expect(screen.getByText(/sin cat.logo/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /ver cat.logo/i })).toHaveAttribute(
+    expect(screen.getByText(/sin catálogo/i)).toBeInTheDocument();
+    expect(screen.getByText(/catálogo walinka conectado/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ver catálogo/i })).toHaveAttribute(
       'href',
       'https://go.ventalink.app/catalogo/negocio-local'
     );
+    expect(screen.getByRole('button', { name: /editar url/i })).toBeInTheDocument();
   });
 
-  it('shows Conectado without create CTA for connected links', () => {
+  it('shows Conectado and the create catalog card if the connected link has no URL yet', () => {
     renderCard({
       walinkaLink: {
         status: 'connected',
@@ -75,7 +80,7 @@ describe('OwnerBusinessCard Walinka link status', () => {
     });
 
     expect(screen.getByText('Conectado')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /crear catálogo walinka/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /crear catálogo gratis/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /continuar en walinka/i })).not.toBeInTheDocument();
   });
 });

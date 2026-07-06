@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildWalinkaCreateCatalogUrl,
+  buildWalinkaRegisterUrl,
   canCreateWalinkaCatalog,
   buildBusinessClaimUrl,
   getBusinessCatalogUrl,
   isWalinkaCatalogUrl,
+  normalizeCatalogUrl,
 } from './walinkaCatalog';
 
 describe('walinka catalog helpers', () => {
@@ -38,14 +40,22 @@ describe('walinka catalog helpers', () => {
 
   it('accepts Walinka and Ventalink domains only', () => {
     expect(isWalinkaCatalogUrl('https://go.ventalink.app/catalogo/mi-negocio')).toBe(true);
+    expect(isWalinkaCatalogUrl('go.ventalink.app/catalogo/mi-negocio')).toBe(true);
     expect(isWalinkaCatalogUrl('https://tienda.walinka.app/catalogo/mi-negocio')).toBe(true);
     expect(isWalinkaCatalogUrl('https://example.com/catalogo/mi-negocio')).toBe(false);
   });
 
   it('gets catalog URL from future catalog_url or current website field', () => {
     expect(getBusinessCatalogUrl({ catalog_url: 'https://go.ventalink.app/catalogo/a' })).toBe('https://go.ventalink.app/catalogo/a');
+    expect(getBusinessCatalogUrl({ catalog_url: 'go.ventalink.app/catalogo/a' })).toBe('https://go.ventalink.app/catalogo/a');
     expect(getBusinessCatalogUrl({ website: 'https://go.ventalink.app/catalogo/b' })).toBe('https://go.ventalink.app/catalogo/b');
     expect(getBusinessCatalogUrl({ website: 'https://example.com' })).toBeNull();
+  });
+
+  it('normalizes catalog URLs and builds the register URL', () => {
+    expect(normalizeCatalogUrl('go.ventalink.app/catalogo/a')).toBe('https://go.ventalink.app/catalogo/a');
+    expect(normalizeCatalogUrl('https://go.ventalink.app/catalogo/a')).toBe('https://go.ventalink.app/catalogo/a');
+    expect(buildWalinkaRegisterUrl()).toBe('https://go.ventalink.app/register');
   });
 
   it('allows catalog creation only for the claimed owner', () => {

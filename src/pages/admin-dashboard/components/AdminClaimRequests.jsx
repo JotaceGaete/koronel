@@ -86,6 +86,11 @@ export default function AdminClaimRequests() {
                   {claim?.claimant_phone && <span className="text-muted-foreground"> · {claim?.claimant_phone}</span>}
                   {claim?.claimant_role && <span className="text-muted-foreground"> · {claim?.claimant_role}</span>}
                 </div>
+                {claim?.requester && (
+                  <p className="text-xs text-muted-foreground">
+                    Cuenta: {claim?.requester?.full_name || 'Sin nombre'} ({claim?.requester?.email})
+                  </p>
+                )}
                 {claim?.evidence_notes && (
                   <p className="mt-2 text-xs text-muted-foreground bg-muted/60 rounded-md p-2">
                     <span className="font-medium text-foreground">Evidencia: </span>
@@ -94,7 +99,8 @@ export default function AdminClaimRequests() {
                 )}
                 {claim?.claim_status !== 'pending' && (claim?.admin_notes || claim?.reviewed_at) && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Revisado {claim?.reviewed_at ? new Date(claim.reviewed_at)?.toLocaleDateString('es-CL') : ''}
+                    Revisado{claim?.reviewer?.full_name ? ` por ${claim?.reviewer?.full_name}` : ''}
+                    {claim?.reviewed_at ? ` el ${new Date(claim.reviewed_at)?.toLocaleDateString('es-CL')}` : ''}
                     {claim?.admin_notes ? ` · Nota: ${claim?.admin_notes}` : ''}
                   </p>
                 )}

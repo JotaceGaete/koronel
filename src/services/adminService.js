@@ -45,7 +45,7 @@ function withoutBusinessOnlyFields(payload = {}) {
 // ── Businesses ──────────────────────────────────────────────
 export const adminBusinessService = {
   async getAll({ search = '', category = '', status = '' } = {}) {
-    let query = supabase?.from('businesses')?.select('*, owner:user_profiles(full_name, email)')?.order('created_at', { ascending: false });
+    let query = supabase?.from('businesses')?.select('*, owner:user_profiles!businesses_owner_id_fkey(full_name, email)')?.order('created_at', { ascending: false });
     if (search) query = query?.ilike('name', `%${search}%`);
     if (category) query = query?.eq('category_key', category);
     if (status === 'featured') query = query?.eq('featured', true);
@@ -118,7 +118,9 @@ export const adminCategoryService = {
 // ── Claim Requests ──────────────────────────────────────────
 export const adminClaimService = {
   async getAll(status = '') {
-    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), claimant:user_profiles(full_name, email)')?.order('created_at', { ascending: false });
+    // business_claims has two FKs into user_profiles (user_id, reviewed_by), so both
+    // embeds must name their constraint explicitly or PostgREST can't disambiguate.
+    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), requester:user_profiles!business_claims_user_id_fkey(full_name, email), reviewer:user_profiles!business_claims_reviewed_by_fkey(full_name, email)')?.order('created_at', { ascending: false });
     if (status) query = query?.eq('claim_status', status);
     const { data, error } = await query;
     if (error) throw error;

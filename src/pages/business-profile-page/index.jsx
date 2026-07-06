@@ -15,6 +15,7 @@ import ChurchDetails from './components/ChurchDetails';
 import ShareButtons from 'components/ui/ShareButtons';
 import BusinessJobs from './components/BusinessJobs';
 import { businessService } from '../../services/businessService';
+import { getCategoryLabel } from '../../utils/businessCategoryFilter';
 import { useCity } from '../../contexts/CityContext';
 
 function buildProfileMocks(CITY_CONFIG) {
@@ -165,8 +166,8 @@ export default function BusinessProfilePage() {
   }, [businessId]);
 
   // Build category labels from real hierarchy (category + parent from DB)
-  const catRow = business?.category;
-  const parentCatName = catRow?.parent?.name ?? (catRow?.name || business?.category) ?? null;
+  const catRow = business?.category_details;
+  const parentCatName = catRow?.parent?.name ?? (catRow?.name || getCategoryLabel(business?.category, null)) ?? null;
   const subCatName = catRow?.parent_id && catRow?.name ? catRow?.name : null;
 
   // Merge real data over mock for display
@@ -187,7 +188,7 @@ export default function BusinessProfilePage() {
     websiteUrl: business?.website || null,
     parentCategoryName: parentCatName,
     subCategoryName: subCatName,
-    category: parentCatName || business?.category,
+    category: parentCatName || getCategoryLabel(business?.category, null),
     reviewCount: business?.review_count ?? BUSINESS?.reviewCount,
   } : { ...BUSINESS, logoUrl: null, socialLinks: [], websiteUrl: BUSINESS?.website };
 

@@ -10,11 +10,15 @@ import {
   canCreateWalinkaCatalog,
   getBusinessCatalogUrl,
 } from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 export default function BusinessCard({ business }) {
   const CITY_CONFIG = useCity();
   const { user } = useAuth();
-  const category = business?.parentCategoryName || business?.subCategoryName || business?.category || '';
+  const category = getCategoryLabel(
+    business?.parentCategoryName || business?.subCategoryName || business?.category,
+    ''
+  );
   const hasContact = business?.phone || business?.whatsapp;
   const catalogUrl = getBusinessCatalogUrl(business);
   const canCreateCatalog = canCreateWalinkaCatalog(business, user);

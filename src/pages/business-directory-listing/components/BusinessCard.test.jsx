@@ -62,6 +62,29 @@ describe('BusinessCard Walinka CTA', () => {
     );
   });
 
+  it('renders category objects as labels', () => {
+    render(
+      <MemoryRouter>
+        <BusinessCard
+          business={{
+            id: 'business-card-category-object',
+            name: 'Artesellos',
+            category: {
+              id: 'cat-1',
+              name: 'Imprenta y grafica',
+              name_key: 'imprenta-grafica',
+              parent_id: 'parent-1',
+              parent: { id: 'parent-1', name: 'Comercio local' },
+            },
+            image: '/assets/images/no_image.png',
+          }}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Imprenta y grafica')).toBeInTheDocument();
+  });
+
   it('shows Crear catalogo Walinka only for the claimed owner', () => {
     mockUseAuth.mockReturnValue({ user: { id: 'owner-1' } });
 

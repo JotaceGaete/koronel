@@ -11,6 +11,7 @@ import {
   canCreateWalinkaCatalog,
   getBusinessCatalogUrl,
 } from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 const CATEGORY_CONFIG = {
   supermercados: { label: 'Supermercados', color: '#0891b2', bg: '#e0f2fe' },
@@ -25,7 +26,7 @@ export default function BusinessBottomSheet({ business, onClose }) {
   const { user } = useAuth();
   if (!business) return null;
 
-  const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: business?.category || '', color: '#6b7280', bg: '#f3f4f6' };
+  const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: getCategoryLabel(business?.category, ''), color: '#6b7280', bg: '#f3f4f6' };
   const directionsUrl = business?.directionsUrl || getDirectionsUrl(business?.lat, business?.lng);
   const catalogUrl = getBusinessCatalogUrl(business);
   const canCreateCatalog = canCreateWalinkaCatalog(business, user);

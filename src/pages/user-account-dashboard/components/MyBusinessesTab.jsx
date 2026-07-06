@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
@@ -6,6 +6,7 @@ import Button from 'components/ui/Button';
 import { businessService } from '../../../services/businessService';
 import { formatDate } from '../../../utils/format';
 import { useCity } from '../../../contexts/CityContext';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -63,6 +64,7 @@ export default function MyBusinessesTab({ userId }) {
     const image = getImage(biz);
     const status = biz?.status || 'pending';
     const sc = STATUS_CONFIG?.[status] || STATUS_CONFIG?.pending;
+    const categoryLabel = getCategoryLabel(biz?.category, 'Sin categoria');
     const premiumUntil = biz?.premium_until
       ? formatDate(biz.premium_until, { day: 'numeric', month: 'long' })
       : null;
@@ -81,7 +83,7 @@ export default function MyBusinessesTab({ userId }) {
         </div>
         <div className="p-4">
           <h3 className="font-heading font-semibold text-foreground text-base line-clamp-1 mb-0.5">{biz?.name}</h3>
-          <p className="text-xs font-caption text-muted-foreground mb-1">{biz?.category} · {biz?.address}</p>
+          <p className="text-xs font-caption text-muted-foreground mb-1">{categoryLabel} - {biz?.address}</p>
           {status === 'premium' && premiumUntil && (
             <p className="text-xs font-medium mb-2" style={{ color: '#5b21b6' }}>Premium hasta el {premiumUntil}</p>
           )}
@@ -142,11 +144,12 @@ export default function MyBusinessesTab({ userId }) {
             {claims?.map((c) => {
               const csc = CLAIM_STATUS_CONFIG?.[c?.claim_status] || CLAIM_STATUS_CONFIG?.pending;
               const biz = c?.business;
+              const categoryLabel = getCategoryLabel(biz?.category, 'Sin categoria');
               return (
                 <div key={c?.id} className="bg-card border border-border rounded-md p-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-medium text-foreground truncate">{biz?.name || 'Negocio'}</p>
-                    <p className="text-xs font-caption text-muted-foreground">{biz?.category} · {biz?.address}</p>
+                    <p className="text-xs font-caption text-muted-foreground">{categoryLabel} - {biz?.address}</p>
                     <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: csc?.bg, color: csc?.color }}>
                       <Icon name={csc?.icon} size={11} color="currentColor" />
                       {csc?.label}
@@ -193,3 +196,4 @@ export default function MyBusinessesTab({ userId }) {
     </div>
   );
 }
+

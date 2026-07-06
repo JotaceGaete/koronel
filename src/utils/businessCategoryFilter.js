@@ -125,6 +125,12 @@ function humanizeKey(value) {
     .replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
+export function getCategoryLabel(category, fallback = 'Sin categoria') {
+  if (typeof category === 'string') return category;
+  if (!category || typeof category !== 'object') return fallback;
+  return category?.name || category?.name_key || category?.key || category?.slug || fallback;
+}
+
 export function normalizeCategoryKey(value) {
   const key = toKey(value);
   if (!key || key === 'all') return key;

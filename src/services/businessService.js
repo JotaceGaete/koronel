@@ -100,18 +100,18 @@ export const businessService = {
         ?.select(`
           *,
           business_images(storage_path, alt_text, is_primary, sort_order),
-          category:categories(id, name, name_key, parent_id)
+          category_details:categories(id, name, name_key, parent_id)
         `)
         ?.eq('id', id)
         ?.single();
       if (error) throw error;
-      if (data?.category?.parent_id) {
+      if (data?.category_details?.parent_id) {
         const { data: parent } = await supabase
           ?.from('categories')
           ?.select('id, name')
-          ?.eq('id', data.category.parent_id)
+          ?.eq('id', data.category_details.parent_id)
           ?.single();
-        if (parent) data.category.parent = parent;
+        if (parent) data.category_details.parent = parent;
       }
       return { data, error: null };
     } catch (error) {

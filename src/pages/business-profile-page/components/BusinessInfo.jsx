@@ -9,6 +9,7 @@ import {
   canCreateWalinkaCatalog,
   getBusinessCatalogUrl,
 } from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 function StarRating({ rating, reviewCount }) {
   return (
@@ -33,8 +34,14 @@ export default function BusinessInfo({ business, onCall, onWhatsApp, onDirection
   const CITY_CONFIG = useCity();
   const { user } = useAuth();
   // Build category breadcrumb
-  const parentCat = business?.parentCategoryName || (business?.categories?.[0]) || business?.category || null;
-  const subCat = business?.subCategoryName || (business?.categories?.length > 1 ? business?.categories?.[1] : null);
+  const parentCat = getCategoryLabel(
+    business?.parentCategoryName || (business?.categories?.[0]) || business?.category,
+    null
+  );
+  const subCat = getCategoryLabel(
+    business?.subCategoryName || (business?.categories?.length > 1 ? business?.categories?.[1] : null),
+    null
+  );
   const catalogUrl = getBusinessCatalogUrl(business);
   const canCreateCatalog = canCreateWalinkaCatalog(business, user);
   const claimUrl = buildBusinessClaimUrl(business);

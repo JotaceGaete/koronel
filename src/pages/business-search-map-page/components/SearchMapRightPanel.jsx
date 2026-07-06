@@ -11,6 +11,7 @@ import {
   canCreateWalinkaCatalog,
   getBusinessCatalogUrl,
 } from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 const DEFAULT_ZOOM = 13;
 
@@ -73,6 +74,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
           const catalogUrl = getBusinessCatalogUrl(business);
           const canCreateCatalog = canCreateWalinkaCatalog(business, user);
           const claimUrl = buildBusinessClaimUrl(business);
+          const categoryLabel = getCategoryLabel(business?.parentCategoryName || business?.category, null);
           const createCatalogUrl = buildWalinkaCreateCatalogUrl({
             ...business,
             city: business?.city || CITY_CONFIG?.name,
@@ -92,7 +94,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                   <p style={{ fontWeight: '700', fontSize: '13px', marginBottom: '4px', lineHeight: '1.3' }}>
                     {business?.name}
                   </p>
-                  {(business?.parentCategoryName || business?.category) && (
+                  {categoryLabel && (
                     <span style={{
                       display: 'inline-block',
                       background: 'var(--color-primary, #2563EB)',
@@ -102,7 +104,7 @@ export default function SearchMapRightPanel({ businesses, selectedId, onMarkerCl
                       borderRadius: '999px',
                       marginBottom: '4px',
                     }}>
-                      {business?.parentCategoryName || business?.category}
+                      {categoryLabel}
                     </span>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginBottom: '6px' }}>

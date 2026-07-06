@@ -9,6 +9,7 @@ import {
   canCreateWalinkaCatalog,
   getBusinessCatalogUrl,
 } from '../../../utils/walinkaCatalog';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 export default function SearchMapBusinessCard({ business, isSelected, onClick, cardRef }) {
   const navigate = useNavigate();
@@ -28,9 +29,9 @@ export default function SearchMapBusinessCard({ business, isSelected, onClick, c
       />
     ));
 
-  const hasBreadcrumb = business?.parentCategoryName || business?.category;
-  const breadcrumbParent = business?.parentCategoryName || business?.category;
-  const breadcrumbChild = business?.subCategoryName;
+  const breadcrumbParent = getCategoryLabel(business?.parentCategoryName || business?.category, null);
+  const breadcrumbChild = getCategoryLabel(business?.subCategoryName, null);
+  const hasBreadcrumb = breadcrumbParent || breadcrumbChild;
 
   return (
     <div

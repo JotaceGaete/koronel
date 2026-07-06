@@ -8,6 +8,7 @@ import {
   getBusinessCategoryCandidates,
   getBusinessCategoryKey,
   getBusinessSearchText,
+  getCategoryLabel,
   normalizeCategoryKey,
   normalizeBusinessCategoryFilter,
   normalizeSearchText,
@@ -18,6 +19,13 @@ vi.mock('../lib/supabase', () => ({
 }));
 
 describe('mapService category filtering', () => {
+  it('normalizes category labels from strings and category objects', () => {
+    expect(getCategoryLabel('Comercio')).toBe('Comercio');
+    expect(getCategoryLabel({ id: 'c1', name: 'Imprenta y grafica', name_key: 'imprenta-grafica' })).toBe('Imprenta y grafica');
+    expect(getCategoryLabel({ id: 'c2', name_key: 'comercio-local' })).toBe('comercio-local');
+    expect(getCategoryLabel(null)).toBe('Sin categoria');
+  });
+
   it('normalizes search text accents, case, trim, and spaces', () => {
     expect(normalizeSearchText('  Restaurante   Peruano Mágico  ')).toBe('restaurante peruano magico');
   });

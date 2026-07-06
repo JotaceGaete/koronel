@@ -1,9 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
 import { formatDate } from '../../../utils/format';
 import { useCity } from '../../../contexts/CityContext';
+import { getCategoryLabel } from '../../../utils/businessCategoryFilter';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -16,6 +17,7 @@ export default function BusinessCard({ business, onEdit }) {
   const CITY_CONFIG = useCity();
   const status = business?.status || 'pending';
   const statusCfg = STATUS_CONFIG?.[status] || STATUS_CONFIG?.pending;
+  const categoryLabel = getCategoryLabel(business?.category, 'Sin categoria');
 
   const primaryImg = business?.business_images?.find(img => img?.is_primary) || business?.business_images?.[0];
   const imageUrl = primaryImg?.storage_path
@@ -47,7 +49,7 @@ export default function BusinessCard({ business, onEdit }) {
       {/* Content */}
       <div className="p-4">
         <h3 className="font-heading font-semibold text-foreground text-base mb-0.5 line-clamp-1">{business?.name}</h3>
-        <p className="text-xs text-muted-foreground mb-1">{business?.category} · {business?.address}</p>
+        <p className="text-xs text-muted-foreground mb-1">{categoryLabel} - {business?.address}</p>
 
         {status === 'premium' && premiumUntil && (
           <p className="text-xs font-medium mb-2" style={{ color: '#5b21b6' }}>
@@ -56,7 +58,7 @@ export default function BusinessCard({ business, onEdit }) {
           </p>
         )}
         {status === 'pending' && (
-          <p className="text-xs text-muted-foreground mb-2">En revisión por el equipo de {CITY_CONFIG.siteName}</p>
+          <p className="text-xs text-muted-foreground mb-2">En revisiÃ³n por el equipo de {CITY_CONFIG.siteName}</p>
         )}
         {business?.rejection_reason && status === 'rejected' && (
           <p className="text-xs mb-2" style={{ color: '#991b1b' }}>Motivo: {business?.rejection_reason}</p>
@@ -86,3 +88,4 @@ export default function BusinessCard({ business, onEdit }) {
     </div>
   );
 }
+

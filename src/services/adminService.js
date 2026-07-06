@@ -125,14 +125,13 @@ export const adminClaimService = {
     return data || [];
   },
 
-  async updateStatus(id, status) {
-    const { data: claim, error: fetchError } = await supabase?.from('business_claims')?.select('id, business_id, user_id')?.eq('id', id)?.single();
-    if (fetchError || !claim) throw fetchError || new Error('Solicitud no encontrada');
-    const { data, error } = await supabase?.from('business_claims')?.update({ claim_status: status })?.eq('id', id)?.select()?.single();
+  // Ownership transfer never happens via a raw UPDATE from the client: both
+  // paths call a SECURITY DEFINER RPC that re-checks is_admin() server-side
+  // and applies the claim + business changes atomically.
+  async updateStatus(id, status, adminNotes = null) {
+    const fn = status === 'approved' ? 'approve_business_claim' : 'reject_business_claim';
+    const { data, error } = await supabase?.rpc(fn, { p_claim_id: id, p_admin_notes: adminNotes || null });
     if (error) throw error;
-    if (status === 'approved' && claim?.business_id && claim?.user_id) {
-      await supabase?.from('businesses')?.update({ owner_id: claim.user_id, claimed: true })?.eq('id', claim.business_id);
-    }
     return data;
   },
 };

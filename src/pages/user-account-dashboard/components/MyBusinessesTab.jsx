@@ -148,6 +148,9 @@ export default function MyBusinessesTab({ userId }) {
                       <Icon name={csc?.icon} size={11} color="currentColor" />
                       {csc?.label}
                     </span>
+                    {c?.claim_status === 'rejected' && c?.admin_notes && (
+                      <p className="text-xs font-caption text-muted-foreground mt-1">Motivo: {c?.admin_notes}</p>
+                    )}
                   </div>
                   <span className="text-xs text-muted-foreground">{new Date(c?.created_at)?.toLocaleDateString('es-CL')}</span>
                   {biz?.id && (

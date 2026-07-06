@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { useCity } from 'contexts/CityContext';
+import { getDirectionsUrl } from '../../../utils/nearbyLocation';
 
 const CATEGORY_CONFIG = {
   supermercados: { label: 'Supermercados', color: '#0891b2', bg: '#e0f2fe' },
@@ -17,6 +18,7 @@ export default function BusinessBottomSheet({ business, onClose }) {
   if (!business) return null;
 
   const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: business?.category || '', color: '#6b7280', bg: '#f3f4f6' };
+  const directionsUrl = business?.directionsUrl || getDirectionsUrl(business?.lat, business?.lng);
 
   const handleWhatsApp = () => {
     if (!business?.phone) return;
@@ -75,6 +77,12 @@ export default function BusinessBottomSheet({ business, onClose }) {
             <span className="text-sm text-muted-foreground">{business?.address}</span>
           </div>
         )}
+        {business?.distanceLabel && (
+          <div className="flex items-center gap-2">
+            <Icon name="Navigation" size={14} color="var(--color-primary)" />
+            <span className="text-sm text-muted-foreground">{business?.distanceLabel}</span>
+          </div>
+        )}
         {business?.phone && (
           <div className="flex items-center gap-2">
             <Icon name="Phone" size={14} color="var(--color-primary)" />
@@ -104,6 +112,17 @@ export default function BusinessBottomSheet({ business, onClose }) {
           <Icon name="ExternalLink" size={15} color="currentColor" />
           Ver detalles
         </Link>
+        {directionsUrl && (
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors text-foreground"
+          >
+            <Icon name="Route" size={15} color="currentColor" />
+            Cómo llegar
+          </a>
+        )}
       </div>
     </div>
   );

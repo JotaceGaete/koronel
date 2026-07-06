@@ -1,6 +1,7 @@
 import React from 'react';
-import { Marker } from 'react-leaflet';
+import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import { isValidCoordinate } from '../../../utils/nearbyLocation';
 
 // Create custom colored markers
 const createMarkerIcon = (color, size = 28) => {
@@ -29,11 +30,28 @@ export const selectedBusinessIcon = createMarkerIcon('#1d4ed8', 34);
 export const selectedEventIcon = createMarkerIcon('#c2410c', 34);
 export const communityPostIcon = createMarkerIcon('#7c3aed');
 export const selectedCommunityPostIcon = createMarkerIcon('#5b21b6', 34);
+export const userLocationIcon = L?.divIcon({
+  className: '',
+  html: `
+    <div style="
+      width: 24px;
+      height: 24px;
+      background: #10b981;
+      border: 3px solid white;
+      border-radius: 999px;
+      box-shadow: 0 0 0 8px rgba(16,185,129,0.22), 0 2px 10px rgba(0,0,0,0.3);
+    "></div>
+  `,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -14],
+});
 
 export function BusinessMarker({ business, isSelected, onClick }) {
+  if (!isValidCoordinate(business?.lat, business?.lng)) return null;
   return (
     <Marker
-      position={[business?.lat, business?.lng]}
+      position={[Number(business?.lat), Number(business?.lng)]}
       icon={isSelected ? selectedBusinessIcon : businessIcon}
       eventHandlers={{ click: () => onClick?.(business) }}
     />
@@ -41,10 +59,10 @@ export function BusinessMarker({ business, isSelected, onClick }) {
 }
 
 export function EventMarker({ event, isSelected, onClick }) {
-  if (!event?.resolvedLat || !event?.resolvedLng) return null;
+  if (!isValidCoordinate(event?.resolvedLat, event?.resolvedLng)) return null;
   return (
     <Marker
-      position={[event?.resolvedLat, event?.resolvedLng]}
+      position={[Number(event?.resolvedLat), Number(event?.resolvedLng)]}
       icon={isSelected ? selectedEventIcon : eventIcon}
       eventHandlers={{ click: () => onClick?.(event) }}
     />
@@ -52,12 +70,21 @@ export function EventMarker({ event, isSelected, onClick }) {
 }
 
 export function CommunityPostMarker({ post, isSelected, onClick }) {
-  if (!post?.lat || !post?.lng) return null;
+  if (!isValidCoordinate(post?.lat, post?.lng)) return null;
   return (
     <Marker
-      position={[post?.lat, post?.lng]}
+      position={[Number(post?.lat), Number(post?.lng)]}
       icon={isSelected ? selectedCommunityPostIcon : communityPostIcon}
       eventHandlers={{ click: () => onClick?.(post) }}
     />
+  );
+}
+
+export function UserLocationMarker({ position }) {
+  if (!isValidCoordinate(position?.lat, position?.lng)) return null;
+  return (
+    <Marker position={[Number(position?.lat), Number(position?.lng)]} icon={userLocationIcon}>
+      <Popup>Tú estás aquí</Popup>
+    </Marker>
   );
 }

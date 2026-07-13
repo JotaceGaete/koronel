@@ -123,20 +123,24 @@ export const communityService = {
     }
   },
 
-  // Top authors by (posts + replies) in the last `days` — bounded, indexed
-  // by created_at, aggregated client-side.
+  // Shared by getActiveMembers() and getCommunityStats(): {user_id: count}
+  // of posts+replies in the last `days`, bounded/indexed by created_at.
+  async _getRecentActivityMap({ days = 30 } = {}) {
+    const since = new Date(Date.now() - days * 86400000)?.toISOString();
+    const [{ data: posts }, { data: replies }] = await Promise.all([
+      supabase?.from('community_posts')?.select('user_id')?.eq('status', 'active')?.gte('created_at', since),
+      supabase?.from('community_replies')?.select('user_id')?.eq('status', 'active')?.gte('created_at', since),
+    ]);
+    const activity = {};
+    (posts || [])?.forEach(p => { if (p?.user_id) activity[p.user_id] = (activity?.[p.user_id] || 0) + 1; });
+    (replies || [])?.forEach(r => { if (r?.user_id) activity[r.user_id] = (activity?.[r.user_id] || 0) + 1; });
+    return activity;
+  },
+
+  // Top authors by (posts + replies) in the last `days`.
   async getActiveMembers({ days = 30, limit = 5 } = {}) {
     try {
-      const since = new Date(Date.now() - days * 86400000)?.toISOString();
-      const [{ data: posts }, { data: replies }] = await Promise.all([
-        supabase?.from('community_posts')?.select('user_id')?.eq('status', 'active')?.gte('created_at', since),
-        supabase?.from('community_replies')?.select('user_id')?.eq('status', 'active')?.gte('created_at', since),
-      ]);
-
-      const activity = {};
-      (posts || [])?.forEach(p => { if (p?.user_id) activity[p.user_id] = (activity?.[p.user_id] || 0) + 1; });
-      (replies || [])?.forEach(r => { if (r?.user_id) activity[r.user_id] = (activity?.[r.user_id] || 0) + 1; });
-
+      const activity = await communityService?._getRecentActivityMap({ days });
       const topIds = Object.entries(activity)
         ?.sort((a, b) => b?.[1] - a?.[1])
         ?.slice(0, limit)
@@ -157,6 +161,34 @@ export const communityService = {
       return { data: ranked, error: null };
     } catch (error) {
       return { data: [], error };
+    }
+  },
+
+  // Headline numbers for the stats strip — every field is a single indexed
+  // count query, cheap regardless of table size.
+  async getCommunityStats() {
+    try {
+      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+
+      const [totalQuestions, repliesToday, repliesThisMonth, activityMap] = await Promise.all([
+        supabase?.from('community_posts')?.select('id', { count: 'exact', head: true })?.eq('status', 'active'),
+        supabase?.from('community_replies')?.select('id', { count: 'exact', head: true })?.eq('status', 'active')?.gte('created_at', startOfDay?.toISOString()),
+        supabase?.from('community_replies')?.select('id', { count: 'exact', head: true })?.eq('status', 'active')?.gte('created_at', startOfMonth?.toISOString()),
+        communityService?._getRecentActivityMap({ days: 30 }),
+      ]);
+
+      return {
+        data: {
+          totalQuestions: totalQuestions?.count || 0,
+          repliesToday: repliesToday?.count || 0,
+          repliesThisMonth: repliesThisMonth?.count || 0,
+          activeMembers: Object.keys(activityMap || {})?.length,
+        },
+        error: null,
+      };
+    } catch (error) {
+      return { data: { totalQuestions: 0, repliesToday: 0, repliesThisMonth: 0, activeMembers: 0 }, error };
     }
   },
 

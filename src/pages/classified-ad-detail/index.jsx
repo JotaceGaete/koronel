@@ -157,14 +157,33 @@ export default function ClassifiedAdDetail() {
     return new Date(dateStr)?.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
-  const images = ad?.ad_images?.length > 0
-    ? ad?.ad_images?.map(img => ({
+  const isOficio = ad?.listing_type === 'oficio';
+
+  // Para oficios: la foto de perfil vive aparte; la galería muestra solo
+  // imágenes de portafolio. Para el resto de los avisos, todas las
+  // imágenes van a la galería, igual que antes.
+  const allAdImages = ad?.ad_images || [];
+  const profileAdImage = isOficio
+    ? allAdImages?.find(img => img?.image_type === 'profile')
+      || allAdImages?.find(img => img?.is_primary)
+      || null
+    : null;
+  const gallerySource = isOficio
+    ? allAdImages?.filter(img => img?.image_type !== 'profile')
+    : allAdImages;
+
+  const images = gallerySource?.length > 0
+    ? gallerySource?.map(img => ({
         url: adService?.getImageUrl(img?.storage_path),
         alt: img?.alt_text || ad?.title
       }))
-    : ad?.image
+    : !isOficio && ad?.image
       ? [{ url: ad?.image, alt: ad?.imageAlt || ad?.title }]
       : [];
+
+  const profileImageUrl = profileAdImage
+    ? adService?.getImageUrl(profileAdImage?.storage_path)
+    : null;
 
   const lastSeen = adOwner?.user_profiles?.updated_at
     ? messageService?.formatLastSeen(adOwner?.user_profiles?.updated_at)
@@ -212,20 +231,88 @@ export default function ClassifiedAdDetail() {
         {/* Breadcrumb */}
         <div className="border-b border-border bg-card">
           <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 flex items-center gap-2 text-sm text-muted-foreground">
-            <Link to="/classified-ads-listing" className="hover:text-foreground transition-colors">Clasificados</Link>
+            {isOficio ? (
+              <Link to="/profesionales" className="hover:text-foreground transition-colors">Profesionales</Link>
+            ) : (
+              <Link to="/classified-ads-listing" className="hover:text-foreground transition-colors">Clasificados</Link>
+            )}
             <Icon name="ChevronRight" size={14} color="currentColor" />
-            <span className="text-foreground line-clamp-1">{ad?.title}</span>
+            <span className="text-foreground line-clamp-1">{isOficio ? (ad?.providerLabel || ad?.title) : ad?.title}</span>
           </div>
         </div>
+
+        {/* Cabecera de perfil profesional — solo para oficios */}
+        {isOficio && (
+          <div className="border-b border-border bg-card">
+            <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 flex flex-col sm:flex-row items-center sm:items-end gap-4">
+              {/* Avatar grande */}
+              <div className="shrink-0 relative">
+                <div
+                  className="rounded-full overflow-hidden bg-muted flex items-center justify-center"
+                  style={{ width: 96, height: 96, border: '4px solid white', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+                >
+                  {profileImageUrl ? (
+                    <img src={profileImageUrl} alt={ad?.providerLabel || ad?.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <Icon name="User" size={44} color="var(--color-primary)" />
+                  )}
+                </div>
+                {ad?.provider_verified && (
+                  <div className="absolute bottom-0.5 right-0.5 w-7 h-7 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--color-success)', border: '2.5px solid white' }}>
+                    <Icon name="Check" size={14} color="white" />
+                  </div>
+                )}
+              </div>
+              {/* Nombre + oficio + badges */}
+              <div className="flex-1 min-w-0 text-center sm:text-left pb-1">
+                <h1 className="font-heading font-bold text-2xl md:text-3xl text-foreground leading-tight">
+                  {ad?.providerLabel || ad?.title}
+                </h1>
+                {ad?.providerLabel && (
+                  <p className="text-base font-caption mt-0.5" style={{ color: 'var(--color-primary)' }}>
+                    {ad.title}
+                  </p>
+                )}
+                <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 mt-2">
+                  {ad?.provider_verified && (
+                    <span className="inline-flex items-center gap-1 text-xs font-caption px-2.5 py-1 rounded-full"
+                      style={{ background: 'rgba(56,161,105,0.12)', color: 'var(--color-success)' }}>
+                      <Icon name="BadgeCheck" size={12} color="currentColor" />
+                      Perfil verificado
+                    </span>
+                  )}
+                  {ad?.isNew && (
+                    <span className="text-xs font-caption px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
+                      🆕 Nuevo en {CITY_CONFIG.siteName}
+                    </span>
+                  )}
+                  {ad?.ratings_enabled && (
+                    <span className="inline-flex items-center gap-1 text-xs font-caption px-2.5 py-1 rounded-full"
+                      style={{ background: 'rgba(56,161,105,0.12)', color: 'var(--color-success)' }}>
+                      <Icon name="ThumbsUp" size={12} color="currentColor" />
+                      Acepta recomendaciones
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Images + Description */}
             <div className="lg:col-span-2 space-y-5">
-              {/* Image Gallery */}
+              {/* Image Gallery — para oficios muestra solo el portafolio, nunca la foto de perfil */}
               {images?.length > 0 ? (
                 <div className="space-y-2">
-                  <div className="relative rounded-lg overflow-hidden bg-muted" style={{ height: '360px' }}>
+                  {isOficio && (
+                    <h2 className="text-xs font-caption font-semibold uppercase tracking-wide text-muted-foreground">
+                      Trabajos realizados
+                    </h2>
+                  )}
+                  <div className="relative rounded-lg overflow-hidden bg-muted" style={{ height: isOficio ? '280px' : '360px' }}>
                     {ad?.featured && (
                       <span
                         className="absolute top-3 left-3 z-10 px-2 py-1 text-xs font-semibold rounded"
@@ -256,11 +343,11 @@ export default function ClassifiedAdDetail() {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : !isOficio ? (
                 <div className="rounded-lg bg-muted flex items-center justify-center" style={{ height: '280px' }}>
                   <Icon name="Image" size={48} color="var(--color-muted-foreground)" />
                 </div>
-              )}
+              ) : null}
 
               {/* Title + Price */}
               <div>

@@ -20,10 +20,16 @@ export const adService = {
     }
   },
 
-  async getAll({ category, search, priceRange, dateFilter, condition, sort = 'newest', page = 1, pageSize = 12 } = {}) {
-    try {
-      let query = supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary)', { count: 'exact' })?.eq('ad_status', 'active');
+  async getAll({ listingType, category, search, priceRange, dateFilter, condition, sort = 'newest', page = 1, pageSize = 12 } = {}) {
+    const buildQuery = (applyListingTypeFilter) => {
+      let query = supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)', { count: 'exact' })?.eq('ad_status', 'active');
 
+      if (applyListingTypeFilter && listingType === 'oficio') {
+        query = query?.eq('listing_type', 'oficio');
+      } else if (applyListingTypeFilter && listingType === 'clasificados') {
+        // Contrato: Clasificados = todo aviso que no sea 'oficio'.
+        query = query?.neq('listing_type', 'oficio');
+      }
       if (category && category !== 'all') {
         query = query?.eq('category_key', category);
       }
@@ -66,9 +72,18 @@ export const adService = {
 
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-      query = query?.range(from, to);
+      return query?.range(from, to);
+    };
 
-      const { data, error, count } = await query;
+    try {
+      let { data, error, count } = await buildQuery(true);
+      if (error?.code === '42703') {
+        // listing_type puede no existir todavía en algún entorno que no
+        // corrió 20260702300000_profesionales_oficios.sql — caemos al
+        // comportamiento anterior (sin filtrar por tipo) en vez de romper
+        // el listado.
+        ({ data, error, count } = await buildQuery(false));
+      }
       if (error) throw error;
       return { data: data || [], count: count || 0, error: null };
     } catch (error) {
@@ -79,7 +94,21 @@ export const adService = {
 
   async getRecent(limit = 6) {
     try {
-      const { data, error } = await supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary)')?.eq('ad_status', 'active')?.order('created_at', { ascending: false })?.limit(limit);
+      // Contrato: "Reciente" del home no debe mezclar profesionales.
+      let { data, error } = await supabase
+        ?.from('classified_ads')
+        ?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')
+        ?.eq('ad_status', 'active')
+        ?.neq('listing_type', 'oficio')
+        ?.order('created_at', { ascending: false })
+        ?.limit(limit);
+      if (error?.code === '42703') {
+        // listing_type puede no existir todavía en algún entorno — caemos
+        // al comportamiento anterior en vez de romper el home.
+        const fallback = await supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')?.eq('ad_status', 'active')?.order('created_at', { ascending: false })?.limit(limit);
+        data = fallback?.data;
+        error = fallback?.error;
+      }
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {
@@ -91,7 +120,7 @@ export const adService = {
     try {
       let query = supabase
         ?.from('classified_ads')
-        ?.select('*, ad_images(storage_path, alt_text, is_primary)')
+        ?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')
         ?.eq('ad_status', 'active')
         ?.order('created_at', { ascending: false })
         ?.limit(limit);
@@ -113,7 +142,7 @@ export const adService = {
     try {
       const { data, error } = await supabase
         ?.from('classified_ads')
-        ?.select('*, ad_images(storage_path, alt_text, is_primary, sort_order)')
+        ?.select('*, ad_images(storage_path, alt_text, is_primary, image_type, sort_order)')
         ?.eq('id', id)
         ?.single();
       if (error) throw error;
@@ -146,7 +175,7 @@ export const adService = {
 
   async getByUser(userId) {
     try {
-      const { data, error } = await supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary)')?.eq('user_id', userId)?.order('created_at', { ascending: false });
+      const { data, error } = await supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')?.eq('user_id', userId)?.order('created_at', { ascending: false });
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {
@@ -194,8 +223,11 @@ export const adService = {
     }
   },
 
-  // Create ad — supports both authenticated and guest users
-  async create({ userId, formData, photoPaths, guestInfo, ipAddress }) {
+  // Create ad — supports both authenticated and guest users.
+  // profilePhotoPath: single path for a profesional's portrait (image_type='profile').
+  // photoPaths: portfolio images (image_type='portfolio') — or regular ad photos
+  //             for avisos de venta, que no usan foto de perfil separada.
+  async create({ userId, formData, photoPaths, profilePhotoPath, guestInfo, ipAddress }) {
     try {
       const expiresAt = new Date();
       expiresAt?.setDate(expiresAt?.getDate() + parseInt(formData?.duration || 30));
@@ -225,19 +257,50 @@ export const adService = {
         ip_address: ipAddress || null,
         guest_email: isGuest ? guestInfo?.email : null,
         verification_token: verificationToken,
+        listing_type: formData?.listing_type || 'venta',
+        price_type: formData?.price_type || null,
+        schedule_note: formData?.schedule_note || null,
+        provider_name: formData?.provider_name || null,
+        provider_last_name: formData?.provider_last_name || null,
+        provider_display_name: formData?.provider_display_name || null,
+        ratings_enabled: formData?.ratings_enabled || false,
+        available_urgency: formData?.available_urgency || false,
+        weekend_service: formData?.weekend_service || false,
+        issues_invoice: formData?.issues_invoice || false,
       };
 
       const { data: ad, error: adError } = await supabase?.from('classified_ads')?.insert(payload)?.select()?.single();
 
       if (adError) throw adError;
 
-      if (photoPaths?.length > 0) {
-        const imageInserts = photoPaths?.map((path, index) => ({
+      const imageInserts = [];
+
+      if (profilePhotoPath) {
+        // Foto de perfil explícita — siempre primaria, nunca parte del portafolio.
+        imageInserts.push({
           ad_id: ad?.id,
-          storage_path: path,
-          is_primary: index === 0,
-          sort_order: index
-        }));
+          storage_path: profilePhotoPath,
+          is_primary: true,
+          image_type: 'profile',
+          sort_order: 0,
+        });
+      }
+
+      if (photoPaths?.length > 0) {
+        photoPaths?.forEach((path, index) => {
+          imageInserts.push({
+            ad_id: ad?.id,
+            storage_path: path,
+            // Sin foto de perfil explícita, la primera imagen es la primaria
+            // (comportamiento anterior, para avisos de venta).
+            is_primary: !profilePhotoPath && index === 0,
+            image_type: 'portfolio',
+            sort_order: index,
+          });
+        });
+      }
+
+      if (imageInserts?.length > 0) {
         const { error: imagesError } = await supabase?.from('ad_images')?.insert(imageInserts)?.select();
         if (imagesError) throw imagesError;
       }
@@ -305,22 +368,49 @@ export const adService = {
   },
 
   formatAd(ad) {
-    const primaryImage = ad?.ad_images?.find(img => img?.is_primary) || ad?.ad_images?.[0];
-    const imageUrl = primaryImage?.storage_path
-      ? (primaryImage?.storage_path?.startsWith('http') ? primaryImage?.storage_path : `${R2_PUBLIC}/${primaryImage?.storage_path}`)
+    const allImages = ad?.ad_images || [];
+
+    // Foto de perfil: image_type='profile' explícito, o fallback legacy a is_primary.
+    const profileImg = allImages?.find(img => img?.image_type === 'profile')
+      || allImages?.find(img => img?.is_primary)
+      || allImages?.[0]
+      || null;
+
+    // Portafolio: toda imagen que NO sea la foto de perfil.
+    const portfolioImgs = allImages
+      ?.filter(img => img !== profileImg && img?.image_type !== 'profile')
+      ?.map(img => ({
+        url: img?.storage_path?.startsWith('http')
+          ? img.storage_path
+          : `${R2_PUBLIC}/${img.storage_path}`,
+        alt: img?.alt_text || ad?.title,
+      }));
+
+    const imageUrl = profileImg?.storage_path
+      ? (profileImg?.storage_path?.startsWith('http') ? profileImg.storage_path : `${R2_PUBLIC}/${profileImg.storage_path}`)
       : null;
+
     const now = Date.now();
     const createdAt = new Date(ad?.created_at);
     const diffMs = now - createdAt?.getTime();
     const diffH = Math.floor(diffMs / 3600000);
     const diffD = Math.floor(diffMs / 86400000);
     const timeAgo = diffH < 1 ? 'Hace menos de 1 hora' : diffH < 24 ? `Hace ${diffH} hora${diffH > 1 ? 's' : ''}` : diffD < 7 ? `Hace ${diffD} día${diffD > 1 ? 's' : ''}` : `Hace ${Math.floor(diffD / 7)} semana${Math.floor(diffD / 7) > 1 ? 's' : ''}`;
+
+    const providerLabel = ad?.provider_display_name
+      || [ad?.provider_name, ad?.provider_last_name]?.filter(Boolean)?.join(' ')
+      || null;
+    const isNew = diffD < 30;
+
     return {
       ...ad,
       image: imageUrl,
-      imageAlt: primaryImage?.alt_text || ad?.title,
+      imageAlt: profileImg?.alt_text || ad?.title,
+      portfolioImages: portfolioImgs,
       timeAgo,
-      datePosted: createdAt
+      datePosted: createdAt,
+      providerLabel,
+      isNew,
     };
   }
 };

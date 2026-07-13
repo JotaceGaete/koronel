@@ -6,7 +6,15 @@ import { adminAdService } from '../../../services/adminService';
 const STATUS_LABELS = { active: 'Activo', expired: 'Expirado', draft: 'Borrador', deleted: 'Eliminado', pending: 'Pendiente' };
 const STATUS_COLORS = { active: '#22c55e', expired: '#f59e0b', draft: '#94a3b8', deleted: '#ef4444', pending: '#f97316' };
 
-export default function AdminClassifiedAds() {
+const PRICE_TYPE_LABELS = {
+  free_quote: 'Presupuesto gratis',
+  visit: 'Visita desde $',
+  from: 'Desde $',
+  hourly: 'Por hora',
+  negotiable: 'A convenir',
+};
+
+export default function AdminProfesionales() {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,9 +27,8 @@ export default function AdminClassifiedAds() {
     setLoading(true);
     setError(null);
     try {
-      const data = await adminAdService?.getAll({ search, status: filterStatus, listingType: 'clasificados' });
+      const data = await adminAdService?.getAll({ search, status: filterStatus, listingType: 'profesionales' });
       setAds(data);
-      // Count pending separately for badge
       if (!filterStatus) {
         setPendingCount(data?.filter(a => a?.ad_status === 'pending')?.length || 0);
       }
@@ -47,7 +54,7 @@ export default function AdminClassifiedAds() {
   };
 
   const handleReject = async (ad) => {
-    if (!window.confirm('¿Rechazar este aviso?')) return;
+    if (!window.confirm('¿Rechazar esta ficha?')) return;
     setActionLoading(ad?.id + '_reject');
     try {
       await adminAdService?.update(ad?.id, { ad_status: 'deleted' });
@@ -59,18 +66,9 @@ export default function AdminClassifiedAds() {
     }
   };
 
-  const handleToggleFeatured = async (ad) => {
+  const handleToggleVerified = async (ad) => {
     try {
-      await adminAdService?.update(ad?.id, { featured: !ad?.featured });
-      load();
-    } catch (e) {
-      setError(e?.message);
-    }
-  };
-
-  const handleExpire = async (ad) => {
-    try {
-      await adminAdService?.update(ad?.id, { ad_status: 'expired' });
+      await adminAdService?.update(ad?.id, { provider_verified: !ad?.provider_verified });
       load();
     } catch (e) {
       setError(e?.message);
@@ -78,7 +76,7 @@ export default function AdminClassifiedAds() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar este aviso?')) return;
+    if (!window.confirm('¿Eliminar esta ficha de profesional?')) return;
     try {
       await adminAdService?.remove(id);
       load();
@@ -87,18 +85,37 @@ export default function AdminClassifiedAds() {
     }
   };
 
+  const providerLabel = (ad) =>
+    ad?.provider_display_name ||
+    [ad?.provider_name, ad?.provider_last_name]?.filter(Boolean)?.join(' ') ||
+    ad?.title ||
+    '—';
+
   return (
     <div>
       <AdminPageHeader
-        title="Avisos Clasificados"
-        subtitle={pendingCount > 0 ? `${pendingCount} aviso${pendingCount > 1 ? 's' : ''} pendiente${pendingCount > 1 ? 's' : ''} de aprobación` : undefined}
+        title="Directorio de Profesionales"
+        subtitle={
+          pendingCount > 0
+            ? `${pendingCount} ficha${pendingCount > 1 ? 's' : ''} pendiente${pendingCount > 1 ? 's' : ''} de aprobación`
+            : 'Gasfíteres, abogados, psicólogos y más servicios'
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <Icon name="Search" size={16} color="currentColor" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input value={search} onChange={e => setSearch(e?.target?.value)} placeholder="Buscar aviso..." className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input
+                value={search}
+                onChange={e => setSearch(e?.target?.value)}
+                placeholder="Buscar profesional..."
+                className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
-            <select value={filterStatus} onChange={e => setFilterStatus(e?.target?.value)} className="px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none">
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e?.target?.value)}
+              className="px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none"
+            >
               <option value="">Todos los estados</option>
               {Object.entries(STATUS_LABELS)?.map(([v, l]) => (
                 <option key={v} value={v}>{l}{v === 'pending' && pendingCount > 0 ? ` (${pendingCount})` : ''}</option>
@@ -113,15 +130,22 @@ export default function AdminClassifiedAds() {
         }
       />
 
-      {error && <div className="mt-4 mb-4 p-3 rounded-md text-sm" style={{ background: '#fee2e2', color: 'var(--color-error)' }}>{error}</div>}
+      {error && (
+        <div className="mt-4 mb-4 p-3 rounded-md text-sm" style={{ background: '#fee2e2', color: 'var(--color-error)' }}>
+          {error}
+        </div>
+      )}
 
-      {/* Pending alert banner */}
       {pendingCount > 0 && !filterStatus && (
         <div className="mt-4 mb-4 flex items-center gap-2 p-3 rounded-md text-sm font-caption border"
           style={{ background: 'rgba(249,115,22,0.08)', borderColor: 'rgba(249,115,22,0.3)', color: '#c2410c' }}>
           <Icon name="Clock" size={15} color="currentColor" />
-          <span><strong>{pendingCount} aviso{pendingCount > 1 ? 's' : ''}</strong> pendiente{pendingCount > 1 ? 's' : ''} de aprobación.</span>
-          <button onClick={() => setFilterStatus('pending')} className="ml-auto underline font-semibold text-xs">Ver pendientes</button>
+          <span>
+            <strong>{pendingCount} ficha{pendingCount > 1 ? 's' : ''}</strong> pendiente{pendingCount > 1 ? 's' : ''} de aprobación.
+          </span>
+          <button onClick={() => setFilterStatus('pending')} className="ml-auto underline font-semibold text-xs">
+            Ver pendientes
+          </button>
         </div>
       )}
 
@@ -129,12 +153,12 @@ export default function AdminClassifiedAds() {
         <table className="w-full text-sm">
           <thead className="bg-muted sticky top-[65px] z-40">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Título</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Profesional</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Categoría</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Publicador</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">IP</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Zona</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">Precio</th>
               <th className="text-center px-4 py-3 font-medium text-muted-foreground">Estado</th>
-              <th className="text-center px-4 py-3 font-medium text-muted-foreground">Dest.</th>
+              <th className="text-center px-4 py-3 font-medium text-muted-foreground">Verificado</th>
               <th className="text-right px-4 py-3 font-medium text-muted-foreground">Acciones</th>
             </tr>
           </thead>
@@ -144,44 +168,56 @@ export default function AdminClassifiedAds() {
                 <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td></tr>
               ))
             ) : ads?.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No se encontraron avisos</td></tr>
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                  No hay profesionales publicados
+                </td>
+              </tr>
             ) : ads?.map(ad => (
-              <tr key={ad?.id} className={`hover:bg-muted/50 transition-colors ${ad?.ad_status === 'pending' ? 'bg-orange-50' : ''}`}>
+              <tr
+                key={ad?.id}
+                className={`hover:bg-muted/50 transition-colors ${ad?.ad_status === 'pending' ? 'bg-orange-50' : ''}`}
+              >
                 <td className="px-4 py-3">
-                  <div className="font-medium text-foreground">{ad?.title}</div>
-                  <div className="text-xs text-muted-foreground">{ad?.price ? `$${Number(ad?.price)?.toLocaleString('es-CL')}` : 'Sin precio'}</div>
-                </td>
-                <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{ad?.category}</td>
-                <td className="px-4 py-3 hidden lg:table-cell">
-                  <div className="text-foreground text-xs">{ad?.owner?.full_name || ad?.guest_email || '—'}</div>
-                  {ad?.guest_email && (
+                  <div className="font-medium text-foreground">{providerLabel(ad)}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{ad?.owner?.full_name || ad?.guest_email || '—'}</div>
+                  {ad?.phone && (
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Icon name="Mail" size={11} color="currentColor" />
-                      {ad?.guest_email}
-                    </div>
-                  )}
-                  {ad?.owner?.email && (
-                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Icon name="Mail" size={11} color="currentColor" />
-                      {ad?.owner?.email}
+                      <Icon name="Phone" size={11} color="currentColor" />
+                      {ad?.phone}
                     </div>
                   )}
                 </td>
+                <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{ad?.category || '—'}</td>
+                <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs">{ad?.location || '—'}</td>
                 <td className="px-4 py-3 hidden xl:table-cell">
-                  {ad?.ip_address ? (
-                    <span className="text-xs font-data text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                      {ad?.ip_address}
+                  {ad?.price_type ? (
+                    <span className="text-xs">
+                      {PRICE_TYPE_LABELS[ad?.price_type] || ad?.price_type}
+                      {ad?.price && ['from', 'hourly', 'visit'].includes(ad?.price_type) && (
+                        <span className="font-semibold ml-1" style={{ color: 'var(--color-primary)' }}>
+                          ${Number(ad?.price).toLocaleString('es-CL')}
+                        </span>
+                      )}
                     </span>
                   ) : '—'}
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white" style={{ background: STATUS_COLORS?.[ad?.ad_status] || '#94a3b8' }}>
+                  <span
+                    className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                    style={{ background: STATUS_COLORS?.[ad?.ad_status] || '#94a3b8' }}
+                  >
                     {STATUS_LABELS?.[ad?.ad_status] || ad?.ad_status}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <button onClick={() => handleToggleFeatured(ad)} className={`inline-flex items-center justify-center w-7 h-7 rounded-full transition-colors ${ad?.featured ? 'text-white' : 'bg-muted text-muted-foreground'}`} style={ad?.featured ? { background: 'var(--color-accent)' } : {}}>
-                    <Icon name="Star" size={14} color="currentColor" />
+                  <button
+                    onClick={() => handleToggleVerified(ad)}
+                    title={ad?.provider_verified ? 'Quitar verificación' : 'Marcar como verificado'}
+                    className={`inline-flex items-center justify-center w-7 h-7 rounded-full transition-colors ${ad?.provider_verified ? 'text-white' : 'bg-muted text-muted-foreground'}`}
+                    style={ad?.provider_verified ? { background: 'var(--color-success)' } : {}}
+                  >
+                    <Icon name="ShieldCheck" size={14} color="currentColor" />
                   </button>
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -193,7 +229,7 @@ export default function AdminClassifiedAds() {
                           disabled={actionLoading === ad?.id + '_approve'}
                           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-white transition-colors disabled:opacity-50"
                           style={{ background: 'var(--color-success)' }}
-                          title="Aprobar aviso"
+                          title="Aprobar ficha"
                         >
                           <Icon name="Check" size={13} color="currentColor" />
                           Aprobar
@@ -203,19 +239,28 @@ export default function AdminClassifiedAds() {
                           disabled={actionLoading === ad?.id + '_reject'}
                           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-white transition-colors disabled:opacity-50"
                           style={{ background: 'var(--color-error)' }}
-                          title="Rechazar aviso"
+                          title="Rechazar ficha"
                         >
                           <Icon name="X" size={13} color="currentColor" />
                           Rechazar
                         </button>
                       </>
                     )}
-                    {ad?.ad_status === 'active' && (
-                      <button onClick={() => handleExpire(ad)} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Expirar">
-                        <Icon name="Clock" size={15} color="currentColor" />
-                      </button>
-                    )}
-                    <button onClick={() => handleDelete(ad?.id)} className="p-1.5 rounded hover:bg-muted transition-colors" style={{ color: 'var(--color-error)' }}>
+                    <a
+                      href={`/clasificados/${ad?.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                      title="Ver ficha pública"
+                    >
+                      <Icon name="ExternalLink" size={15} color="currentColor" />
+                    </a>
+                    <button
+                      onClick={() => handleDelete(ad?.id)}
+                      className="p-1.5 rounded hover:bg-muted transition-colors"
+                      style={{ color: 'var(--color-error)' }}
+                      title="Eliminar ficha"
+                    >
                       <Icon name="Trash2" size={15} color="currentColor" />
                     </button>
                   </div>

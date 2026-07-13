@@ -32,6 +32,8 @@ import JobsListing from './pages/jobs-listing';
 import JobDetailPage from './pages/job-detail-page';
 import PublishJobForm from './pages/publish-job-form';
 import JobApplicationForm from './pages/job-application-form';
+import ProfesionalesListing from './pages/profesionales-listing';
+import PostProfesionalForm from './pages/post-profesional-form';
 
 const Routes = () => {
   return (
@@ -47,6 +49,13 @@ const Routes = () => {
           <Route path="/directorio-negocios" element={<BusinessDirectoryListing />} />
           <Route path="/business-profile-page" element={<BusinessProfilePage />} />
           <Route path="/classified-ads-listing" element={<ClassifiedAdsListing />} />
+          <Route path="/profesionales" element={<ProfesionalesListing />} />
+          {/* Sin ProtectedRoute: PostProfesionalForm ya maneja publicación de invitados
+              (GuestInfoModal), igual que /post-classified-ad — mismo criterio de acceso. */}
+          <Route path="/profesionales/publicar" element={<PostProfesionalForm />} />
+          {/* Redirects de compatibilidad — el nombre anterior de esta sección era /oficios */}
+          <Route path="/oficios" element={<Navigate to="/profesionales" replace />} />
+          <Route path="/oficios/publicar" element={<Navigate to="/profesionales/publicar" replace />} />
           <Route path="/login" element={<LoginPage />} />
           {/* Registro manual eliminado: Koronel solo permite login con Google. */}
           <Route path="/signup" element={<Navigate to="/login" replace />} />

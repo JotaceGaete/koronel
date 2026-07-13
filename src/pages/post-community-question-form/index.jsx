@@ -51,6 +51,7 @@ export default function PostCommunityQuestionForm() {
   const [showMap, setShowMap] = useState(false);
   const [images, setImages] = useState([]);
   const [imageError, setImageError] = useState(null);
+  const [submittedPostId, setSubmittedPostId] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -112,6 +113,7 @@ export default function PostCommunityQuestionForm() {
         await communityService?.uploadQuestionImages(post?.id, images?.map(i => i?.file));
       }
 
+      setSubmittedPostId(post?.id || null);
       setSubmitted(true);
       window?.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
@@ -138,16 +140,22 @@ export default function PostCommunityQuestionForm() {
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: '#d1fae5' }}>
               <Icon name="CheckCircle" size={40} color="#059669" />
             </div>
-            <h1 className="text-2xl font-heading font-bold text-foreground mb-3">¡Pregunta enviada!</h1>
-            <p className="text-muted-foreground mb-2">Tu pregunta fue enviada y está pendiente de moderación.</p>
-            <p className="text-sm text-muted-foreground mb-8">Nuestro equipo la revisará pronto y la publicará en la comunidad.</p>
+            <h1 className="text-2xl font-heading font-bold text-foreground mb-3">¡Pregunta publicada!</h1>
+            <p className="text-muted-foreground mb-2">Tu pregunta ya está visible en la comunidad.</p>
+            <p className="text-sm text-muted-foreground mb-8">Nuestro equipo puede moderar contenido inapropiado después de publicado.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/comunidad">
-                <Button variant="default" iconName="MessageCircle" iconPosition="left" iconSize={16}>Ver comunidad</Button>
-              </Link>
+              {submittedPostId ? (
+                <Link to={`/comunidad/${submittedPostId}`}>
+                  <Button variant="default" iconName="MessageCircle" iconPosition="left" iconSize={16}>Ver mi pregunta</Button>
+                </Link>
+              ) : (
+                <Link to="/comunidad">
+                  <Button variant="default" iconName="MessageCircle" iconPosition="left" iconSize={16}>Ver comunidad</Button>
+                </Link>
+              )}
               <Button
                 variant="outline"
-                onClick={() => { setSubmitted(false); setFormData({ title: '', body: '', sector: '' }); setPin(null); setErrors({}); }}
+                onClick={() => { setSubmitted(false); setSubmittedPostId(null); setFormData({ title: '', body: '', sector: '' }); setPin(null); setErrors({}); }}
                 iconName="Plus" iconPosition="left" iconSize={16}
               >
                 Hacer otra pregunta
@@ -185,8 +193,8 @@ export default function PostCommunityQuestionForm() {
           </div>
 
           <div className="mb-5 flex items-start gap-2 p-3 rounded-lg border" style={{ background: 'var(--color-muted)', borderColor: 'var(--color-border)' }}>
-            <Icon name="Clock" size={16} color="var(--color-primary)" className="mt-0.5 shrink-0" />
-            <p className="text-sm text-muted-foreground">Las preguntas son revisadas antes de publicarse. El proceso puede tomar algunas horas.</p>
+            <Icon name="Zap" size={16} color="var(--color-primary)" className="mt-0.5 shrink-0" />
+            <p className="text-sm text-muted-foreground">Tu pregunta se publica al instante y queda visible para toda la comunidad.</p>
           </div>
 
           <form onSubmit={handleSubmit} noValidate>

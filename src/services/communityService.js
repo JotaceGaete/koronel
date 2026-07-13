@@ -84,7 +84,7 @@ export const communityService = {
           lat: lat || null,
           lng: lng || null,
           user_id: userId,
-          status: 'pending',
+          status: 'active',
         })
         ?.select()
         ?.single();

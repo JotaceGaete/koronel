@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
+import ShareButtons from 'components/ui/ShareButtons';
 import { communityService } from '../../../services/communityService';
+import { formatRelativeTime } from 'utils/relativeTime';
 
 const SECTOR_COLORS = {
   Centro: { bg: '#dbeafe', color: '#1d4ed8' },
@@ -56,6 +58,12 @@ export default function QuestionHeader({ post, hasVoted, onVote, voteLoading, us
             <Icon name="Map" size={13} color="currentColor" />
             Ver negocios y eventos cercanos
           </Link>
+        )}
+        {(post?.reply_count || 0) > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Icon name="Zap" size={12} color="var(--color-success)" />
+            última actividad {formatRelativeTime(post?.last_activity_at)}
+          </span>
         )}
       </div>
       {/* Title */}
@@ -121,6 +129,11 @@ export default function QuestionHeader({ post, hasVoted, onVote, voteLoading, us
           <Icon name="ThumbsUp" size={15} color="currentColor" />
           <span>{post?.upvote_count || 0}</span>
         </button>
+      </div>
+      {/* Share */}
+      <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border">
+        <span className="text-xs text-muted-foreground shrink-0">Compartir:</span>
+        <ShareButtons title={post?.title} />
       </div>
       {/* Lightbox */}
       {lightboxIdx !== null && (

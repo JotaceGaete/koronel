@@ -26,10 +26,19 @@ export default function CommunityQuestionDetailPage() {
     try {
       const { data, error } = await communityService?.getPostById(id);
       if (error || !data) { setNotFound(true); return; }
-      setPost(data);
 
       const { data: replyData } = await communityService?.getRepliesByPostId(id);
       setReplies(replyData || []);
+
+      const lastReplyAt = (replyData || [])?.reduce(
+        (latest, r) => (!latest || r?.created_at > latest ? r?.created_at : latest),
+        null
+      );
+      setPost({
+        ...data,
+        reply_count: replyData?.length || 0,
+        last_activity_at: lastReplyAt || data?.created_at,
+      });
 
       // Load user votes
       if (user?.id) {

@@ -333,7 +333,7 @@ export const businessService = {
     try {
       const { data, error } = await supabase
         ?.from('business_claims')
-        ?.select('id, business_id, claim_status, created_at, business:businesses(id, name, category, address)')
+        ?.select('id, business_id, claim_status, admin_notes, created_at, reviewed_at, business:businesses(id, name, category, address)')
         ?.eq('user_id', userId)
         ?.order('created_at', { ascending: false });
       if (error) throw error;
@@ -343,13 +343,51 @@ export const businessService = {
     }
   },
 
-  async submitClaim({ businessId, userId, name, email, phone, role }) {
+  /** Última solicitud del usuario para un negocio puntual (para no duplicar ni re-mostrar el CTA). */
+  async getMyClaimForBusiness(userId, businessId) {
     try {
-      const { data, error } = await supabase?.from('business_claims')?.insert({ business_id: businessId, user_id: userId, claimant_name: name, claimant_email: email, claimant_phone: phone, claimant_role: role })?.select()?.single();
+      if (!userId || !businessId) return { data: null, error: null };
+      const { data, error } = await supabase
+        ?.from('business_claims')
+        ?.select('id, claim_status, admin_notes, created_at')
+        ?.eq('user_id', userId)
+        ?.eq('business_id', businessId)
+        ?.order('created_at', { ascending: false })
+        ?.limit(1)
+        ?.maybeSingle();
+      if (error) throw error;
+      return { data: data || null, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  async submitClaim({ businessId, userId, name, email, phone, role, evidenceNotes }) {
+    try {
+      const { data, error } = await supabase
+        ?.from('business_claims')
+        ?.insert({
+          business_id: businessId,
+          user_id: userId,
+          claimant_name: name,
+          claimant_email: email,
+          claimant_phone: phone,
+          claimant_role: role,
+          evidence_notes: evidenceNotes || null,
+        })
+        ?.select()
+        ?.single();
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      return { data: null, error };
+      // Postgres unique_violation on the partial index for pending claims
+      const isDuplicate = error?.code === '23505';
+      return {
+        data: null,
+        error: isDuplicate
+          ? { ...error, message: 'Ya tienes una solicitud pendiente para este negocio.' }
+          : error,
+      };
     }
   },
 

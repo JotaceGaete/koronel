@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
@@ -7,6 +7,10 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { businessService } from '../../../services/businessService';
 import { PHONE_PLACEHOLDER } from '../../../utils/phone';
 
+const PENDING_CLAIM_LABEL = {
+  pending: { title: 'Solicitud en revisión', text: 'Ya enviaste una solicitud para reclamar este negocio. Te avisaremos por correo cuando el equipo la revise.' },
+};
+
 export default function ClaimBusiness({ businessId, businessName, claimed }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -14,7 +18,20 @@ export default function ClaimBusiness({ businessId, businessName, claimed }) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [form, setForm] = useState({ name: '', email: user?.email || '', phone: '', role: '' });
+  const [existingClaim, setExistingClaim] = useState(null);
+  const [checkingClaim, setCheckingClaim] = useState(false);
+  const [form, setForm] = useState({ name: '', email: user?.email || '', phone: '', role: '', evidenceNotes: '' });
+
+  useEffect(() => {
+    let mounted = true;
+    if (user?.id && businessId && !claimed) {
+      setCheckingClaim(true);
+      businessService?.getMyClaimForBusiness(user.id, businessId)?.then(({ data }) => {
+        if (mounted) setExistingClaim(data || null);
+      })?.finally(() => { if (mounted) setCheckingClaim(false); });
+    }
+    return () => { mounted = false; };
+  }, [user?.id, businessId, claimed]);
 
   const handleReclaimClick = () => {
     if (!user) {
@@ -41,13 +58,14 @@ export default function ClaimBusiness({ businessId, businessName, claimed }) {
     );
   }
 
-  if (submitted) {
+  if (submitted || (!checkingClaim && existingClaim?.claim_status === 'pending')) {
+    const label = PENDING_CLAIM_LABEL?.pending;
     return (
       <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex items-center gap-3">
         <Icon name="CheckCircle" size={22} color="var(--color-primary)" />
         <div>
-          <p className="text-sm font-caption font-semibold text-primary">Solicitud enviada</p>
-          <p className="text-xs font-caption text-muted-foreground">Revisaremos tu solicitud y te contactaremos pronto.</p>
+          <p className="text-sm font-caption font-semibold text-primary">{submitted ? 'Solicitud enviada' : label?.title}</p>
+          <p className="text-xs font-caption text-muted-foreground">{submitted ? 'Revisaremos tu solicitud y te contactaremos pronto.' : label?.text}</p>
         </div>
       </div>
     );
@@ -64,10 +82,11 @@ export default function ClaimBusiness({ businessId, businessName, claimed }) {
       email: form?.email,
       phone: form?.phone,
       role: form?.role,
+      evidenceNotes: form?.evidenceNotes,
     });
     setSubmitting(false);
     if (error) {
-      setSubmitError('Error al enviar la solicitud. Por favor intenta de nuevo.');
+      setSubmitError(error?.message || 'Error al enviar la solicitud. Por favor intenta de nuevo.');
     } else {
       setSubmitted(true);
     }
@@ -131,6 +150,19 @@ export default function ClaimBusiness({ businessId, businessName, claimed }) {
             value={form?.role}
             onChange={(e) => setForm((f) => ({ ...f, role: e?.target?.value }))}
           />
+          <div>
+            <label className="block text-sm font-caption font-semibold text-foreground mb-1.5">
+              Evidencia (opcional)
+            </label>
+            <textarea
+              value={form?.evidenceNotes}
+              onChange={(e) => setForm((f) => ({ ...f, evidenceNotes: e?.target?.value }))}
+              placeholder="Cuéntanos cómo podemos verificar que eres el propietario: RUT de la empresa, correo corporativo, redes sociales, etc."
+              rows={3}
+              maxLength={500}
+              className="w-full px-4 py-3 text-sm font-body rounded-md border border-border bg-card text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
+            />
+          </div>
           {submitError && (
             <p className="text-sm font-caption" style={{ color: 'var(--color-error)' }}>{submitError}</p>
           )}

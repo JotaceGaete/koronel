@@ -14,6 +14,8 @@ export default function AdminClaimRequests() {
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState('pending');
   const [processing, setProcessing] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectNote, setRejectNote] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -29,10 +31,12 @@ export default function AdminClaimRequests() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleAction = async (id, status) => {
+  const handleAction = async (id, status, adminNotes = null) => {
     setProcessing(id);
     try {
-      await adminClaimService?.updateStatus(id, status);
+      await adminClaimService?.updateStatus(id, status, adminNotes);
+      setRejectingId(null);
+      setRejectNote('');
       load();
     } catch (e) {
       setError(e?.message);
@@ -84,25 +88,64 @@ export default function AdminClaimRequests() {
                   {claim?.claimant_phone && <span className="text-muted-foreground"> · {claim?.claimant_phone}</span>}
                   {claim?.claimant_role && <span className="text-muted-foreground"> · {claim?.claimant_role}</span>}
                 </div>
+                {claim?.requester && (
+                  <p className="text-xs text-muted-foreground">
+                    Cuenta: {claim?.requester?.full_name || 'Sin nombre'} ({claim?.requester?.email})
+                  </p>
+                )}
+                {claim?.evidence_notes && (
+                  <p className="mt-2 text-xs text-muted-foreground bg-muted/60 rounded-md p-2">
+                    <span className="font-medium text-foreground">Evidencia: </span>
+                    {claim?.evidence_notes}
+                  </p>
+                )}
+                {claim?.claim_status !== 'pending' && (claim?.admin_notes || claim?.reviewed_at) && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Revisado{claim?.reviewer?.full_name ? ` por ${claim?.reviewer?.full_name}` : ''}
+                    {claim?.reviewed_at ? ` el ${new Date(claim.reviewed_at)?.toLocaleDateString('es-CL')}` : ''}
+                    {claim?.admin_notes ? ` · Nota: ${claim?.admin_notes}` : ''}
+                  </p>
+                )}
               </div>
               {claim?.claim_status === 'pending' && (
-                <div className="flex gap-2 shrink-0">
-                  <button
-                    onClick={() => handleAction(claim?.id, 'approved')}
-                    disabled={processing === claim?.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-md transition-colors disabled:opacity-50"
-                    style={{ background: '#22c55e' }}
-                  >
-                    <Icon name="Check" size={14} color="white" /> Aprobar
-                  </button>
-                  <button
-                    onClick={() => handleAction(claim?.id, 'rejected')}
-                    disabled={processing === claim?.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-md transition-colors disabled:opacity-50"
-                    style={{ background: '#ef4444' }}
-                  >
-                    <Icon name="X" size={14} color="white" /> Rechazar
-                  </button>
+                <div className="flex flex-col gap-2 shrink-0 items-end">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAction(claim?.id, 'approved')}
+                      disabled={processing === claim?.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-md transition-colors disabled:opacity-50"
+                      style={{ background: '#22c55e' }}
+                    >
+                      <Icon name="Check" size={14} color="white" /> Aprobar
+                    </button>
+                    <button
+                      onClick={() => setRejectingId(rejectingId === claim?.id ? null : claim?.id)}
+                      disabled={processing === claim?.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-md transition-colors disabled:opacity-50"
+                      style={{ background: '#ef4444' }}
+                    >
+                      <Icon name="X" size={14} color="white" /> Rechazar
+                    </button>
+                  </div>
+                  {rejectingId === claim?.id && (
+                    <div className="w-full sm:w-64 flex flex-col gap-2">
+                      <textarea
+                        value={rejectNote}
+                        onChange={(e) => setRejectNote(e?.target?.value)}
+                        placeholder="Motivo del rechazo (opcional)"
+                        rows={2}
+                        className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <button
+                        onClick={() => handleAction(claim?.id, 'rejected', rejectNote?.trim() || null)}
+                        disabled={processing === claim?.id}
+                        className="px-3 py-1.5 text-xs font-medium text-white rounded-md disabled:opacity-50"
+                        style={{ background: '#ef4444' }}
+                      >
+                        Confirmar rechazo
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

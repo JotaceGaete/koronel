@@ -46,7 +46,9 @@ function withoutBusinessOnlyFields(payload = {}) {
 // ── Businesses ──────────────────────────────────────────────
 export const adminBusinessService = {
   async getAll({ search = '', category = '', status = '' } = {}) {
-    let query = supabase?.from('businesses')?.select('*, owner:user_profiles(full_name, email)')?.order('created_at', { ascending: false });
+    let query = supabase?.from('businesses')?.select('*, owner:user_profiles!businesses_owner_id_fkey(full_name, email)')?.order('created_at', { ascending: false });
+    if (search) query = query?.ilike('name', `%${search}%`);
+    if (category) query = query?.eq('category_key', category);
     if (status === 'featured') query = query?.eq('featured', true);
     else if (status === 'verified') query = query?.eq('verified', true);
     else if (status && ['pending', 'published', 'premium', 'rejected']?.includes(status)) query = query?.eq('status', status);
@@ -120,21 +122,22 @@ export const adminCategoryService = {
 // ── Claim Requests ──────────────────────────────────────────
 export const adminClaimService = {
   async getAll(status = '') {
-    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), claimant:user_profiles(full_name, email)')?.order('created_at', { ascending: false });
+    // business_claims has two FKs into user_profiles (user_id, reviewed_by), so both
+    // embeds must name their constraint explicitly or PostgREST can't disambiguate.
+    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), requester:user_profiles!business_claims_user_id_fkey(full_name, email), reviewer:user_profiles!business_claims_reviewed_by_fkey(full_name, email)')?.order('created_at', { ascending: false });
     if (status) query = query?.eq('claim_status', status);
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
   },
 
-  async updateStatus(id, status) {
-    const { data: claim, error: fetchError } = await supabase?.from('business_claims')?.select('id, business_id, user_id')?.eq('id', id)?.single();
-    if (fetchError || !claim) throw fetchError || new Error('Solicitud no encontrada');
-    const { data, error } = await supabase?.from('business_claims')?.update({ claim_status: status })?.eq('id', id)?.select()?.single();
+  // Ownership transfer never happens via a raw UPDATE from the client: both
+  // paths call a SECURITY DEFINER RPC that re-checks is_admin() server-side
+  // and applies the claim + business changes atomically.
+  async updateStatus(id, status, adminNotes = null) {
+    const fn = status === 'approved' ? 'approve_business_claim' : 'reject_business_claim';
+    const { data, error } = await supabase?.rpc(fn, { p_claim_id: id, p_admin_notes: adminNotes || null });
     if (error) throw error;
-    if (status === 'approved' && claim?.business_id && claim?.user_id) {
-      await supabase?.from('businesses')?.update({ owner_id: claim.user_id, claimed: true })?.eq('id', claim.business_id);
-    }
     return data;
   },
 };

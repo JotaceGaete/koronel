@@ -15,13 +15,9 @@ const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
 const MIN_TOUCH = 44;
 
-function isAdminUser(user, userProfile) {
+function isAdminUser(user) {
   if (!user) return false;
-  const meta = user?.user_metadata || {};
-  const appMeta = user?.app_metadata || {};
-  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
-  const profileAdmin = userProfile?.role === 'admin';
-  return authAdmin || profileAdmin;
+  return user?.app_metadata?.role === 'admin';
 }
 
 const INITIAL = {
@@ -37,7 +33,7 @@ const INITIAL = {
 };
 
 export default function AdminQuickBusinessEntry() {
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -53,14 +49,14 @@ export default function AdminQuickBusinessEntry() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!user || !isAdminUser(user, userProfile)) {
+    if (!user || !isAdminUser(user)) {
       navigate('/login', { replace: true });
       return;
     }
     businessService?.getHierarchicalCategories?.()?.then(({ data, flat }) => {
       setCategories(flat || []);
     });
-  }, [user, userProfile, navigate]);
+  }, [user, navigate]);
 
   const handleChange = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 

@@ -15,13 +15,9 @@ const navItems = [
   { label: 'Mapa', path: '/mapa', icon: 'Map' },
 ];
 
-function isAdminUser(user, userProfile) {
+function isAdminUser(user) {
   if (!user) return false;
-  const meta = user?.user_metadata || {};
-  const appMeta = user?.app_metadata || {};
-  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
-  const profileAdmin = userProfile?.role === 'admin';
-  return authAdmin || profileAdmin;
+  return user?.app_metadata?.role === 'admin';
 }
 
 export default function Header() {
@@ -81,7 +77,7 @@ export default function Header() {
   }, [mobileOpen]);
 
   const displayName = userProfile?.full_name || user?.email?.split('@')?.[0] || 'Usuario';
-  const isAdmin = isAdminUser(user, userProfile);
+  const isAdmin = isAdminUser(user);
 
   return (
     <>

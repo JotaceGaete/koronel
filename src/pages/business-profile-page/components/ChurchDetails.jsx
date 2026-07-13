@@ -40,7 +40,7 @@ export default function ChurchDetails({ businessId, canEdit: canEditProp }) {
     }
     if (!user?.id || !businessId) return;
     // Check if user is admin
-    const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin';
+    const isAdmin = user?.app_metadata?.role === 'admin';
     if (isAdmin) { setCanEdit(true); return; }
     // Check approved claim
     churchDetailsService?.hasApprovedClaim(businessId, user?.id)?.then(hasClaim => {

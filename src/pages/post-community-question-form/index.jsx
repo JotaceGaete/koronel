@@ -9,6 +9,9 @@ import Button from 'components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { communityService } from '../../services/communityService';
 import QuestionImageUpload from './components/QuestionImageUpload';
+import PostTypeSelector from './components/PostTypeSelector';
+import PollOptionsEditor, { MIN_POLL_OPTIONS, MAX_POLL_OPTIONS } from './components/PollOptionsEditor';
+import PollClosingDatePicker from './components/PollClosingDatePicker';
 
 // Fix Leaflet icon
 delete L?.Icon?.Default?.prototype?._getIconUrl;
@@ -43,6 +46,7 @@ function PinDropper({ pin, onPinDrop }) {
 export default function PostCommunityQuestionForm() {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [postType, setPostType] = useState('question');
   const [formData, setFormData] = useState({ title: '', body: '', sector: '' });
   const [pin, setPin] = useState(null);
   const [errors, setErrors] = useState({});
@@ -51,12 +55,19 @@ export default function PostCommunityQuestionForm() {
   const [showMap, setShowMap] = useState(false);
   const [images, setImages] = useState([]);
   const [imageError, setImageError] = useState(null);
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollClosesAt, setPollClosesAt] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/login', { state: { from: '/comunidad/nueva' } });
     }
   }, [authLoading, isAuthenticated, navigate]);
+
+  const handleTypeChange = (type) => {
+    setPostType(type);
+    setErrors({});
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -67,9 +78,20 @@ export default function PostCommunityQuestionForm() {
     const e = {};
     if (!formData?.title?.trim()) e.title = 'El título es obligatorio';
     if (formData?.title?.trim()?.length < 5) e.title = 'El título debe tener al menos 5 caracteres';
-    if (!formData?.body?.trim()) e.body = 'La descripción es obligatoria';
-    if (formData?.body?.trim()?.length < 10) e.body = 'La descripción debe tener al menos 10 caracteres';
+
+    if (postType === 'question') {
+      if (!formData?.body?.trim()) e.body = 'La descripción es obligatoria';
+      if (formData?.body?.trim()?.length < 10) e.body = 'La descripción debe tener al menos 10 caracteres';
+    }
+
     if (!formData?.sector) e.sector = 'Selecciona un sector';
+
+    if (postType === 'poll') {
+      const nonBlank = pollOptions?.map(opt => opt?.trim())?.filter(Boolean);
+      if (nonBlank?.length < MIN_POLL_OPTIONS) e.pollOptions = `La encuesta necesita al menos ${MIN_POLL_OPTIONS} opciones`;
+      else if (nonBlank?.length > MAX_POLL_OPTIONS) e.pollOptions = `La encuesta admite un máximo de ${MAX_POLL_OPTIONS} opciones`;
+    }
+
     return e;
   };
 
@@ -88,6 +110,17 @@ export default function PostCommunityQuestionForm() {
     });
   };
 
+  const resetForm = () => {
+    setSubmitted(false);
+    setPostType('question');
+    setFormData({ title: '', body: '', sector: '' });
+    setPin(null);
+    setImages([]);
+    setPollOptions(['', '']);
+    setPollClosesAt(null);
+    setErrors({});
+  };
+
   const handleSubmit = async (ev) => {
     ev?.preventDefault();
     const validationErrors = validate();
@@ -97,25 +130,39 @@ export default function PostCommunityQuestionForm() {
     }
     setSubmitting(true);
     try {
-      const { data: post, error } = await communityService?.createPost({
-        title: formData?.title,
-        body: formData?.body,
-        sector: formData?.sector,
-        lat: pin?.lat || null,
-        lng: pin?.lng || null,
-        userId: user?.id,
-      });
-      if (error) throw error;
+      if (postType === 'poll') {
+        const { error } = await communityService?.createPoll({
+          title: formData?.title,
+          body: formData?.body,
+          sector: formData?.sector,
+          lat: pin?.lat || null,
+          lng: pin?.lng || null,
+          userId: user?.id,
+          options: pollOptions,
+          closesAt: pollClosesAt,
+        });
+        if (error) throw error;
+      } else {
+        const { data: post, error } = await communityService?.createPost({
+          title: formData?.title,
+          body: formData?.body,
+          sector: formData?.sector,
+          lat: pin?.lat || null,
+          lng: pin?.lng || null,
+          userId: user?.id,
+        });
+        if (error) throw error;
 
-      // Upload images if any
-      if (images?.length > 0 && post?.id) {
-        await communityService?.uploadQuestionImages(post?.id, images?.map(i => i?.file));
+        // Upload images if any
+        if (images?.length > 0 && post?.id) {
+          await communityService?.uploadQuestionImages(post?.id, images?.map(i => i?.file));
+        }
       }
 
       setSubmitted(true);
       window?.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      setErrors({ submit: err?.message || 'Error al enviar la pregunta. Por favor intenta de nuevo.' });
+      setErrors({ submit: err?.message || 'Error al enviar la publicación. Por favor intenta de nuevo.' });
     } finally {
       setSubmitting(false);
     }
@@ -138,8 +185,14 @@ export default function PostCommunityQuestionForm() {
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: '#d1fae5' }}>
               <Icon name="CheckCircle" size={40} color="#059669" />
             </div>
-            <h1 className="text-2xl font-heading font-bold text-foreground mb-3">¡Pregunta enviada!</h1>
-            <p className="text-muted-foreground mb-2">Tu pregunta fue enviada y está pendiente de moderación.</p>
+            <h1 className="text-2xl font-heading font-bold text-foreground mb-3">
+              {postType === 'poll' ? '¡Encuesta enviada!' : '¡Pregunta enviada!'}
+            </h1>
+            <p className="text-muted-foreground mb-2">
+              {postType === 'poll'
+                ? 'Tu encuesta fue enviada y está pendiente de moderación.'
+                : 'Tu pregunta fue enviada y está pendiente de moderación.'}
+            </p>
             <p className="text-sm text-muted-foreground mb-8">Nuestro equipo la revisará pronto y la publicará en la comunidad.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/comunidad">
@@ -147,10 +200,10 @@ export default function PostCommunityQuestionForm() {
               </Link>
               <Button
                 variant="outline"
-                onClick={() => { setSubmitted(false); setFormData({ title: '', body: '', sector: '' }); setPin(null); setErrors({}); }}
+                onClick={resetForm}
                 iconName="Plus" iconPosition="left" iconSize={16}
               >
-                Hacer otra pregunta
+                Crear otra publicación
               </Button>
             </div>
           </div>
@@ -169,24 +222,32 @@ export default function PostCommunityQuestionForm() {
             <Icon name="ChevronRight" size={12} color="currentColor" />
             <Link to="/comunidad" className="hover:text-primary transition-colors">Comunidad</Link>
             <Icon name="ChevronRight" size={12} color="currentColor" />
-            <span className="text-foreground">Nueva Pregunta</span>
+            <span className="text-foreground">{postType === 'poll' ? 'Nueva Encuesta' : 'Nueva Pregunta'}</span>
           </nav>
         </div>
 
         <div className="max-w-2xl mx-auto px-4 md:px-6 lg:px-8 pb-16">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--color-primary)' }}>
-              <Icon name="MessageCirclePlus" size={20} color="white" />
+              <Icon name={postType === 'poll' ? 'BarChart3' : 'MessageCirclePlus'} size={20} color="white" />
             </div>
             <div>
-              <h1 className="text-2xl font-heading font-bold text-foreground">Hacer una Pregunta</h1>
-              <p className="text-sm text-muted-foreground">Consulta a la comunidad de Coronel</p>
+              <h1 className="text-2xl font-heading font-bold text-foreground">
+                {postType === 'poll' ? 'Crear una Encuesta' : 'Hacer una Pregunta'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {postType === 'poll' ? 'Deja que la comunidad vote en un clic' : 'Consulta a la comunidad de Coronel'}
+              </p>
             </div>
           </div>
 
           <div className="mb-5 flex items-start gap-2 p-3 rounded-lg border" style={{ background: 'var(--color-muted)', borderColor: 'var(--color-border)' }}>
             <Icon name="Clock" size={16} color="var(--color-primary)" className="mt-0.5 shrink-0" />
-            <p className="text-sm text-muted-foreground">Las preguntas son revisadas antes de publicarse. El proceso puede tomar algunas horas.</p>
+            <p className="text-sm text-muted-foreground">Las publicaciones son revisadas antes de publicarse. El proceso puede tomar algunas horas.</p>
+          </div>
+
+          <div className="mb-5">
+            <PostTypeSelector value={postType} onChange={handleTypeChange} />
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -200,7 +261,7 @@ export default function PostCommunityQuestionForm() {
                   type="text"
                   value={formData?.title}
                   onChange={e => handleChange('title', e?.target?.value)}
-                  placeholder="Ej: ¿Dónde puedo encontrar un buen mecánico en Centro?"
+                  placeholder={postType === 'poll' ? 'Ej: ¿Dónde compras frutas y verduras?' : 'Ej: ¿Dónde puedo encontrar un buen mecánico en Centro?'}
                   className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   style={{ borderColor: errors?.title ? 'var(--color-error)' : 'var(--color-border)' }}
                 />
@@ -210,18 +271,30 @@ export default function PostCommunityQuestionForm() {
               {/* Body */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Descripción <span style={{ color: 'var(--color-error)' }}>*</span>
+                  Descripción{' '}
+                  {postType === 'poll'
+                    ? <span className="text-muted-foreground font-normal">(opcional)</span>
+                    : <span style={{ color: 'var(--color-error)' }}>*</span>}
                 </label>
                 <textarea
                   value={formData?.body}
                   onChange={e => handleChange('body', e?.target?.value)}
-                  placeholder="Describe tu consulta con más detalle..."
-                  rows={5}
+                  placeholder={postType === 'poll' ? 'Agrega contexto a tu encuesta (opcional)...' : 'Describe tu consulta con más detalle...'}
+                  rows={postType === 'poll' ? 3 : 5}
                   className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                   style={{ borderColor: errors?.body ? 'var(--color-error)' : 'var(--color-border)' }}
                 />
                 {errors?.body && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.body}</p>}
               </div>
+
+              {/* Poll Options */}
+              {postType === 'poll' && (
+                <PollOptionsEditor
+                  options={pollOptions}
+                  onChange={setPollOptions}
+                  error={errors?.pollOptions}
+                />
+              )}
 
               {/* Sector */}
               <div>
@@ -273,16 +346,23 @@ export default function PostCommunityQuestionForm() {
                     </MapContainer>
                   </div>
                 )}
-                {showMap && <p className="text-xs text-muted-foreground mt-1">Haz clic en el mapa para marcar la ubicación de tu consulta.</p>}
+                {showMap && <p className="text-xs text-muted-foreground mt-1">Haz clic en el mapa para marcar la ubicación de tu publicación.</p>}
               </div>
 
-              {/* Image Upload */}
-              <QuestionImageUpload
-                images={images}
-                onAdd={handleAddImages}
-                onRemove={handleRemoveImage}
-                error={imageError}
-              />
+              {/* Poll closing date */}
+              {postType === 'poll' && (
+                <PollClosingDatePicker onChange={setPollClosesAt} />
+              )}
+
+              {/* Image Upload (Pregunta only in V1) */}
+              {postType === 'question' && (
+                <QuestionImageUpload
+                  images={images}
+                  onAdd={handleAddImages}
+                  onRemove={handleRemoveImage}
+                  error={imageError}
+                />
+              )}
 
               {/* Submit Error */}
               {errors?.submit && (
@@ -304,7 +384,7 @@ export default function PostCommunityQuestionForm() {
                   iconPosition="right"
                   iconSize={16}
                 >
-                  {submitting ? 'Enviando...' : 'Enviar pregunta'}
+                  {submitting ? 'Enviando...' : postType === 'poll' ? 'Crear encuesta' : 'Enviar pregunta'}
                 </Button>
               </div>
             </div>

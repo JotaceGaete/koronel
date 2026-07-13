@@ -1,5 +1,22 @@
 import { supabase } from '../lib/supabase';
 
+// Embed used everywhere a publication needs to reveal whether it's a poll. For a Pregunta,
+// `poll` resolves to null — the type is derived from presence/absence, community_posts is
+// never touched. Fetched via Supabase's FK-based embedding, so listing N posts still costs a
+// single request/query, not N+1.
+const POLL_EMBED = 'poll:community_polls(id, closes_at, status, results_visibility, created_at, options:community_poll_options(id, label, position, vote_count))';
+
+function withSortedPollOptions(post) {
+  if (!post?.poll?.options?.length) return post;
+  return {
+    ...post,
+    poll: {
+      ...post?.poll,
+      options: [...post?.poll?.options]?.sort((a, b) => a?.position - b?.position),
+    },
+  };
+}
+
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
 
@@ -7,7 +24,7 @@ export const communityService = {
     try {
       let query = supabase
         ?.from('community_posts')
-        ?.select('*, author:user_profiles(id, full_name, avatar_url)', { count: 'exact' })
+        ?.select(`*, author:user_profiles(id, full_name, avatar_url), ${POLL_EMBED}`, { count: 'exact' })
         ?.eq('status', 'active');
 
       if (sector && sector !== 'all') {
@@ -48,7 +65,7 @@ export const communityService = {
       }
 
       const enriched = (data || [])?.map(p => ({
-        ...p,
+        ...withSortedPollOptions(p),
         reply_count: replyCounts?.[p?.id] || 0,
       }));
 
@@ -63,11 +80,11 @@ export const communityService = {
     try {
       const { data, error } = await supabase
         ?.from('community_posts')
-        ?.select('*, author:user_profiles(id, full_name, avatar_url)')
+        ?.select(`*, author:user_profiles(id, full_name, avatar_url), ${POLL_EMBED}`)
         ?.eq('id', id)
         ?.single();
       if (error) throw error;
-      return { data, error: null };
+      return { data: withSortedPollOptions(data), error: null };
     } catch (error) {
       return { data: null, error };
     }
@@ -195,6 +212,130 @@ export const communityService = {
       }
     } catch (error) {
       return { voted: hasVoted, newCount: currentCount, error };
+    }
+  },
+
+  // ─── POLLS ───────────────────────────────────────────────────────────────
+  // Poll option voting is a separate concept from the upvotes above: `community_votes`
+  // stays exactly as-is and keeps meaning "me interesa esta publicación". A poll vote is an
+  // exclusive choice among 2-6 options, stored in community_poll_votes, and it is never
+  // written directly from here — every vote goes through the cast_poll_vote RPC (see the
+  // migration) so the database enforces atomicity and the closes_at/open check server-side.
+
+  async createPoll({ title, body, sector, lat, lng, userId, options, closesAt }) {
+    const trimmedOptions = (options || [])
+      ?.map(opt => opt?.trim())
+      ?.filter(Boolean);
+
+    if (trimmedOptions?.length < 2) {
+      return { data: null, error: new Error('La encuesta necesita al menos 2 opciones') };
+    }
+    if (trimmedOptions?.length > 6) {
+      return { data: null, error: new Error('La encuesta admite un máximo de 6 opciones') };
+    }
+
+    const { data: post, error: postError } = await this.createPost({
+      title,
+      body: body?.trim() || '',
+      sector,
+      lat,
+      lng,
+      userId,
+    });
+    if (postError) return { data: null, error: postError };
+
+    try {
+      const { data: poll, error: pollError } = await supabase
+        ?.from('community_polls')
+        ?.insert({ post_id: post?.id, closes_at: closesAt || null })
+        ?.select()
+        ?.single();
+      if (pollError) throw pollError;
+
+      const { data: insertedOptions, error: optionsError } = await supabase
+        ?.from('community_poll_options')
+        ?.insert(trimmedOptions?.map((label, position) => ({ poll_id: poll?.id, label, position })))
+        ?.select();
+      if (optionsError) throw optionsError;
+
+      return {
+        data: {
+          ...post,
+          poll: {
+            ...poll,
+            options: (insertedOptions || [])?.sort((a, b) => a?.position - b?.position),
+          },
+        },
+        error: null,
+      };
+    } catch (error) {
+      // Best-effort cleanup: cascade delete takes care of any poll/options row that did
+      // get created before the failure, so we never leave an orphaned "encuesta" post.
+      await supabase?.from('community_posts')?.delete()?.eq('id', post?.id);
+      return { data: null, error };
+    }
+  },
+
+  async getUserPollVote(userId, pollId) {
+    if (!userId || !pollId) return { data: null, error: null };
+    try {
+      const { data, error } = await supabase
+        ?.from('community_poll_votes')
+        ?.select('option_id')
+        ?.eq('user_id', userId)
+        ?.eq('poll_id', pollId)
+        ?.maybeSingle();
+      if (error) throw error;
+      return { data: data || null, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  async getUserPollVotesForPosts(userId, pollIds) {
+    if (!userId || !pollIds?.length) return { data: [], error: null };
+    try {
+      const { data, error } = await supabase
+        ?.from('community_poll_votes')
+        ?.select('poll_id, option_id')
+        ?.eq('user_id', userId)
+        ?.in('poll_id', pollIds);
+      if (error) throw error;
+      return { data: data || [], error: null };
+    } catch (error) {
+      return { data: [], error };
+    }
+  },
+
+  // Only path that ever writes to community_poll_votes / adjusts vote_count. See
+  // cast_poll_vote() in the migration for the atomicity and closed-poll guarantees.
+  async castPollVote({ pollId, optionId }) {
+    try {
+      const { data, error } = await supabase?.rpc('cast_poll_vote', {
+        p_poll_id: pollId,
+        p_option_id: optionId,
+      });
+      if (error) throw error;
+      return { data: (data || [])?.sort((a, b) => a?.position - b?.position), error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  isPollClosed(poll) {
+    if (!poll) return false;
+    if (poll?.status === 'closed') return true;
+    if (poll?.closes_at && new Date(poll?.closes_at)?.getTime() <= Date.now()) return true;
+    return false;
+  },
+
+  async adminClosePoll(pollId) {
+    try {
+      const { error } = await supabase?.from('community_polls')?.update({ status: 'closed' })?.eq('id', pollId);
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error };
     }
   },
 

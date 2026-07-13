@@ -369,7 +369,7 @@ export const communityService = {
     try {
       let query = supabase
         ?.from('community_posts')
-        ?.select('*, author:user_profiles(id, full_name, email)')
+        ?.select('*, author:user_profiles(id, full_name, email), poll:community_polls(id, status, closes_at)')
         ?.order('created_at', { ascending: false });
       if (status && status !== 'all') query = query?.eq('status', status);
       if (search?.trim()) query = query?.or(`title.ilike.%${search}%,body.ilike.%${search}%`);

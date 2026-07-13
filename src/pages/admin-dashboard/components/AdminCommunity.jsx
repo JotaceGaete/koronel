@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Icon from 'components/AppIcon';
 import AdminPageHeader from 'components/admin/AdminPageHeader';
+import PollStatusBadge from 'components/community/PollStatusBadge';
 import { communityService } from '../../../services/communityService';
 
 const STATUS_CONFIG = {
@@ -59,7 +60,7 @@ function PostsTab() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar esta pregunta permanentemente?')) return;
+    if (!window.confirm('¿Eliminar esta publicación permanentemente?')) return;
     setActionLoading(id + 'delete');
     try {
       const { error: err } = await communityService?.adminDeletePost(id);
@@ -72,13 +73,26 @@ function PostsTab() {
     }
   };
 
+  const handleClosePoll = async (pollId, postId) => {
+    setActionLoading(postId + 'closepoll');
+    try {
+      const { error: err } = await communityService?.adminClosePoll(pollId);
+      if (err) throw err;
+      setPosts(prev => prev?.map(p => (p?.id === postId ? { ...p, poll: { ...p?.poll, status: 'closed' } } : p)));
+    } catch (e) {
+      setError(e?.message || 'Error al cerrar la encuesta');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const pendingCount = posts?.filter(p => p?.status === 'pending')?.length;
 
   return (
     <div>
       {pendingCount > 0 && (
         <p className="text-sm mb-4" style={{ color: '#d97706' }}>
-          {pendingCount} pregunta{pendingCount > 1 ? 's' : ''} pendiente{pendingCount > 1 ? 's' : ''} de moderación
+          {pendingCount} publicación{pendingCount > 1 ? 'es' : ''} pendiente{pendingCount > 1 ? 's' : ''} de moderación
         </p>
       )}
 
@@ -88,7 +102,7 @@ function PostsTab() {
           <input
             value={search}
             onChange={e => setSearch(e?.target?.value)}
-            placeholder="Buscar pregunta..."
+            placeholder="Buscar publicación..."
             className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -110,7 +124,8 @@ function PostsTab() {
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Pregunta</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Publicación</th>
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Tipo</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Sector</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Autor</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Fecha</th>
@@ -121,17 +136,34 @@ function PostsTab() {
           <tbody className="divide-y divide-border">
             {loading ? (
               Array.from({ length: 5 })?.map((_, i) => (
-                <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td></tr>
+                <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td></tr>
               ))
             ) : posts?.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No se encontraron preguntas</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No se encontraron publicaciones</td></tr>
             ) : posts?.map(post => {
               const statusCfg = STATUS_CONFIG?.[post?.status] || STATUS_CONFIG?.pending;
+              const pollClosed = post?.poll ? communityService?.isPollClosed(post?.poll) : false;
               return (
                 <tr key={post?.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground line-clamp-1">{post?.title}</div>
                     <div className="text-xs text-muted-foreground line-clamp-1">{post?.body}</div>
+                  </td>
+                  <td className="px-4 py-3 hidden sm:table-cell">
+                    {post?.poll ? (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--color-primary)' }}>
+                          <Icon name="BarChart3" size={12} color="currentColor" />
+                          Encuesta
+                        </span>
+                        <PollStatusBadge isClosed={pollClosed} />
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                        <Icon name="MessageCircle" size={12} color="currentColor" />
+                        Pregunta
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{post?.sector}</td>
                   <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">{post?.author?.full_name || '—'}</td>
@@ -163,6 +195,17 @@ function PostsTab() {
                           style={{ color: '#d97706' }}
                         >
                           <Icon name="XCircle" size={15} color="currentColor" />
+                        </button>
+                      )}
+                      {post?.poll && !pollClosed && (
+                        <button
+                          onClick={() => handleClosePoll(post?.poll?.id, post?.id)}
+                          disabled={actionLoading === post?.id + 'closepoll'}
+                          className="p-1.5 rounded hover:bg-muted transition-colors disabled:opacity-50"
+                          title="Cerrar encuesta"
+                          style={{ color: '#6b7280' }}
+                        >
+                          <Icon name="Lock" size={15} color="currentColor" />
                         </button>
                       )}
                       <button
@@ -414,7 +457,7 @@ export default function AdminCommunity() {
     <div>
       <AdminPageHeader
         title="Comunidad"
-        subtitle="Moderación de preguntas y negocios sugeridos"
+        subtitle="Moderación de preguntas, encuestas y negocios sugeridos"
         actions={
           <div className="flex gap-1">
             <button

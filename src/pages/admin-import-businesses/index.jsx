@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
@@ -8,13 +8,9 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const BATCH_SIZE = 5;
 
-function isAdminUser(user, userProfile) {
+function isAdminUser(user) {
   if (!user) return false;
-  const meta = user?.user_metadata || {};
-  const appMeta = user?.app_metadata || {};
-  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
-  const profileAdmin = userProfile?.role === 'admin';
-  return authAdmin || profileAdmin;
+  return user?.app_metadata?.role === 'admin';
 }
 
 function normalizePlaces(payload) {
@@ -42,7 +38,7 @@ async function getAuthHeaders() {
 }
 
 export default function AdminImportBusinesses() {
-  const { user, userProfile, loading, profileLoading } = useAuth();
+  const { user, loading } = useAuth();
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('Coronel, Chile');
   const [places, setPlaces] = useState([]);
@@ -54,15 +50,7 @@ export default function AdminImportBusinesses() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const hasRoleInToken = useMemo(() => {
-    const meta = user?.user_metadata || {};
-    const appMeta = user?.app_metadata || {};
-    return meta?.role === 'admin' || appMeta?.role === 'admin';
-  }, [user]);
-
-  const waitingForProfile = user && !hasRoleInToken && profileLoading;
-
-  if (loading || waitingForProfile) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -73,7 +61,7 @@ export default function AdminImportBusinesses() {
     );
   }
 
-  if (!user || !isAdminUser(user, userProfile)) {
+  if (!user || !isAdminUser(user)) {
     return <Navigate to="/login" replace />;
   }
 

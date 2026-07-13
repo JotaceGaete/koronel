@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import QuestionCard from './components/QuestionCard';
 import SectorChips from './components/SectorChips';
 import CommunityStatsStrip from './components/CommunityStatsStrip';
+import CommunitySidebar from './components/CommunitySidebar';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Recientes' },
@@ -145,7 +146,8 @@ export default function CommunityQAListing() {
         </div>
 
         {/* Content */}
-        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-5">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-5 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
+          <div className="min-w-0">
           {loading && posts?.length === 0 ? (
             <div className="flex flex-col gap-2.5">
               {Array.from({ length: 8 })?.map((_, i) => (
@@ -196,6 +198,9 @@ export default function CommunityQAListing() {
               )}
             </>
           )}
+          </div>
+
+          <CommunitySidebar onSearchWord={setSearch} />
         </div>
       </div>
     </div>

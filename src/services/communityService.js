@@ -1,10 +1,75 @@
 import { supabase } from '../lib/supabase';
 
+export const COMMUNITY_SECTORS = ['Centro', 'Lagunillas', 'Schwager', 'Puchoco', 'Las Higueras', 'Punta de Parra', 'Otro'];
+
+const STOPWORDS = new Set([
+  'que', 'para', 'con', 'las', 'los', 'una', 'uno', 'del', 'por', 'como', 'donde', 'dónde',
+  'que?', 'cual', 'cuál', 'este', 'esta', 'esto', 'sobre', 'hay', 'alguien', 'algun', 'alguna',
+  'sabe', 'saben', 'buen', 'buena', 'buenos', 'buenas', 'recomiendan', 'recomienda', 'mejor',
+  'todo', 'toda', 'muy', 'mas', 'más', 'pero', 'sus', 'tiene', 'tienen', 'desde', 'hasta',
+]);
+
+// Attaches reply_count and last_activity_at to a page of posts using a single
+// bounded query over their replies — no schema change, cheap at page size.
+async function attachReplyStats(posts) {
+  const postIds = (posts || [])?.map(p => p?.id);
+  if (!postIds?.length) return posts || [];
+
+  const { data: replyData } = await supabase
+    ?.from('community_replies')
+    ?.select('post_id, created_at')
+    ?.in('post_id', postIds)
+    ?.eq('status', 'active');
+
+  const counts = {};
+  const lastReplyAt = {};
+  (replyData || [])?.forEach(r => {
+    counts[r?.post_id] = (counts?.[r?.post_id] || 0) + 1;
+    if (!lastReplyAt?.[r?.post_id] || r?.created_at > lastReplyAt?.[r?.post_id]) {
+      lastReplyAt[r.post_id] = r?.created_at;
+    }
+  });
+
+  return (posts || [])?.map(p => ({
+    ...p,
+    reply_count: counts?.[p?.id] || 0,
+    last_activity_at: lastReplyAt?.[p?.id] || p?.created_at,
+  }));
+}
+
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
 
   async getPosts({ sector = '', search = '', sort = 'recent', page = 1, pageSize = 12 } = {}) {
     try {
+      // "unanswered" can't be expressed as a single indexed query without a
+      // reply_count column, so it fetches a bounded recent window, filters
+      // client-side, then paginates the filtered set in memory. Correct for
+      // the realistic "browse recent unanswered questions" use case; if the
+      // feed grows enough that 200 recent posts isn't representative, this
+      // needs a real reply_count column (schema change, not in scope here).
+      if (sort === 'unanswered') {
+        const WINDOW = 200;
+        let windowQuery = supabase
+          ?.from('community_posts')
+          ?.select('*, author:user_profiles(id, full_name, avatar_url)')
+          ?.eq('status', 'active')
+          ?.order('created_at', { ascending: false })
+          ?.limit(WINDOW);
+        if (sector && sector !== 'all') windowQuery = windowQuery?.eq('sector', sector);
+        if (search?.trim()) windowQuery = windowQuery?.or(`title.ilike.%${search}%,body.ilike.%${search}%`);
+
+        const { data, error } = await windowQuery;
+        if (error) throw error;
+
+        const enriched = await attachReplyStats(data);
+        const unanswered = enriched?.filter(p => !p?.reply_count);
+
+        const from = (page - 1) * pageSize;
+        const pageData = unanswered?.slice(from, from + pageSize);
+        return { data: pageData, count: unanswered?.length || 0, error: null };
+      }
+
       let query = supabase
         ?.from('community_posts')
         ?.select('*, author:user_profiles(id, full_name, avatar_url)', { count: 'exact' })
@@ -16,12 +81,8 @@ export const communityService = {
       if (search?.trim()) {
         query = query?.or(`title.ilike.%${search}%,body.ilike.%${search}%`);
       }
-
       if (sort === 'votes') {
         query = query?.order('upvote_count', { ascending: false });
-      } else if (sort === 'unanswered') {
-        // We'll filter client-side for unanswered
-        query = query?.order('created_at', { ascending: false });
       } else {
         query = query?.order('created_at', { ascending: false });
       }
@@ -33,29 +94,106 @@ export const communityService = {
       const { data, error, count } = await query;
       if (error) throw error;
 
-      // Get reply counts
-      const postIds = (data || [])?.map(p => p?.id);
-      let replyCounts = {};
-      if (postIds?.length > 0) {
-        const { data: replyData } = await supabase
-          ?.from('community_replies')
-          ?.select('post_id')
-          ?.in('post_id', postIds)
-          ?.eq('status', 'active');
-        (replyData || [])?.forEach(r => {
-          replyCounts[r?.post_id] = (replyCounts?.[r?.post_id] || 0) + 1;
-        });
-      }
-
-      const enriched = (data || [])?.map(p => ({
-        ...p,
-        reply_count: replyCounts?.[p?.id] || 0,
-      }));
-
+      const enriched = await attachReplyStats(data);
       return { data: enriched, count: count || 0, error: null };
     } catch (error) {
       console.error('communityService.getPosts error:', error);
       return { data: [], count: 0, error };
+    }
+  },
+
+  // Real per-sector counts (active posts only) — one indexed count query per
+  // sector, same pattern as homepage/StatsBar.jsx.
+  async getSectorCounts() {
+    try {
+      const results = await Promise.all(
+        COMMUNITY_SECTORS?.map(sector =>
+          supabase
+            ?.from('community_posts')
+            ?.select('id', { count: 'exact', head: true })
+            ?.eq('status', 'active')
+            ?.eq('sector', sector)
+        )
+      );
+      const counts = {};
+      COMMUNITY_SECTORS?.forEach((sector, i) => { counts[sector] = results?.[i]?.count || 0; });
+      return { data: counts, error: null };
+    } catch (error) {
+      return { data: {}, error };
+    }
+  },
+
+  // Top authors by (posts + replies) in the last `days` — bounded, indexed
+  // by created_at, aggregated client-side.
+  async getActiveMembers({ days = 30, limit = 5 } = {}) {
+    try {
+      const since = new Date(Date.now() - days * 86400000)?.toISOString();
+      const [{ data: posts }, { data: replies }] = await Promise.all([
+        supabase?.from('community_posts')?.select('user_id')?.eq('status', 'active')?.gte('created_at', since),
+        supabase?.from('community_replies')?.select('user_id')?.eq('status', 'active')?.gte('created_at', since),
+      ]);
+
+      const activity = {};
+      (posts || [])?.forEach(p => { if (p?.user_id) activity[p.user_id] = (activity?.[p.user_id] || 0) + 1; });
+      (replies || [])?.forEach(r => { if (r?.user_id) activity[r.user_id] = (activity?.[r.user_id] || 0) + 1; });
+
+      const topIds = Object.entries(activity)
+        ?.sort((a, b) => b?.[1] - a?.[1])
+        ?.slice(0, limit)
+        ?.map(([id]) => id);
+      if (!topIds?.length) return { data: [], error: null };
+
+      const { data: profiles } = await supabase
+        ?.from('user_profiles')
+        ?.select('id, full_name, avatar_url')
+        ?.in('id', topIds);
+
+      const byId = {};
+      (profiles || [])?.forEach(p => { byId[p?.id] = p; });
+
+      const ranked = topIds
+        ?.map(id => ({ ...byId?.[id], id, activity_count: activity?.[id] }))
+        ?.filter(m => m?.full_name);
+      return { data: ranked, error: null };
+    } catch (error) {
+      return { data: [], error };
+    }
+  },
+
+  // Lightweight word-frequency heuristic over recent titles — not a real tag
+  // system, just enough to show "lo que se está preguntando esta semana".
+  extractTrendingWords(titles, limit = 6) {
+    const freq = {};
+    (titles || [])?.forEach(title => {
+      const words = title
+        ?.toLowerCase()
+        ?.normalize('NFD')?.replace(/\p{Diacritic}/gu, '')
+        ?.replace(/[^a-z0-9ñ\s]/g, '')
+        ?.split(/\s+/)
+        ?.filter(w => w?.length > 3 && !STOPWORDS?.has(w));
+      words?.forEach(w => { freq[w] = (freq?.[w] || 0) + 1; });
+    });
+    return Object.entries(freq)
+      ?.filter(([, count]) => count > 1)
+      ?.sort((a, b) => b?.[1] - a?.[1])
+      ?.slice(0, limit)
+      ?.map(([word, count]) => ({ word, count }));
+  },
+
+  async getTrendingWords({ days = 7, limit = 6 } = {}) {
+    try {
+      const since = new Date(Date.now() - days * 86400000)?.toISOString();
+      const { data, error } = await supabase
+        ?.from('community_posts')
+        ?.select('title')
+        ?.eq('status', 'active')
+        ?.gte('created_at', since)
+        ?.order('created_at', { ascending: false })
+        ?.limit(100);
+      if (error) throw error;
+      return { data: communityService?.extractTrendingWords(data?.map(p => p?.title), limit), error: null };
+    } catch (error) {
+      return { data: [], error };
     }
   },
 

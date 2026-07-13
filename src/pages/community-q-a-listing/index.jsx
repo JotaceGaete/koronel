@@ -6,6 +6,7 @@ import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
+import PollCard from './components/PollCard';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Más recientes' },
@@ -27,7 +28,11 @@ function formatRelativeDate(dateStr) {
   } catch { return ''; }
 }
 
-function QuestionCard({ post, coverImage }) {
+function QuestionCard({ post, coverImage, user, userVote, onVoted }) {
+  if (post?.poll) {
+    return <PollCard post={post} user={user} userVote={userVote} onVoted={onVoted} />;
+  }
+
   const bodySnippet = post?.body?.length > 120 ? post?.body?.slice(0, 120) + '...' : post?.body;
 
   return (
@@ -114,6 +119,7 @@ export default function CommunityQAListing() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [coverImages, setCoverImages] = useState({});
+  const [userPollVotes, setUserPollVotes] = useState({});
   const PAGE_SIZE = 12;
 
   const load = useCallback(async (pg = 1) => {
@@ -153,6 +159,24 @@ export default function CommunityQAListing() {
     setCoverImages(map || {});
   };
 
+  // Batch-load which option (if any) the current user already voted for each poll on this
+  // page, mirroring the loadCoverImages pattern above but actually wired up via useEffect.
+  useEffect(() => {
+    const pollIds = posts?.filter(p => p?.poll)?.map(p => p?.poll?.id);
+    if (!user?.id || !pollIds?.length) return;
+    communityService?.getUserPollVotesForPosts(user?.id, pollIds)?.then(({ data }) => {
+      setUserPollVotes(prev => {
+        const next = { ...prev };
+        (data || [])?.forEach(v => { next[v?.poll_id] = v?.option_id; });
+        return next;
+      });
+    });
+  }, [posts, user?.id]);
+
+  const handlePollVoted = (pollId, optionId) => {
+    setUserPollVotes(prev => ({ ...prev, [pollId]: optionId }));
+  };
+
   const handleLoadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -164,7 +188,7 @@ export default function CommunityQAListing() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
-      <PageMeta title="Comunidad" description="Preguntas, recomendaciones y conversaciones de la comunidad en Coronel." path={location.pathname + (location.search || '')} />
+      <PageMeta title="Comunidad" description="Preguntas, encuestas, recomendaciones y conversaciones de la comunidad en Coronel." path={location.pathname + (location.search || '')} />
       <Header />
       <div style={{ paddingTop: '64px' }}>
         {/* Page Header */}
@@ -174,9 +198,9 @@ export default function CommunityQAListing() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Icon name="MessageCircle" size={22} color="var(--color-primary)" />
-                  <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Preguntas a la Comunidad</h1>
+                  <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Comunidad</h1>
                 </div>
-                <p className="text-muted-foreground text-sm">Consultas y recomendaciones en Coronel</p>
+                <p className="text-muted-foreground text-sm">Preguntas, encuestas y recomendaciones en Coronel</p>
               </div>
               <Button
                 variant="default"
@@ -188,7 +212,7 @@ export default function CommunityQAListing() {
                   navigate('/comunidad/nueva');
                 }}
               >
-                Hacer una pregunta
+                Nueva publicación
               </Button>
             </div>
           </div>
@@ -204,7 +228,7 @@ export default function CommunityQAListing() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e?.target?.value)}
-                placeholder="Buscar preguntas..."
+                placeholder="Buscar en la comunidad..."
                 className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
@@ -246,9 +270,9 @@ export default function CommunityQAListing() {
               <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--color-muted)' }}>
                 <Icon name="MessageCircleOff" size={28} color="var(--color-muted-foreground)" />
               </div>
-              <h3 className="font-heading font-semibold text-foreground mb-2">No hay preguntas aún</h3>
+              <h3 className="font-heading font-semibold text-foreground mb-2">Aún no hay publicaciones</h3>
               <p className="text-muted-foreground text-sm mb-6">
-                {search ? `No se encontraron preguntas para "${search}"` : 'Sé el primero en hacer una pregunta a la comunidad'}
+                {search ? `No se encontraron publicaciones para "${search}"` : 'Sé el primero en publicar algo en la comunidad'}
               </p>
               <Button
                 variant="default"
@@ -260,16 +284,25 @@ export default function CommunityQAListing() {
                   navigate('/comunidad/nueva');
                 }}
               >
-                Hacer la primera pregunta
+                Crear la primera publicación
               </Button>
             </div>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground mb-4">{totalCount} pregunta{totalCount !== 1 ? 's' : ''}</p>
+              <p className="text-sm text-muted-foreground mb-4">{totalCount} publicación{totalCount !== 1 ? 'es' : ''}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {posts?.map(post => {
                   const coverImage = coverImages?.[post?.id];
-                  return <QuestionCard key={post?.id} post={post} coverImage={coverImage} />;
+                  return (
+                    <QuestionCard
+                      key={post?.id}
+                      post={post}
+                      coverImage={coverImage}
+                      user={user}
+                      userVote={userPollVotes?.[post?.poll?.id]}
+                      onVoted={handlePollVoted}
+                    />
+                  );
                 })}
               </div>
               {hasMore && (

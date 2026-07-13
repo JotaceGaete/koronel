@@ -6,6 +6,7 @@ import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
 import QuestionHeader from './components/QuestionHeader';
+import PollDetail from './components/PollDetail';
 import ReplyCard from './components/ReplyCard';
 import ReplyForm from './components/ReplyForm';
 
@@ -19,6 +20,7 @@ export default function CommunityQuestionDetailPage() {
   const [votedPostIds, setVotedPostIds] = useState(new Set());
   const [votedReplyIds, setVotedReplyIds] = useState(new Set());
   const [voteLoading, setVoteLoading] = useState(null);
+  const [pollVote, setPollVote] = useState(null);
 
   const loadPost = useCallback(async () => {
     if (!id) return;
@@ -33,11 +35,15 @@ export default function CommunityQuestionDetailPage() {
 
       // Load user votes
       if (user?.id) {
-        const allIds = [id, ...(replyData || [])?.map(r => r?.id)];
         const { data: postVotes } = await communityService?.getUserVotes(user?.id, [id], 'post');
         const { data: replyVotes } = await communityService?.getUserVotes(user?.id, (replyData || [])?.map(r => r?.id), 'reply');
         setVotedPostIds(new Set((postVotes || [])?.map(v => v?.target_id)));
         setVotedReplyIds(new Set((replyVotes || [])?.map(v => v?.target_id)));
+
+        if (data?.poll?.id) {
+          const { data: voteData } = await communityService?.getUserPollVote(user?.id, data?.poll?.id);
+          setPollVote(voteData?.option_id || null);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -87,6 +93,10 @@ export default function CommunityQuestionDetailPage() {
       return next;
     });
     setVoteLoading(null);
+  };
+
+  const handlePollVoted = (pollId, optionId) => {
+    setPollVote(optionId);
   };
 
   const handleReplySubmitted = (newReply) => {
@@ -142,28 +152,38 @@ export default function CommunityQuestionDetailPage() {
         </div>
 
         <div className="max-w-3xl mx-auto px-4 md:px-6 pb-16 space-y-5">
-          {/* Question */}
-          <QuestionHeader
-            post={post}
-            hasVoted={votedPostIds?.has(post?.id)}
-            onVote={handlePostVote}
-            voteLoading={voteLoading === 'post'}
-            user={user}
-          />
+          {/* Question or Poll */}
+          {post?.poll ? (
+            <PollDetail post={post} user={user} userVote={pollVote} onVoted={handlePollVoted} />
+          ) : (
+            <QuestionHeader
+              post={post}
+              hasVoted={votedPostIds?.has(post?.id)}
+              onVote={handlePostVote}
+              voteLoading={voteLoading === 'post'}
+              user={user}
+            />
+          )}
 
-          {/* Replies Section */}
+          {/* Replies / Comments Section */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Icon name="MessageSquare" size={18} color="var(--color-primary)" />
               <h2 className="font-heading font-semibold text-foreground">
-                {replies?.length} {replies?.length === 1 ? 'Respuesta' : 'Respuestas'}
+                {replies?.length} {post?.poll
+                  ? (replies?.length === 1 ? 'Comentario' : 'Comentarios')
+                  : (replies?.length === 1 ? 'Respuesta' : 'Respuestas')}
               </h2>
             </div>
 
             {replies?.length === 0 ? (
               <div className="bg-card border border-border rounded-xl p-8 text-center">
                 <Icon name="MessageSquarePlus" size={28} color="var(--color-muted-foreground)" className="mx-auto mb-3" />
-                <p className="text-muted-foreground text-sm">Aún no hay respuestas. ¡Sé el primero en responder!</p>
+                <p className="text-muted-foreground text-sm">
+                  {post?.poll
+                    ? 'Aún no hay comentarios. ¡Sé el primero en comentar!'
+                    : 'Aún no hay respuestas. ¡Sé el primero en responder!'}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">

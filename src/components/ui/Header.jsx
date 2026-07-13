@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Inicio', path: '/homepage', icon: 'Home' },
   { label: 'Negocios', path: '/business-directory-listing', icon: 'Building2' },
   { label: 'Clasificados', path: '/classified-ads-listing', icon: 'Tag' },
+  { label: 'Profesionales', path: '/profesionales', icon: 'UserCheck' },
   { label: 'Eventos', path: '/eventos', icon: 'CalendarDays' },
   { label: 'Empleos', path: '/empleos', icon: 'Briefcase' },
   { label: 'Comunidad', path: '/comunidad', icon: 'MessageCircle' },

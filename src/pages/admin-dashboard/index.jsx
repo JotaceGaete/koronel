@@ -6,6 +6,7 @@ import AdminBusinesses from './components/AdminBusinesses';
 import AdminCategories from './components/AdminCategories';
 import AdminClaimRequests from './components/AdminClaimRequests';
 import AdminClassifiedAds from './components/AdminClassifiedAds';
+import AdminProfesionales from './components/AdminProfesionales';
 import AdminFeaturedListings from './components/AdminFeaturedListings';
 import AdminBanners from './components/AdminBanners';
 import AdminPopups from './components/AdminPopups';
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { id: 'incomplete', label: 'Negocios incompletos', icon: 'FileText' },
   { id: 'categories', label: 'Categorías', icon: 'LayoutGrid' },
   { id: 'claims', label: 'Reclamaciones', icon: 'FileCheck' },
+  { id: 'profesionales', label: 'Profesionales', icon: 'UserCheck' },
   { id: 'ads', label: 'Clasificados', icon: 'Tag' },
   { id: 'featured', label: 'Destacados', icon: 'Star' },
   { id: 'banners', label: 'Banners', icon: 'Image' },
@@ -36,6 +38,7 @@ const SECTION_MAP = {
   incomplete: AdminIncompleteBusinesses,
   categories: AdminCategories,
   claims: AdminClaimRequests,
+  profesionales: AdminProfesionales,
   ads: AdminClassifiedAds,
   featured: AdminFeaturedListings,
   banners: AdminBanners,

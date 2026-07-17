@@ -284,8 +284,11 @@ export default function ClassifiedAdDetail() {
                   )}
                   {ad?.isNew && (
                     <span className="text-xs font-caption px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
-                      {/* Esta rama no tiene CityContext/useCity (ver docs/recuperacion-profesionales-oficios.md);
-                          mismo literal que ya usa handleWhatsApp() más arriba en este archivo. */}
+                      {/* "CoronelLocal" (marca/plataforma) es intencional, no "Coronel" (ciudad):
+                          esta rama no tiene CityContext/useCity, y "Nuevo en X" indica que el
+                          profesional se unió recientemente a la plataforma, igual que
+                          handleWhatsApp() más arriba y los ~15 usos de "en CoronelLocal" en
+                          el resto del sitio (footer, mensajes de compartir, modales de éxito). */}
                       🆕 Nuevo en CoronelLocal
                     </span>
                   )}

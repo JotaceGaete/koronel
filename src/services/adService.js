@@ -153,6 +153,10 @@ export const adService = {
     }
   },
 
+  // NOTA: no existe ninguna migración que cree la función `increment_ad_views`
+  // (buscar en supabase/migrations/ — no está). El rpc() de abajo siempre
+  // resuelve en 404 y cae al fallback manual. Pendiente: crear la RPC atómica
+  // en una migración aparte; no se agrega aquí para no ejecutar SQL sin revisión.
   async incrementViews(id) {
     try {
       const { error } = await supabase?.rpc('increment_ad_views', { ad_id: id });

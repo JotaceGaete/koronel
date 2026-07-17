@@ -216,6 +216,17 @@ describe('communityService.castPollVote', () => {
     expect(data)?.toBeNull();
     expect(error)?.toBeInstanceOf(Error);
   });
+
+  it('logs the full error to the console, not just its message — needed to see a PGRST schema-cache error\'s code/details', async () => {
+    const consoleSpy = vi.spyOn(console, 'error')?.mockImplementation(() => {});
+    const pgrstError = { code: 'PGRST202', message: 'Could not find the function public.cast_poll_vote(p_option_id, p_poll_id) in the schema cache' };
+    supabase.rpc?.mockResolvedValue({ data: null, error: pgrstError });
+
+    await communityService?.castPollVote({ pollId: 'poll-1', optionId: 'opt-1' });
+
+    expect(consoleSpy)?.toHaveBeenCalledWith('communityService.castPollVote error:', pgrstError);
+    consoleSpy?.mockRestore();
+  });
 });
 
 describe('communityService.adminClosePoll', () => {

@@ -366,6 +366,11 @@ export const communityService = {
       if (error) throw error;
       return { data: (data || [])?.sort((a, b) => a?.position - b?.position), error: null };
     } catch (error) {
+      // Logged in full (not just error.message, which is all the UI shows) so a PGRST error
+      // code/details — e.g. PGRST202 "Could not find the function ... in the schema cache",
+      // the exact symptom of a PostgREST cache that never picked up a migration — is visible in
+      // devtools without having to reproduce the vote again with the network tab open.
+      console.error('communityService.castPollVote error:', error);
       return { data: null, error };
     }
   },

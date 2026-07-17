@@ -27,6 +27,10 @@ export default function CommunityQuestionDetailPage() {
     setLoading(true);
     try {
       const { data, error } = await communityService?.getPostById(id);
+      // TEMP DEBUG (remove once confirmed in the field): full object getPostById() returns for
+      // this post, to see directly whether `poll` came back populated or null and why.
+      console.log('[DEBUG community-question-detail-page] getPostById() ->', JSON.stringify(data, null, 2));
+      console.log('[DEBUG community-question-detail-page] post.poll ->', data?.poll);
       if (error || !data) { setNotFound(true); return; }
       setPost(data);
 

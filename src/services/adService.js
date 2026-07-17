@@ -154,24 +154,21 @@ export const adService = {
   },
 
   // NOTA: no existe ninguna migración que cree la función `increment_ad_views`
-  // (buscar en supabase/migrations/ — no está). El rpc() de abajo siempre
-  // resuelve en 404 y cae al fallback manual. Pendiente: crear la RPC atómica
-  // en una migración aparte; no se agrega aquí para no ejecutar SQL sin revisión.
+  // (buscar en supabase/migrations/ — no está), así que la llamada rpc()
+  // siempre resolvía en 404. Deshabilitada temporalmente para no generar ese
+  // 404 en cada visita; se usa directamente el fallback manual (update por
+  // fila) hasta que exista una migración con la RPC atómica.
   async incrementViews(id) {
     try {
-      const { error } = await supabase?.rpc('increment_ad_views', { ad_id: id });
-      if (error) {
-        // Fallback: manual increment if RPC doesn't exist
-        const { data: current } = await supabase
-          ?.from('classified_ads')
-          ?.select('views')
-          ?.eq('id', id)
-          ?.single();
-        await supabase
-          ?.from('classified_ads')
-          ?.update({ views: (current?.views || 0) + 1 })
-          ?.eq('id', id);
-      }
+      const { data: current } = await supabase
+        ?.from('classified_ads')
+        ?.select('views')
+        ?.eq('id', id)
+        ?.single();
+      await supabase
+        ?.from('classified_ads')
+        ?.update({ views: (current?.views || 0) + 1 })
+        ?.eq('id', id);
     } catch (e) {
       // Silent fail — view count is non-critical
     }

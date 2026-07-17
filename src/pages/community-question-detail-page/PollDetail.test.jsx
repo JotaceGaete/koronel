@@ -45,39 +45,24 @@ beforeEach(() => {
 });
 
 describe('PollDetail', () => {
-  it('shows the title, optional description, and selectable options when there is no vote yet', () => {
+  it('shows the title, description, and a ballot (radios + disabled Votar) when there is no vote yet — never a comment box first', () => {
     renderDetail();
     expect(screen.getByRole('heading', { name: basePost?.title }))?.toBeInTheDocument();
     expect(screen.getByText(basePost?.body))?.toBeInTheDocument();
     expect(screen.getByText('Feria'))?.toBeInTheDocument();
     expect(screen.getByText('Supermercado'))?.toBeInTheDocument();
-    expect(screen.queryByText('Cambiar voto'))?.not?.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Votar' }))?.toBeDisabled();
   });
 
-  it('shows result bars and a "Cambiar voto" control once the user has voted, while still open', () => {
-    renderDetail({ userVote: 'opt-1' });
-    expect(screen.getByText('60%'))?.toBeInTheDocument();
-    expect(screen.getByText('40%'))?.toBeInTheDocument();
-    expect(screen.getByText('Cambiar voto'))?.toBeInTheDocument();
+  it('selecting an option does not vote by itself — it only enables Votar', () => {
+    renderDetail();
+    fireEvent.click(screen.getByRole('button', { name: 'Feria' }));
+
+    expect(communityService?.castPollVote)?.not?.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Votar' }))?.toBeEnabled();
   });
 
-  it('clicking "Cambiar voto" reveals the selectable options again', () => {
-    renderDetail({ userVote: 'opt-1' });
-    fireEvent.click(screen.getByText('Cambiar voto'));
-    expect(screen.getByText('Feria'))?.toBeInTheDocument();
-    expect(screen.getByText('Supermercado'))?.toBeInTheDocument();
-    expect(screen.getByText('Cancelar'))?.toBeInTheDocument();
-  });
-
-  it('shows a read-only result view with no voting controls once the poll is closed', () => {
-    communityService?.isPollClosed?.mockReturnValue(true);
-    renderDetail({ userVote: 'opt-1' });
-    expect(screen.getByText('60%'))?.toBeInTheDocument();
-    expect(screen.queryByText('Cambiar voto'))?.not?.toBeInTheDocument();
-    expect(screen.queryByText('Feria', { selector: 'button' }))?.not?.toBeInTheDocument();
-  });
-
-  it('casts a vote through communityService.castPollVote and reports it via onVoted', async () => {
+  it('clicking Votar casts the vote for the selected option and reports it via onVoted', async () => {
     communityService?.castPollVote?.mockResolvedValue({
       data: [
         { id: 'opt-1', label: 'Feria', position: 0, vote_count: 13 },
@@ -88,16 +73,58 @@ describe('PollDetail', () => {
     const onVoted = vi.fn();
     renderDetail({ onVoted });
 
-    fireEvent.click(screen.getByText('Feria'));
+    fireEvent.click(screen.getByRole('button', { name: 'Feria' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Votar' }));
 
     expect(await screen.findByText('62%'))?.toBeInTheDocument();
     expect(communityService?.castPollVote)?.toHaveBeenCalledWith({ pollId: 'poll-1', optionId: 'opt-1' });
     expect(onVoted)?.toHaveBeenCalledWith('poll-1', 'opt-1');
   });
 
-  it('prompts to log in instead of showing selectable options when there is no user', () => {
+  it('shows a result-bar view with a "Tu voto" receipt and no way to change it, once voted (voto único, sin cambiar voto)', () => {
+    renderDetail({ userVote: 'opt-1' });
+    expect(screen.getByText('60%'))?.toBeInTheDocument();
+    expect(screen.getByText('40%'))?.toBeInTheDocument();
+    expect(screen.getByText(/Tu voto:\s*Feria/))?.toBeInTheDocument();
+    expect(screen.queryByText('Cambiar voto'))?.not?.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Votar' }))?.not?.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Feria' }))?.not?.toBeInTheDocument();
+  });
+
+  it('shows "Encuesta finalizada" and read-only results, with no voting controls, once the poll is closed', () => {
+    communityService?.isPollClosed?.mockReturnValue(true);
+    renderDetail({ userVote: 'opt-1' });
+    expect(screen.getByText('Encuesta finalizada'))?.toBeInTheDocument();
+    expect(screen.getByText('60%'))?.toBeInTheDocument();
+    expect(screen.getByText('20 votos finales'))?.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Votar' }))?.not?.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Feria' }))?.not?.toBeInTheDocument();
+  });
+
+  it('a closed poll the user never voted on shows results with no "Tu voto" receipt', () => {
+    communityService?.isPollClosed?.mockReturnValue(true);
+    renderDetail({ userVote: null });
+    expect(screen.getByText('Encuesta finalizada'))?.toBeInTheDocument();
+    expect(screen.queryByText(/Tu voto:/))?.not?.toBeInTheDocument();
+  });
+
+  it('prompts to log in instead of showing the ballot when there is no user', () => {
     renderDetail({ user: null });
     expect(screen.getByText(/Inicia sesión/))?.toBeInTheDocument();
     expect(screen.queryByText('Feria'))?.not?.toBeInTheDocument();
+  });
+
+  it('shows an error and keeps the ballot votable when the vote fails (e.g. a closed poll rejected server-side)', async () => {
+    communityService?.castPollVote?.mockResolvedValue({
+      data: null,
+      error: new Error('La encuesta está cerrada o no existe'),
+    });
+    renderDetail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Feria' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Votar' }));
+
+    expect(await screen.findByText('La encuesta está cerrada o no existe'))?.toBeInTheDocument();
+    expect(screen.getByText('Feria'))?.toBeInTheDocument();
   });
 });

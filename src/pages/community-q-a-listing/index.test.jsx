@@ -11,7 +11,7 @@ vi.mock('../../services/communityService', () => ({
   communityService: {
     getPosts: vi.fn(),
     getPostsWithImages: vi.fn(),
-    getUserPollVotesForPosts: vi.fn(),
+    isPollClosed: vi.fn(),
   },
   COMMUNITY_CATEGORIES: [
     { key: 'services', label: 'Servicios y datos', chipLabel: 'Servicios' },
@@ -45,7 +45,7 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks();
   communityService?.getPostsWithImages?.mockResolvedValue({});
-  communityService?.getUserPollVotesForPosts?.mockResolvedValue({ data: [] });
+  communityService?.isPollClosed?.mockReturnValue(false);
 });
 
 describe('CommunityQAListing category chips', () => {
@@ -95,5 +95,48 @@ describe('CommunityQAListing category chips', () => {
     renderPage();
 
     expect(await screen.findByText('Servicios y datos'))?.toBeInTheDocument();
+  });
+
+  it('renders a poll as a distinct teaser card, clearly different from a question card', async () => {
+    communityService?.getPosts?.mockResolvedValue({
+      data: [
+        {
+          id: 'post-1',
+          title: '¿Alguien conoce un buen mecánico?',
+          body: 'Se me rompió el auto.',
+          sector: 'Centro',
+          category_key: 'services',
+          author: { full_name: 'Juan' },
+          poll: null,
+        },
+        {
+          id: 'post-2',
+          title: '¿Quién gana Argentina o España?',
+          category_key: 'polls',
+          poll: {
+            id: 'poll-1',
+            closes_at: null,
+            status: 'open',
+            options: [
+              { id: 'opt-1', label: 'Argentina', vote_count: 41 },
+              { id: 'opt-2', label: 'España', vote_count: 22 },
+            ],
+          },
+        },
+      ],
+      count: 2,
+      error: null,
+    });
+
+    renderPage();
+
+    // The question card shows its own body/author; the poll card shows the "Encuesta" badge,
+    // its title and the vote count — never the question's content, and never poll options.
+    expect(await screen.findByText('¿Alguien conoce un buen mecánico?'))?.toBeInTheDocument();
+    expect(screen.getByText('Se me rompió el auto.'))?.toBeInTheDocument();
+    expect(screen.getByText('¿Quién gana Argentina o España?'))?.toBeInTheDocument();
+    expect(screen.getByText('Encuesta'))?.toBeInTheDocument();
+    expect(screen.getByText('63 votos'))?.toBeInTheDocument();
+    expect(screen.queryByText('Argentina'))?.not?.toBeInTheDocument();
   });
 });

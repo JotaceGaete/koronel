@@ -6,14 +6,14 @@ function formatCountdown(closesAt) {
   if (diffMs <= 0) return null;
 
   const mins = Math.round(diffMs / 60000);
-  if (mins < 60) return `Finaliza en ${mins} min`;
+  if (mins < 60) return `Cierra en ${mins} min`;
 
   const hours = Math.round(mins / 60);
-  if (hours < 24) return hours === 1 ? 'Finaliza en 1 hora' : `Finaliza en ${hours} horas`;
+  if (hours < 24) return hours === 1 ? 'Cierra en 1 hora' : `Cierra en ${hours} horas`;
 
   const days = Math.round(hours / 24);
-  if (days === 1) return 'Finaliza mañana';
-  return `Finaliza en ${days} días`;
+  if (days === 1) return 'Cierra mañana';
+  return `Cierra en ${days} días`;
 }
 
 export default function PollCountdown({ closesAt, isClosed }) {

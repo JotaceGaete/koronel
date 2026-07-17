@@ -195,27 +195,6 @@ describe('communityService.getUserPollVote', () => {
   });
 });
 
-describe('communityService.getUserPollVotesForPosts', () => {
-  it('returns an empty list without calling supabase for an empty pollIds list', async () => {
-    const { data, error } = await communityService?.getUserPollVotesForPosts('user-1', []);
-    expect(data)?.toEqual([]);
-    expect(error)?.toBeNull();
-    expect(supabase?.from)?.not?.toHaveBeenCalled();
-  });
-
-  it('batches votes for several polls into a single query', async () => {
-    const rows = [
-      { poll_id: 'poll-1', option_id: 'opt-1' },
-      { poll_id: 'poll-2', option_id: 'opt-5' },
-    ];
-    supabase?.from?.mockImplementation(() => makeBuilder({ data: rows, error: null }));
-    const { data, error } = await communityService?.getUserPollVotesForPosts('user-1', ['poll-1', 'poll-2']);
-    expect(error)?.toBeNull();
-    expect(data)?.toEqual(rows);
-    expect(supabase?.from)?.toHaveBeenCalledTimes(1);
-  });
-});
-
 describe('communityService.castPollVote', () => {
   it('calls the cast_poll_vote RPC with the poll and option ids, and sorts the returned options by position', async () => {
     const options = [

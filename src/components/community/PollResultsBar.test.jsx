@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PollResultsBar from './PollResultsBar';
 
@@ -38,5 +38,27 @@ describe('PollResultsBar', () => {
 
     rerender(<PollResultsBar option={{ id: 'a', label: 'Feria', vote_count: 1 }} totalVotes={1} isSelected />);
     expect(container.querySelector('svg'))?.toBeInTheDocument();
+  });
+
+  it('shows the absolute vote count alongside the percentage, singular vs plural', () => {
+    const { rerender } = render(
+      <PollResultsBar option={{ id: 'a', label: 'Feria', vote_count: 41 }} totalVotes={71} />
+    );
+    expect(screen.getByText('41 votos'))?.toBeInTheDocument();
+
+    rerender(<PollResultsBar option={{ id: 'a', label: 'Feria', vote_count: 1 }} totalVotes={1} />);
+    expect(screen.getByText('1 voto'))?.toBeInTheDocument();
+  });
+
+  it('animates the bar width in from 0 rather than snapping straight to the final percentage', async () => {
+    const { container } = render(
+      <PollResultsBar option={{ id: 'a', label: 'Feria', vote_count: 58 }} totalVotes={100} />
+    );
+    const bar = container.querySelector('[style*="width"]');
+    expect(bar?.style?.width)?.toBe('0%');
+
+    await vi.waitFor(() => {
+      expect(bar?.style?.width)?.toBe('58%');
+    });
   });
 });

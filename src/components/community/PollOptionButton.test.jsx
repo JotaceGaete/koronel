@@ -29,4 +29,14 @@ describe('PollOptionButton accessibility', () => {
     render(<PollOptionButton option={{ id: 'opt-1', label: 'Feria' }} onSelect={vi.fn()} disabled />);
     expect(screen.getByRole('button', { name: 'Feria' }))?.toBeDisabled();
   });
+
+  it('reflects the selected (not-yet-cast) radio state via aria-pressed', () => {
+    const { rerender } = render(
+      <PollOptionButton option={{ id: 'opt-1', label: 'Feria' }} onSelect={vi.fn()} isSelected={false} />
+    );
+    expect(screen.getByRole('button', { name: 'Feria' }))?.toHaveAttribute('aria-pressed', 'false');
+
+    rerender(<PollOptionButton option={{ id: 'opt-1', label: 'Feria' }} onSelect={vi.fn()} isSelected />);
+    expect(screen.getByRole('button', { name: 'Feria' }))?.toHaveAttribute('aria-pressed', 'true');
+  });
 });

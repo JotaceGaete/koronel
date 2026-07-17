@@ -28,9 +28,9 @@ function formatRelativeDate(dateStr) {
   } catch { return ''; }
 }
 
-function QuestionCard({ post, coverImage, user, userVote, onVoted }) {
+function QuestionCard({ post, coverImage }) {
   if (post?.poll) {
-    return <PollCard post={post} user={user} userVote={userVote} onVoted={onVoted} />;
+    return <PollCard post={post} />;
   }
 
   const bodySnippet = post?.body?.length > 120 ? post?.body?.slice(0, 120) + '...' : post?.body;
@@ -123,7 +123,6 @@ export default function CommunityQAListing() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [coverImages, setCoverImages] = useState({});
-  const [userPollVotes, setUserPollVotes] = useState({});
   const PAGE_SIZE = 12;
 
   const load = useCallback(async (pg = 1) => {
@@ -162,24 +161,6 @@ export default function CommunityQAListing() {
     const ids = posts?.map(p => p?.id);
     const map = await communityService?.getPostsWithImages(ids);
     setCoverImages(map || {});
-  };
-
-  // Batch-load which option (if any) the current user already voted for each poll on this
-  // page, mirroring the loadCoverImages pattern above but actually wired up via useEffect.
-  useEffect(() => {
-    const pollIds = posts?.filter(p => p?.poll)?.map(p => p?.poll?.id);
-    if (!user?.id || !pollIds?.length) return;
-    communityService?.getUserPollVotesForPosts(user?.id, pollIds)?.then(({ data }) => {
-      setUserPollVotes(prev => {
-        const next = { ...prev };
-        (data || [])?.forEach(v => { next[v?.poll_id] = v?.option_id; });
-        return next;
-      });
-    });
-  }, [posts, user?.id]);
-
-  const handlePollVoted = (pollId, optionId) => {
-    setUserPollVotes(prev => ({ ...prev, [pollId]: optionId }));
   };
 
   const handleLoadMore = () => {
@@ -328,9 +309,6 @@ export default function CommunityQAListing() {
                       key={post?.id}
                       post={post}
                       coverImage={coverImage}
-                      user={user}
-                      userVote={userPollVotes?.[post?.poll?.id]}
-                      onVoted={handlePollVoted}
                     />
                   );
                 })}

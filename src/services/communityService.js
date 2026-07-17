@@ -355,21 +355,6 @@ export const communityService = {
     }
   },
 
-  async getUserPollVotesForPosts(userId, pollIds) {
-    if (!userId || !pollIds?.length) return { data: [], error: null };
-    try {
-      const { data, error } = await supabase
-        ?.from('community_poll_votes')
-        ?.select('poll_id, option_id')
-        ?.eq('user_id', userId)
-        ?.in('poll_id', pollIds);
-      if (error) throw error;
-      return { data: data || [], error: null };
-    } catch (error) {
-      return { data: [], error };
-    }
-  },
-
   // Only path that ever writes to community_poll_votes / adjusts vote_count. See
   // cast_poll_vote() in the migration for the atomicity and closed-poll guarantees.
   async castPollVote({ pollId, optionId }) {

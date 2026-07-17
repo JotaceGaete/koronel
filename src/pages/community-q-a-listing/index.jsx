@@ -4,7 +4,7 @@ import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
-import { communityService } from '../../services/communityService';
+import { communityService, COMMUNITY_CATEGORIES, getCategoryLabel } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
 import PollCard from './components/PollCard';
 
@@ -51,6 +51,9 @@ function QuestionCard({ post, coverImage, user, userVote, onVoted }) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs text-muted-foreground bg-muted">
+                {getCategoryLabel(post?.category_key)}
+              </span>
               {post?.lat && post?.lng && (
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   <Icon name="Navigation" size={11} color="currentColor" />
@@ -116,6 +119,7 @@ export default function CommunityQAListing() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('recent');
+  const [categoryKey, setCategoryKey] = useState('all');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [coverImages, setCoverImages] = useState({});
@@ -131,6 +135,7 @@ export default function CommunityQAListing() {
         sort,
         page: pg,
         pageSize: PAGE_SIZE,
+        categoryKey,
       });
       if (pg === 1) {
         setPosts(data || []);
@@ -143,7 +148,7 @@ export default function CommunityQAListing() {
     } finally {
       setLoading(false);
     }
-  }, [search, sort]);
+  }, [search, sort, categoryKey]);
 
   useEffect(() => {
     setPage(1);
@@ -231,6 +236,31 @@ export default function CommunityQAListing() {
                 placeholder="Buscar en la comunidad..."
                 className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
+            </div>
+
+            {/* Category chips */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setCategoryKey('all')}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 ${
+                  categoryKey === 'all' ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+                style={categoryKey === 'all' ? { background: 'var(--color-primary)' } : {}}
+              >
+                Todas
+              </button>
+              {COMMUNITY_CATEGORIES?.map(cat => (
+                <button
+                  key={cat?.key}
+                  onClick={() => setCategoryKey(cat?.key)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 ${
+                    categoryKey === cat?.key ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                  style={categoryKey === cat?.key ? { background: 'var(--color-primary)' } : {}}
+                >
+                  {cat?.chipLabel}
+                </button>
+              ))}
             </div>
 
             {/* Sort */}

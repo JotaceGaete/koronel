@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
-import { communityService } from '../../../services/communityService';
+import { communityService, getCategoryLabel } from '../../../services/communityService';
 
 const SECTOR_COLORS = {
   Centro: { bg: '#dbeafe', color: '#1d4ed8' },
@@ -38,8 +38,11 @@ export default function QuestionHeader({ post, hasVoted, onVote, voteLoading, us
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 md:p-6">
-      {/* Sector + Meta */}
+      {/* Category + Sector + Meta */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-muted text-muted-foreground">
+          {getCategoryLabel(post?.category_key)}
+        </span>
         <span
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
           style={{ background: sectorStyle?.bg, color: sectorStyle?.color }}

@@ -28,6 +28,14 @@ vi.mock('../../services/communityService', () => ({
     isPollClosed: vi.fn(),
     getQuestionImages: vi.fn(),
   },
+  getCategoryLabel: (categoryKey) => ({
+    services: 'Servicios y datos',
+    recommendations: 'Recomendaciones',
+    security: 'Seguridad',
+    community: 'Barrio y comunidad',
+    general: 'Consultas generales',
+    polls: 'Encuestas',
+  }?.[categoryKey] || 'Consultas generales'),
 }));
 
 import { communityService } from '../../services/communityService';

@@ -1,6 +1,35 @@
 import { supabase } from '../lib/supabase';
 import { getActiveCityId } from '../config/city';
 
+// Single source of truth for the Community category taxonomy (Fase 1). `key` is what's
+// persisted (community_posts.category_key); `label` is the full name shown on cards/detail;
+// `chipLabel` is the shorter text used on the listing's filter chips. Listed here, not in a
+// database table, on purpose — see the migration's comment for why. Adding a category later is
+// a one-line addition to this array, no migration required.
+export const COMMUNITY_CATEGORIES = [
+  { key: 'services', label: 'Servicios y datos', chipLabel: 'Servicios' },
+  { key: 'recommendations', label: 'Recomendaciones', chipLabel: 'Recomendaciones' },
+  { key: 'security', label: 'Seguridad', chipLabel: 'Seguridad' },
+  { key: 'community', label: 'Barrio y comunidad', chipLabel: 'Barrio' },
+  { key: 'general', label: 'Consultas generales', chipLabel: 'Consultas' },
+  { key: 'polls', label: 'Encuestas', chipLabel: 'Encuestas' },
+];
+
+const DEFAULT_CATEGORY_KEY = 'general';
+const POLL_CATEGORY_KEY = 'polls';
+const VALID_CATEGORY_KEYS = new Set(COMMUNITY_CATEGORIES?.map(c => c?.key));
+
+// Never trusts caller input as-is: an unknown/missing key silently falls back to 'general'
+// rather than persisting garbage or throwing on a stale client.
+function normalizeCategoryKey(categoryKey) {
+  return VALID_CATEGORY_KEYS?.has(categoryKey) ? categoryKey : DEFAULT_CATEGORY_KEY;
+}
+
+export function getCategoryLabel(categoryKey) {
+  return COMMUNITY_CATEGORIES?.find(c => c?.key === categoryKey)?.label
+    || COMMUNITY_CATEGORIES?.find(c => c?.key === DEFAULT_CATEGORY_KEY)?.label;
+}
+
 function withSortedPollOptions(post) {
   if (!post?.poll?.options?.length) return post;
   return {
@@ -39,7 +68,7 @@ async function getPollsByPostId(postIds) {
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
 
-  async getPosts({ sector = '', search = '', sort = 'recent', page = 1, pageSize = 12 } = {}) {
+  async getPosts({ sector = '', search = '', sort = 'recent', page = 1, pageSize = 12, categoryKey = '' } = {}) {
     try {
       let query = supabase
         ?.from('community_posts')
@@ -49,6 +78,9 @@ export const communityService = {
 
       if (sector && sector !== 'all') {
         query = query?.eq('sector', sector);
+      }
+      if (categoryKey && categoryKey !== 'all') {
+        query = query?.eq('category_key', categoryKey);
       }
       if (search?.trim()) {
         query = query?.or(`title.ilike.%${search}%,body.ilike.%${search}%`);
@@ -113,7 +145,7 @@ export const communityService = {
     }
   },
 
-  async createPost({ title, body, sector, lat, lng, userId }) {
+  async createPost({ title, body, sector, lat, lng, userId, categoryKey }) {
     try {
       const { data, error } = await supabase
         ?.from('community_posts')
@@ -126,6 +158,7 @@ export const communityService = {
           user_id: userId,
           status: 'pending',
           city_id: getActiveCityId(),
+          category_key: normalizeCategoryKey(categoryKey),
         })
         ?.select()
         ?.single();
@@ -258,6 +291,11 @@ export const communityService = {
       return { data: null, error: new Error('La encuesta admite un máximo de 6 opciones') };
     }
 
+    // Always 'polls', never the caller's choice: a poll is already structurally identifiable
+    // (it has a community_polls row) regardless of what topic it's about, and the "Encuestas"
+    // filter chip needs to reliably catch every poll. Reusing the topical selector here would
+    // let a poll end up filed under e.g. "security" and vanish from that chip — worse UX than
+    // one less dropdown on the poll form.
     const { data: post, error: postError } = await this.createPost({
       title,
       body: body?.trim() || '',
@@ -265,6 +303,7 @@ export const communityService = {
       lat,
       lng,
       userId,
+      categoryKey: POLL_CATEGORY_KEY,
     });
     if (postError) return { data: null, error: postError };
 

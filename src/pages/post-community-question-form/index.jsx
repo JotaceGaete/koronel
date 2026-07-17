@@ -7,7 +7,7 @@ import Header from 'components/ui/Header';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import { communityService } from '../../services/communityService';
+import { communityService, COMMUNITY_CATEGORIES } from '../../services/communityService';
 import QuestionImageUpload from './components/QuestionImageUpload';
 import PostTypeSelector from './components/PostTypeSelector';
 import PollOptionsEditor, { MIN_POLL_OPTIONS, MAX_POLL_OPTIONS } from './components/PollOptionsEditor';
@@ -34,6 +34,11 @@ const SECTORS = [
   { value: 'Otro', label: 'Otro' },
 ];
 
+// "Encuestas" is excluded here: a poll always gets that category assigned automatically by
+// communityService.createPoll() (see its comment), so it's never a manual choice on this form.
+const QUESTION_CATEGORIES = COMMUNITY_CATEGORIES?.filter(c => c?.key !== 'polls');
+const DEFAULT_CATEGORY_KEY = 'general';
+
 function PinDropper({ pin, onPinDrop }) {
   useMapEvents({
     click(e) {
@@ -47,7 +52,7 @@ export default function PostCommunityQuestionForm() {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [postType, setPostType] = useState('question');
-  const [formData, setFormData] = useState({ title: '', body: '', sector: '' });
+  const [formData, setFormData] = useState({ title: '', body: '', sector: '', categoryKey: DEFAULT_CATEGORY_KEY });
   const [pin, setPin] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -113,7 +118,7 @@ export default function PostCommunityQuestionForm() {
   const resetForm = () => {
     setSubmitted(false);
     setPostType('question');
-    setFormData({ title: '', body: '', sector: '' });
+    setFormData({ title: '', body: '', sector: '', categoryKey: DEFAULT_CATEGORY_KEY });
     setPin(null);
     setImages([]);
     setPollOptions(['', '']);
@@ -150,6 +155,7 @@ export default function PostCommunityQuestionForm() {
           lat: pin?.lat || null,
           lng: pin?.lng || null,
           userId: user?.id,
+          categoryKey: formData?.categoryKey,
         });
         if (error) throw error;
 
@@ -298,10 +304,11 @@ export default function PostCommunityQuestionForm() {
 
               {/* Sector */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="sector" className="block text-sm font-medium text-foreground mb-1">
                   Sector <span style={{ color: 'var(--color-error)' }}>*</span>
                 </label>
                 <select
+                  id="sector"
                   value={formData?.sector}
                   onChange={e => handleChange('sector', e?.target?.value)}
                   className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -313,6 +320,27 @@ export default function PostCommunityQuestionForm() {
                 </select>
                 {errors?.sector && <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors?.sector}</p>}
               </div>
+
+              {/* Category — polls get theirs auto-assigned (Encuestas), so this only applies
+                  to Preguntas. */}
+              {postType === 'question' && (
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium text-foreground mb-1">
+                    Categoría
+                  </label>
+                  <select
+                    id="category"
+                    value={formData?.categoryKey}
+                    onChange={e => handleChange('categoryKey', e?.target?.value)}
+                    className="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
+                    {QUESTION_CATEGORIES?.map(c => (
+                      <option key={c?.key} value={c?.key}>{c?.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Optional Location */}
               <div>

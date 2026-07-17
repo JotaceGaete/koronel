@@ -284,7 +284,9 @@ export default function ClassifiedAdDetail() {
                   )}
                   {ad?.isNew && (
                     <span className="text-xs font-caption px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
-                      🆕 Nuevo en {CITY_CONFIG.siteName}
+                      {/* Esta rama no tiene CityContext/useCity (ver docs/recuperacion-profesionales-oficios.md);
+                          mismo literal que ya usa handleWhatsApp() más arriba en este archivo. */}
+                      🆕 Nuevo en CoronelLocal
                     </span>
                   )}
                   {ad?.ratings_enabled && (

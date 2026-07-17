@@ -369,13 +369,39 @@ export const communityService = {
     try {
       let query = supabase
         ?.from('community_posts')
-        ?.select('*, author:user_profiles(id, full_name, email), poll:community_polls(id, status, closes_at)')
+        ?.select('*, author:user_profiles(id, full_name, email)')
         ?.order('created_at', { ascending: false });
       if (status && status !== 'all') query = query?.eq('status', status);
       if (search?.trim()) query = query?.or(`title.ilike.%${search}%,body.ilike.%${search}%`);
       const { data, error } = await query;
       if (error) throw error;
-      return { data: data || [], error: null };
+      const posts = data || [];
+
+      // Fetched as a second, independent query on purpose: a broken/out-of-sync
+      // community_polls relation (missing column, RLS issue, etc.) must never take the
+      // whole moderation queue down with it. Worst case, polls just render as "Pregunta".
+      const postIds = posts?.map(p => p?.id)?.filter(Boolean);
+      let pollsByPostId = {};
+      if (postIds?.length) {
+        try {
+          const { data: polls, error: pollsError } = await supabase
+            ?.from('community_polls')
+            ?.select('id, post_id, status, closes_at')
+            ?.in('post_id', postIds);
+          if (pollsError) throw pollsError;
+          pollsByPostId = (polls || [])?.reduce((acc, poll) => {
+            acc[poll?.post_id] = poll;
+            return acc;
+          }, {});
+        } catch (pollsError) {
+          console.error('adminGetPosts: no se pudieron cargar las encuestas asociadas', pollsError);
+        }
+      }
+
+      return {
+        data: posts?.map(post => ({ ...post, poll: pollsByPostId?.[post?.id] || null })),
+        error: null,
+      };
     } catch (error) {
       return { data: [], error };
     }

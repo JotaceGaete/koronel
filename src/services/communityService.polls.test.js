@@ -290,3 +290,58 @@ describe('communityService.getPosts / getPostById poll embed (no N+1)', () => {
     expect(data?.poll)?.toBeNull();
   });
 });
+
+describe('communityService.adminGetPosts (posts and polls fetched independently)', () => {
+  const pendingQuestion = { id: 'post-1', title: '¿Alguien conoce un buen mecánico?', status: 'pending' };
+  const pendingPollPost = { id: 'post-2', title: '¿Dónde compras frutas y verduras?', status: 'pending' };
+  const activePost = { id: 'post-3', title: '¿Cuál es la mejor cafetería?', status: 'active' };
+  const pollRow = { id: 'poll-1', post_id: 'post-2', status: 'open', closes_at: null };
+
+  it('returns pending questions, pending polls (merged from the second query) and active posts together', async () => {
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'community_posts') {
+        return makeBuilder({ data: [pendingQuestion, pendingPollPost, activePost], error: null });
+      }
+      if (table === 'community_polls') return makeBuilder({ data: [pollRow], error: null });
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { data, error } = await communityService?.adminGetPosts();
+
+    expect(error)?.toBeNull();
+    expect(data)?.toHaveLength(3);
+    expect(data?.find(p => p?.id === 'post-1')?.poll)?.toBeNull();
+    expect(data?.find(p => p?.id === 'post-2')?.poll)?.toEqual(pollRow);
+    expect(data?.find(p => p?.id === 'post-3')?.status)?.toBe('active');
+  });
+
+  it('still returns every post (with poll: null) when the community_polls query fails, instead of failing the whole panel', async () => {
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'community_posts') {
+        return makeBuilder({ data: [pendingQuestion, pendingPollPost, activePost], error: null });
+      }
+      if (table === 'community_polls') {
+        return makeBuilder({ data: null, error: new Error('column community_polls_1.status does not exist') });
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { data, error } = await communityService?.adminGetPosts();
+
+    expect(error)?.toBeNull();
+    expect(data)?.toHaveLength(3);
+    expect(data?.every(p => p?.poll === null))?.toBe(true);
+  });
+
+  it('fails the whole request only when community_posts itself errors', async () => {
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'community_posts') return makeBuilder({ data: null, error: new Error('boom') });
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { data, error } = await communityService?.adminGetPosts();
+
+    expect(error)?.toBeTruthy();
+    expect(data)?.toEqual([]);
+  });
+});

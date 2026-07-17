@@ -4,16 +4,18 @@ import path from 'node:path';
 import pg from 'pg';
 
 // Real integration test for the exact question the user raised: does getPostById() actually
-// attach `poll` to a post that genuinely has a community_polls row, end-to-end, through the
-// real decoupled-query merge logic in communityService.js — not a raw SQL check of the RPC
-// (already covered by communityService.pollVote.integration.test.js), and not a mock of
-// supabase.from() that just echoes back whatever the test hands it.
+// attach `poll` (and `poll.options`) to a post that genuinely has a community_polls row,
+// end-to-end, through the real query/merge logic in communityService.js — not a raw SQL check
+// of the RPC (already covered by communityService.pollVote.integration.test.js), and not a mock
+// of supabase.from() that just echoes back whatever the test hands it.
 //
-// Here, `../lib/supabase` is mocked with a tiny adapter that translates the exact
-// .from(table).select(...).eq(...).in(...).single() chains communityService.js actually issues
-// into real SQL run against a real Postgres loaded with this repo's real migrations, and
-// returns the result in the same {data, error} shape PostgREST would. communityService.js
-// itself is imported unmodified — this exercises the real getPostById()/getPosts() source.
+// `../lib/supabase` is mocked with a tiny adapter that translates the exact three independent
+// .from(table).select(...) chains communityService.js actually issues (community_posts,
+// community_polls, community_poll_options — never a nested embed of one inside another) into
+// real SQL run against a real Postgres loaded with this repo's real migrations, executed AS THE
+// anon Postgres role with RLS genuinely enforced (not bypassed), matching exactly what an
+// unauthenticated visitor's request looks like through PostgREST. communityService.js itself is
+// imported unmodified.
 //
 // Skips (not fails) if it can't reach a local Postgres — see TEST_DATABASE_URL.
 
@@ -52,48 +54,63 @@ const SUPABASE_STUB_SQL = `
 `;
 
 let dbAvailable = false;
-let client;
+let client; // runs every query as the anon role, RLS enforced — a real logged-out visitor
 let communityService;
 
-// Minimal adapter: only the exact chains communityService.js's getPosts/getPostById/
-// getPollsByPostId actually call, translated to real SQL and run against the real database.
+async function asAnonQuery(sql, params) {
+  await client.query('BEGIN');
+  await client.query('SET LOCAL ROLE anon');
+  try {
+    return await client.query(sql, params);
+  } finally {
+    await client.query('COMMIT');
+  }
+}
+
+// Minimal adapter: the exact three independent chains communityService.js's
+// getPosts/getPostById/getPollsByPostId call — community_posts, community_polls (plain
+// columns), community_poll_options (its own query, never embedded inside community_polls).
 function makeSupabaseAdapter() {
   function communityPostsQuery({ single, eqFilters }) {
     const idFilter = eqFilters?.id;
-    return client
-      .query(
-        `SELECT cp.*, CASE WHEN up.id IS NULL THEN NULL ELSE
-           jsonb_build_object('id', up.id, 'full_name', up.full_name, 'avatar_url', up.avatar_url)
-         END AS author
-         FROM public.community_posts cp
-         LEFT JOIN public.user_profiles up ON up.id = cp.user_id
-         WHERE ($1::uuid IS NULL OR cp.id = $1)`,
-        [idFilter || null]
-      )
-      .then(res => {
-        if (single) {
-          return { data: res.rows?.[0] || null, error: res.rows?.length ? null : new Error('not found') };
-        }
-        return { data: res.rows, error: null, count: res.rows?.length };
-      });
+    return asAnonQuery(
+      `SELECT cp.*, CASE WHEN up.id IS NULL THEN NULL ELSE
+         jsonb_build_object('id', up.id, 'full_name', up.full_name, 'avatar_url', up.avatar_url)
+       END AS author
+       FROM public.community_posts cp
+       LEFT JOIN public.user_profiles up ON up.id = cp.user_id
+       WHERE ($1::uuid IS NULL OR cp.id = $1)`,
+      [idFilter || null]
+    ).then(res => {
+      if (single) {
+        return { data: res.rows?.[0] || null, error: res.rows?.length ? null : new Error('not found') };
+      }
+      return { data: res.rows, error: null, count: res.rows?.length };
+    });
   }
 
   function communityPollsQuery({ inFilters }) {
     const postIds = inFilters?.post_id || [];
-    return client
-      .query(
-        `SELECT p.id, p.post_id, p.closes_at, p.status, p.results_visibility, p.created_at,
-           COALESCE(
-             (SELECT jsonb_agg(jsonb_build_object('id', o.id, 'label', o.label, 'position', o.position, 'vote_count', o.vote_count))
-              FROM public.community_poll_options o WHERE o.poll_id = p.id),
-             '[]'::jsonb
-           ) AS options
-         FROM public.community_polls p
-         WHERE p.post_id = ANY($1::uuid[])`,
-        [postIds]
-      )
-      .then(res => ({ data: res.rows, error: null }));
+    return asAnonQuery(
+      `SELECT id, post_id, closes_at, status, results_visibility, created_at
+       FROM public.community_polls WHERE post_id = ANY($1::uuid[])`,
+      [postIds]
+    ).then(res => ({ data: res.rows, error: null }));
   }
+
+  function communityPollOptionsQuery({ inFilters }) {
+    const pollIds = inFilters?.poll_id || [];
+    return asAnonQuery(
+      `SELECT * FROM public.community_poll_options WHERE poll_id = ANY($1::uuid[]) ORDER BY position`,
+      [pollIds]
+    ).then(res => ({ data: res.rows, error: null }));
+  }
+
+  const QUERY_BY_TABLE = {
+    community_posts: communityPostsQuery,
+    community_polls: communityPollsQuery,
+    community_poll_options: communityPollOptionsQuery,
+  };
 
   return {
     from(table) {
@@ -102,10 +119,12 @@ function makeSupabaseAdapter() {
         select: () => builder,
         eq: (col, val) => { state.eqFilters[col] = val; return builder; },
         in: (col, vals) => { state.inFilters[col] = vals; return builder; },
+        order: () => builder,
         single: () => { state.single = true; return builder; },
         then: (resolve, reject) => {
-          const run = table === 'community_posts' ? communityPostsQuery(state) : communityPollsQuery(state);
-          return run.then(resolve, reject);
+          const run = QUERY_BY_TABLE[table];
+          if (!run) throw new Error(`adapter: unhandled table ${table}`);
+          return run(state).then(resolve, reject);
         },
       };
       return builder;
@@ -153,27 +172,32 @@ afterAll(async () => {
   await admin.end();
 });
 
-describe('getPostById() against a real database: does poll actually get attached?', () => {
-  it('a post with a real community_polls row comes back with poll populated (not null) and its options', async () => {
+async function seedActivePoll({ title = 'elegir entre una y otra', body = 'alige algo', labels = ['gana el blanco', 'gana el negro'] } = {}) {
+  const postId = crypto.randomUUID();
+  const pollId = crypto.randomUUID();
+  await client.query(
+    `INSERT INTO public.community_posts (id, title, body, sector, status) VALUES ($1, $2, $3, 'Centro', 'active')`,
+    [postId, title, body]
+  );
+  await client.query(`INSERT INTO public.community_polls (id, post_id) VALUES ($1, $2)`, [pollId, postId]);
+  await client.query(
+    `INSERT INTO public.community_poll_options (id, poll_id, label, position) VALUES (gen_random_uuid(), $1, $2, 0), (gen_random_uuid(), $1, $3, 1)`,
+    [pollId, labels?.[0], labels?.[1]]
+  );
+  return { postId, pollId };
+}
+
+describe('getPostById() against a real database, as an anonymous (logged-out) visitor: does poll actually get attached?', () => {
+  it('a post with a real community_polls row and real options comes back with poll AND poll.options populated for a guest with no session', async () => {
     if (!dbAvailable) return;
-    const postId = crypto.randomUUID();
-    const pollId = crypto.randomUUID();
-    await client.query(
-      `INSERT INTO public.community_posts (id, title, body, sector, status) VALUES ($1, 'elegir entre una y otra', 'alige algo', 'Centro', 'active')`,
-      [postId]
-    );
-    await client.query(`INSERT INTO public.community_polls (id, post_id) VALUES ($1, $2)`, [pollId, postId]);
-    await client.query(
-      `INSERT INTO public.community_poll_options (id, poll_id, label, position) VALUES (gen_random_uuid(), $1, 'Argentina', 0), (gen_random_uuid(), $1, 'España', 1)`,
-      [pollId]
-    );
+    const { postId, pollId } = await seedActivePoll();
 
     const { data, error } = await communityService.getPostById(postId);
 
     expect(error)?.toBeNull();
     expect(data?.poll)?.not?.toBeNull();
     expect(data?.poll?.id)?.toBe(pollId);
-    expect(data?.poll?.options?.map(o => o?.label))?.toEqual(['Argentina', 'España']);
+    expect(data?.poll?.options?.map(o => o?.label))?.toEqual(['gana el blanco', 'gana el negro']);
   });
 
   it('a plain Pregunta with no community_polls row correctly comes back with poll: null (this is not a bug — it is a Pregunta)', async () => {

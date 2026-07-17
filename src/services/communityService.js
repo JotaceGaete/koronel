@@ -42,27 +42,52 @@ function withSortedPollOptions(post) {
 }
 
 // Polls are always fetched as their own query, never embedded in the same select() as
-// community_posts: an embed makes the whole request fail atomically if the community_polls
-// relation has any problem (missing/renamed column, RLS, etc.), which used to take the entire
-// posts listing down with it — including plain Preguntas that have no poll at all. Fetching
-// posts and polls separately means a broken community_polls relation only degrades an Encuesta
-// down to rendering as a Pregunta; it never hides a publication.
+// community_posts (an embed makes the whole request fail atomically if the community_polls
+// relation has any problem, which used to take the entire posts listing down with it). The same
+// principle applies one level deeper: community_poll_options is fetched as its OWN third query
+// too, never embedded inside the community_polls select. That embed (`options:
+// community_poll_options(...)`) was the exact line that could turn a real, existing poll into
+// `poll: null` — a failure in the options embed (RLS, schema cache, PostgREST relationship
+// resolution, anything) throws for the *whole* community_polls query, not just the options
+// part, and the post's own poll data (which had nothing wrong with it) got thrown out with it.
+//
+// Now: if community_polls itself fails, there really is no poll data to show (logged, not
+// swallowed). If only community_poll_options fails, the poll is still returned — with an empty
+// options list — instead of being nulled out entirely.
 async function getPollsByPostId(postIds) {
   if (!postIds?.length) return {};
-  try {
-    const { data: polls, error } = await supabase
-      ?.from('community_polls')
-      ?.select('id, post_id, closes_at, status, results_visibility, created_at, options:community_poll_options(id, label, position, vote_count)')
-      ?.in('post_id', postIds);
-    if (error) throw error;
-    return (polls || [])?.reduce((acc, poll) => {
-      acc[poll?.post_id] = poll;
-      return acc;
-    }, {});
-  } catch (error) {
-    console.error('communityService: no se pudieron cargar las encuestas asociadas', error);
+
+  const { data: polls, error: pollsError } = await supabase
+    ?.from('community_polls')
+    ?.select('id, post_id, closes_at, status, results_visibility, created_at')
+    ?.in('post_id', postIds);
+
+  if (pollsError) {
+    console.error('communityService: no se pudo cargar community_polls', pollsError);
     return {};
   }
+  if (!polls?.length) return {};
+
+  const pollIds = polls?.map(p => p?.id);
+  const { data: options, error: optionsError } = await supabase
+    ?.from('community_poll_options')
+    ?.select('*')
+    ?.in('poll_id', pollIds)
+    ?.order('position');
+
+  if (optionsError) {
+    console.error('communityService: no se pudieron cargar las opciones de la encuesta', optionsError);
+  }
+
+  const optionsByPollId = (options || [])?.reduce((acc, opt) => {
+    (acc[opt?.poll_id] ||= [])?.push(opt);
+    return acc;
+  }, {});
+
+  return polls?.reduce((acc, poll) => {
+    acc[poll?.post_id] = { ...poll, options: optionsByPollId?.[poll?.id] || [] };
+    return acc;
+  }, {});
 }
 
 export const communityService = {

@@ -243,24 +243,20 @@ describe('communityService.adminClosePoll', () => {
   });
 });
 
-describe('communityService.getPosts / getPostById poll fetch (independent query, not embedded)', () => {
-  it('getPosts fetches polls in their own query and sorts each poll\'s options by position', async () => {
+describe('communityService.getPosts / getPostById poll fetch (three independent queries, no embeds)', () => {
+  it('getPosts fetches posts, polls and options as three separate queries and sorts each poll\'s options by position', async () => {
     const rows = [{ id: 'post-1' }, { id: 'post-2' }];
-    const polls = [
-      {
-        id: 'poll-1',
-        post_id: 'post-1',
-        options: [
-          { id: 'opt-2', position: 1 },
-          { id: 'opt-1', position: 0 },
-        ],
-      },
+    const polls = [{ id: 'poll-1', post_id: 'post-1', status: 'open', closes_at: null }];
+    const options = [
+      { id: 'opt-2', poll_id: 'poll-1', position: 1 },
+      { id: 'opt-1', poll_id: 'poll-1', position: 0 },
     ];
 
     supabase?.from?.mockImplementation((table) => {
       if (table === 'community_posts') return makeBuilder({ data: rows, error: null, count: 2 });
       if (table === 'community_replies') return makeBuilder({ data: [], error: null });
       if (table === 'community_polls') return makeBuilder({ data: polls, error: null });
+      if (table === 'community_poll_options') return makeBuilder({ data: options, error: null });
       throw new Error(`unexpected table ${table}`);
     });
 
@@ -269,11 +265,12 @@ describe('communityService.getPosts / getPostById poll fetch (independent query,
     expect(error)?.toBeNull();
     expect(supabase?.from)?.toHaveBeenCalledWith('community_posts');
     expect(supabase?.from)?.toHaveBeenCalledWith('community_polls');
+    expect(supabase?.from)?.toHaveBeenCalledWith('community_poll_options');
     expect(data?.[0]?.poll?.options?.map(o => o?.id))?.toEqual(['opt-1', 'opt-2']);
     expect(data?.[1]?.poll)?.toBeNull();
   });
 
-  it('getPosts still returns every post (with poll: null) when the community_polls query fails', async () => {
+  it('getPosts still returns every post (with poll: null) when the community_polls query itself fails', async () => {
     supabase?.from?.mockImplementation((table) => {
       if (table === 'community_posts') return makeBuilder({ data: [{ id: 'post-1' }], error: null, count: 1 });
       if (table === 'community_replies') return makeBuilder({ data: [], error: null });
@@ -290,6 +287,24 @@ describe('communityService.getPosts / getPostById poll fetch (independent query,
     expect(data?.[0]?.poll)?.toBeNull();
   });
 
+  it('a poll survives with empty options (never poll: null) when only the community_poll_options query fails — this used to be the exact bug: an embedded options select inside community_polls threw for the whole row, nulling out a poll that genuinely existed', async () => {
+    const polls = [{ id: 'poll-1', post_id: 'post-1', status: 'open', closes_at: null }];
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'community_posts') return makeBuilder({ data: [{ id: 'post-1' }], error: null, count: 1 });
+      if (table === 'community_replies') return makeBuilder({ data: [], error: null });
+      if (table === 'community_polls') return makeBuilder({ data: polls, error: null });
+      if (table === 'community_poll_options') return makeBuilder({ data: null, error: new Error('boom') });
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { data, error } = await communityService?.getPosts();
+
+    expect(error)?.toBeNull();
+    expect(data?.[0]?.poll)?.not?.toBeNull();
+    expect(data?.[0]?.poll?.id)?.toBe('poll-1');
+    expect(data?.[0]?.poll?.options)?.toEqual([]);
+  });
+
   it('getPostById returns poll: null untouched for a Pregunta, and sorted options for an Encuesta', async () => {
     supabase?.from?.mockImplementation((table) => {
       if (table === 'community_posts') return makeBuilder({ data: { id: 'post-1' }, error: null });
@@ -300,6 +315,26 @@ describe('communityService.getPosts / getPostById poll fetch (independent query,
     expect(error)?.toBeNull();
     expect(data?.poll)?.toBeNull();
   });
+
+  it('getPostById returns a real poll with its options for an Encuesta post — post exists, poll exists, options exist, no auth required for this query', async () => {
+    const polls = [{ id: 'poll-1', post_id: 'post-1', status: 'open', closes_at: null }];
+    const options = [
+      { id: 'opt-1', poll_id: 'poll-1', label: 'gana el blanco', position: 0, vote_count: 0 },
+      { id: 'opt-2', poll_id: 'poll-1', label: 'gana el negro', position: 1, vote_count: 0 },
+    ];
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'community_posts') return makeBuilder({ data: { id: 'post-1' }, error: null });
+      if (table === 'community_polls') return makeBuilder({ data: polls, error: null });
+      if (table === 'community_poll_options') return makeBuilder({ data: options, error: null });
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { data, error } = await communityService?.getPostById('post-1');
+
+    expect(error)?.toBeNull();
+    expect(data?.poll)?.not?.toBeNull();
+    expect(data?.poll?.options?.map(o => o?.label))?.toEqual(['gana el blanco', 'gana el negro']);
+  });
 });
 
 describe('communityService.adminGetPosts (posts and polls fetched independently)', () => {
@@ -308,12 +343,13 @@ describe('communityService.adminGetPosts (posts and polls fetched independently)
   const activePost = { id: 'post-3', title: '¿Cuál es la mejor cafetería?', status: 'active' };
   const pollRow = { id: 'poll-1', post_id: 'post-2', status: 'open', closes_at: null };
 
-  it('returns pending questions, pending polls (merged from the second query) and active posts together', async () => {
+  it('returns pending questions, pending polls (merged from the second/third queries) and active posts together', async () => {
     supabase?.from?.mockImplementation((table) => {
       if (table === 'community_posts') {
         return makeBuilder({ data: [pendingQuestion, pendingPollPost, activePost], error: null });
       }
       if (table === 'community_polls') return makeBuilder({ data: [pollRow], error: null });
+      if (table === 'community_poll_options') return makeBuilder({ data: [], error: null });
       throw new Error(`unexpected table ${table}`);
     });
 
@@ -322,7 +358,7 @@ describe('communityService.adminGetPosts (posts and polls fetched independently)
     expect(error)?.toBeNull();
     expect(data)?.toHaveLength(3);
     expect(data?.find(p => p?.id === 'post-1')?.poll)?.toBeNull();
-    expect(data?.find(p => p?.id === 'post-2')?.poll)?.toEqual(pollRow);
+    expect(data?.find(p => p?.id === 'post-2')?.poll)?.toEqual({ ...pollRow, options: [] });
     expect(data?.find(p => p?.id === 'post-3')?.status)?.toBe('active');
   });
 

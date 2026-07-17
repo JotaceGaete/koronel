@@ -253,25 +253,24 @@ describe('communityService.adminClosePoll', () => {
   });
 });
 
-describe('communityService.getPosts / getPostById poll embed (no N+1)', () => {
-  it('getPosts issues a single query for the page and sorts each poll\'s options by position', async () => {
-    const rows = [
+describe('communityService.getPosts / getPostById poll fetch (independent query, not embedded)', () => {
+  it('getPosts fetches polls in their own query and sorts each poll\'s options by position', async () => {
+    const rows = [{ id: 'post-1' }, { id: 'post-2' }];
+    const polls = [
       {
-        id: 'post-1',
-        poll: {
-          id: 'poll-1',
-          options: [
-            { id: 'opt-2', position: 1 },
-            { id: 'opt-1', position: 0 },
-          ],
-        },
+        id: 'poll-1',
+        post_id: 'post-1',
+        options: [
+          { id: 'opt-2', position: 1 },
+          { id: 'opt-1', position: 0 },
+        ],
       },
-      { id: 'post-2', poll: null },
     ];
 
     supabase?.from?.mockImplementation((table) => {
       if (table === 'community_posts') return makeBuilder({ data: rows, error: null, count: 2 });
       if (table === 'community_replies') return makeBuilder({ data: [], error: null });
+      if (table === 'community_polls') return makeBuilder({ data: polls, error: null });
       throw new Error(`unexpected table ${table}`);
     });
 
@@ -279,12 +278,34 @@ describe('communityService.getPosts / getPostById poll embed (no N+1)', () => {
 
     expect(error)?.toBeNull();
     expect(supabase?.from)?.toHaveBeenCalledWith('community_posts');
+    expect(supabase?.from)?.toHaveBeenCalledWith('community_polls');
     expect(data?.[0]?.poll?.options?.map(o => o?.id))?.toEqual(['opt-1', 'opt-2']);
     expect(data?.[1]?.poll)?.toBeNull();
   });
 
+  it('getPosts still returns every post (with poll: null) when the community_polls query fails', async () => {
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'community_posts') return makeBuilder({ data: [{ id: 'post-1' }], error: null, count: 1 });
+      if (table === 'community_replies') return makeBuilder({ data: [], error: null });
+      if (table === 'community_polls') {
+        return makeBuilder({ data: null, error: new Error('column community_polls_1.status does not exist') });
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { data, error } = await communityService?.getPosts();
+
+    expect(error)?.toBeNull();
+    expect(data)?.toHaveLength(1);
+    expect(data?.[0]?.poll)?.toBeNull();
+  });
+
   it('getPostById returns poll: null untouched for a Pregunta, and sorted options for an Encuesta', async () => {
-    supabase?.from?.mockImplementation(() => makeBuilder({ data: { id: 'post-1', poll: null }, error: null }));
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'community_posts') return makeBuilder({ data: { id: 'post-1' }, error: null });
+      if (table === 'community_polls') return makeBuilder({ data: [], error: null });
+      throw new Error(`unexpected table ${table}`);
+    });
     const { data, error } = await communityService?.getPostById('post-1');
     expect(error)?.toBeNull();
     expect(data?.poll)?.toBeNull();

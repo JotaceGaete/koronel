@@ -1,10 +1,5 @@
 import { supabase } from '../lib/supabase';
-
-// Embed used everywhere a publication needs to reveal whether it's a poll. For a Pregunta,
-// `poll` resolves to null — the type is derived from presence/absence, community_posts is
-// never touched. Fetched via Supabase's FK-based embedding, so listing N posts still costs a
-// single request/query, not N+1.
-const POLL_EMBED = 'poll:community_polls(id, closes_at, status, results_visibility, created_at, options:community_poll_options(id, label, position, vote_count))';
+import { getActiveCityId } from '../config/city';
 
 function withSortedPollOptions(post) {
   if (!post?.poll?.options?.length) return post;
@@ -17,6 +12,30 @@ function withSortedPollOptions(post) {
   };
 }
 
+// Polls are always fetched as their own query, never embedded in the same select() as
+// community_posts: an embed makes the whole request fail atomically if the community_polls
+// relation has any problem (missing/renamed column, RLS, etc.), which used to take the entire
+// posts listing down with it — including plain Preguntas that have no poll at all. Fetching
+// posts and polls separately means a broken community_polls relation only degrades an Encuesta
+// down to rendering as a Pregunta; it never hides a publication.
+async function getPollsByPostId(postIds) {
+  if (!postIds?.length) return {};
+  try {
+    const { data: polls, error } = await supabase
+      ?.from('community_polls')
+      ?.select('id, post_id, closes_at, status, results_visibility, created_at, options:community_poll_options(id, label, position, vote_count)')
+      ?.in('post_id', postIds);
+    if (error) throw error;
+    return (polls || [])?.reduce((acc, poll) => {
+      acc[poll?.post_id] = poll;
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error('communityService: no se pudieron cargar las encuestas asociadas', error);
+    return {};
+  }
+}
+
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
 
@@ -24,8 +43,9 @@ export const communityService = {
     try {
       let query = supabase
         ?.from('community_posts')
-        ?.select(`*, author:user_profiles(id, full_name, avatar_url), ${POLL_EMBED}`, { count: 'exact' })
-        ?.eq('status', 'active');
+        ?.select('*, author:user_profiles(id, full_name, avatar_url)', { count: 'exact' })
+        ?.eq('status', 'active')
+        ?.eq('city_id', getActiveCityId());
 
       if (sector && sector !== 'all') {
         query = query?.eq('sector', sector);
@@ -49,9 +69,10 @@ export const communityService = {
 
       const { data, error, count } = await query;
       if (error) throw error;
+      const posts = data || [];
 
       // Get reply counts
-      const postIds = (data || [])?.map(p => p?.id);
+      const postIds = posts?.map(p => p?.id);
       let replyCounts = {};
       if (postIds?.length > 0) {
         const { data: replyData } = await supabase
@@ -64,8 +85,9 @@ export const communityService = {
         });
       }
 
-      const enriched = (data || [])?.map(p => ({
-        ...withSortedPollOptions(p),
+      const pollsByPostId = await getPollsByPostId(postIds);
+      const enriched = posts?.map(p => ({
+        ...withSortedPollOptions({ ...p, poll: pollsByPostId?.[p?.id] || null }),
         reply_count: replyCounts?.[p?.id] || 0,
       }));
 
@@ -80,11 +102,12 @@ export const communityService = {
     try {
       const { data, error } = await supabase
         ?.from('community_posts')
-        ?.select(`*, author:user_profiles(id, full_name, avatar_url), ${POLL_EMBED}`)
+        ?.select('*, author:user_profiles(id, full_name, avatar_url)')
         ?.eq('id', id)
         ?.single();
       if (error) throw error;
-      return { data: withSortedPollOptions(data), error: null };
+      const pollsByPostId = await getPollsByPostId([id]);
+      return { data: withSortedPollOptions({ ...data, poll: pollsByPostId?.[id] || null }), error: null };
     } catch (error) {
       return { data: null, error };
     }
@@ -102,6 +125,7 @@ export const communityService = {
           lng: lng || null,
           user_id: userId,
           status: 'pending',
+          city_id: getActiveCityId(),
         })
         ?.select()
         ?.single();
@@ -377,26 +401,8 @@ export const communityService = {
       if (error) throw error;
       const posts = data || [];
 
-      // Fetched as a second, independent query on purpose: a broken/out-of-sync
-      // community_polls relation (missing column, RLS issue, etc.) must never take the
-      // whole moderation queue down with it. Worst case, polls just render as "Pregunta".
       const postIds = posts?.map(p => p?.id)?.filter(Boolean);
-      let pollsByPostId = {};
-      if (postIds?.length) {
-        try {
-          const { data: polls, error: pollsError } = await supabase
-            ?.from('community_polls')
-            ?.select('id, post_id, status, closes_at')
-            ?.in('post_id', postIds);
-          if (pollsError) throw pollsError;
-          pollsByPostId = (polls || [])?.reduce((acc, poll) => {
-            acc[poll?.post_id] = poll;
-            return acc;
-          }, {});
-        } catch (pollsError) {
-          console.error('adminGetPosts: no se pudieron cargar las encuestas asociadas', pollsError);
-        }
-      }
+      const pollsByPostId = await getPollsByPostId(postIds);
 
       return {
         data: posts?.map(post => ({ ...post, poll: pollsByPostId?.[post?.id] || null })),

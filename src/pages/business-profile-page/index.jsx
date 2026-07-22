@@ -158,7 +158,7 @@ export default function BusinessProfilePage() {
   }, [businessId]);
 
   // Build category labels from real hierarchy (category + parent from DB)
-  const catRow = business?.category;
+  const catRow = business?.category_ref;
   const parentCatName = catRow?.parent?.name ?? (catRow?.name || business?.category) ?? null;
   const subCatName = catRow?.parent_id && catRow?.name ? catRow?.name : null;
 

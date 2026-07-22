@@ -248,7 +248,13 @@ export default function AdminNotificationsPanel({ onNavigate }) {
       {/* Dropdown Panel */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-full max-w-[320px] bg-card border border-border rounded-xl shadow-xl z-[200] overflow-hidden"
+          // Fixed width, not w-full: this panel is absolutely positioned inside a
+          // plain "relative" wrapper sized only by the bell button (~36px), since
+          // absolutely positioned children never contribute to an ancestor's own
+          // width. `w-full` therefore resolved to ~36px — not the viewport or any
+          // sensible box — collapsing the panel and overflowing its content. The
+          // viewport-relative cap keeps it from spilling past narrow phone screens.
+          className="absolute right-0 top-full mt-2 w-[360px] max-w-[calc(100vw-2rem)] bg-card border border-border rounded-xl shadow-xl z-[200] overflow-hidden"
           style={{ maxHeight: '480px' }}
         >
           {/* Header */}

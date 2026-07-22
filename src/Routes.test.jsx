@@ -43,6 +43,11 @@ describe('Pre-existing routes keep resolving after adding /servicios', () => {
     renderAt('/esto-no-existe');
     expect(await screen.findByText('Page Not Found'))?.toBeInTheDocument();
   });
+
+  it('/admin-dashboard still resolves (redirects an unauthenticated visitor to /login, same as before)', async () => {
+    renderAt('/admin-dashboard');
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' }))?.toBeInTheDocument();
+  });
 });
 
 describe('New /servicios routes resolve', () => {

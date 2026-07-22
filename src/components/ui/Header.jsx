@@ -14,6 +14,7 @@ const navItems = [
   { label: 'Empleos', path: '/empleos', icon: 'Briefcase' },
   { label: 'Comunidad', path: '/comunidad', icon: 'MessageCircle' },
   { label: 'Mapa', path: '/mapa', icon: 'Map' },
+  { label: 'Servicios', path: '/servicios', icon: 'Landmark' },
 ];
 
 function isAdminUser(user, userProfile) {

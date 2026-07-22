@@ -34,6 +34,8 @@ import PublishJobForm from './pages/publish-job-form';
 import JobApplicationForm from './pages/job-application-form';
 import ProfesionalesListing from './pages/profesionales-listing';
 import PostProfesionalForm from './pages/post-profesional-form';
+import PublicServicesListing from './pages/public-services-listing';
+import PublicServiceDetailPage from './pages/public-service-detail-page';
 
 const Routes = () => {
   return (
@@ -114,6 +116,8 @@ const Routes = () => {
           <Route path="/user-business-dashboard" element={
             <ProtectedRoute><UserBusinessDashboard /></ProtectedRoute>
           } />
+          <Route path="/servicios" element={<PublicServicesListing />} />
+          <Route path="/servicios/:id" element={<PublicServiceDetailPage />} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

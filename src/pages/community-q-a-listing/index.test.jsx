@@ -55,7 +55,9 @@ describe('CommunityQAListing category chips', () => {
 
     await screen.findByText('Aún no hay publicaciones');
     expect(screen.getByText('Todas'))?.toBeInTheDocument();
-    expect(screen.getByText('Servicios'))?.toBeInTheDocument();
+    // Scoped to the chip (a <button>): the header nav now also has a "Servicios" entry
+    // (Servicios para la comunidad, /servicios), so the bare text is no longer unique on this page.
+    expect(screen.getByRole('button', { name: 'Servicios' }))?.toBeInTheDocument();
     expect(screen.getByText('Recomendaciones'))?.toBeInTheDocument();
     expect(screen.getByText('Seguridad'))?.toBeInTheDocument();
     expect(screen.getByText('Barrio'))?.toBeInTheDocument();

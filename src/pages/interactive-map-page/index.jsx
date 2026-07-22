@@ -36,6 +36,26 @@ function MapFlyTo({ target }) {
   return null;
 }
 
+// Leaflet measures its container once on mount and never re-measures on its
+// own. If the container's box changes size afterwards — window resize,
+// orientation change, mobile browser chrome show/hide, a sidebar toggling —
+// the tile canvas is left at its stale size until something calls
+// invalidateSize(). ResizeObserver watches the actual DOM box directly, so it
+// catches all of those cases, not just window "resize" events.
+function MapResizeHandler() {
+  const map = useMap();
+  useEffect(() => {
+    const container = map?.getContainer();
+    if (!container || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => {
+      map?.invalidateSize();
+    });
+    observer?.observe(container);
+    return () => observer?.disconnect();
+  }, [map]);
+  return null;
+}
+
 const SECTOR_COLORS = {
   Centro: { bg: '#dbeafe', color: '#1d4ed8' },
   Lagunillas: { bg: '#d1fae5', color: '#065f46' },
@@ -174,11 +194,28 @@ export default function InteractiveMapPage() {
   const hasSelection = selectedBusiness || selectedEvent || selectedPost;
 
   return (
-    <div className="flex flex-col" style={{ height: '100vh', background: 'var(--color-background)' }}>
+    <div style={{ background: 'var(--color-background)' }}>
       <Header />
 
-      {/* Map Container */}
-      <div className="relative flex-1" style={{ marginTop: '64px' }}>
+      {/*
+        Root cause of the old layout bug: Header is `position: fixed`, so it
+        never occupies space in normal flow — a flex column can't "give it"
+        64px, because a fixed element isn't a flex participant at all. The
+        previous layout (flex-col height:100vh, marginTop:64px on this div)
+        assumed the flex-1 sibling would get 100vh-64px; it actually got the
+        full 100vh and was then shifted down 64px by the margin, overflowing
+        64px past the bottom of the viewport with nothing clipping it — the
+        map got cut off, and Leaflet's canvas (measured against that
+        oversized box) didn't line up with what was actually visible either.
+
+        Fixing this with inset-based fixed positioning instead of flex math:
+        top/left/right/bottom on a fixed element make the browser compute the
+        height as 100vh - top - bottom natively, with no JS/flex arithmetic
+        to get wrong and nothing to recompute on resize — it's just CSS. The
+        only fixed number left is `64`, which is Header's own explicit,
+        already-fixed height (Header.jsx sets it inline) — not a guess.
+      */}
+      <div className="relative" style={{ position: 'fixed', top: '64px', left: 0, right: 0, bottom: 0 }}>
         {/* Leaflet Map */}
         <MapContainer
           center={CORONEL_CENTER}
@@ -193,6 +230,9 @@ export default function InteractiveMapPage() {
 
           {/* Fly to target */}
           {flyTarget && <MapFlyTo target={flyTarget} />}
+
+          {/* Keep Leaflet's tile canvas in sync with the container's real size */}
+          <MapResizeHandler />
 
           {/* Business Markers */}
           {showBusinesses && businesses?.map(business => (

@@ -151,7 +151,7 @@ export default function AdminProfesionales() {
 
       <div className="mt-4 overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-sm">
-          <thead className="bg-muted sticky top-[65px] z-40">
+          <thead className="bg-muted">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Profesional</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Categoría</th>

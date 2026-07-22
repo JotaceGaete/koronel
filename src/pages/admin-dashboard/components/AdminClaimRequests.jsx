@@ -59,7 +59,7 @@ export default function AdminClaimRequests() {
           Array.from({ length: 3 })?.map((_, i) => (
             <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
           ))
-        ) : claims?.length === 0 ? (
+        ) : error ? null : claims?.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <Icon name="Inbox" size={40} color="currentColor" className="mx-auto mb-3 opacity-40" />
             <p>No hay solicitudes {filterStatus ? STATUS_LABELS?.[filterStatus]?.toLowerCase() + 's' : ''}</p>

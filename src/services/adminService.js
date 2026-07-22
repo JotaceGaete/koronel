@@ -118,7 +118,11 @@ export const adminCategoryService = {
 // ── Claim Requests ──────────────────────────────────────────
 export const adminClaimService = {
   async getAll(status = '') {
-    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), claimant:user_profiles(full_name, email)')?.order('created_at', { ascending: false });
+    // business_claims has two FKs to user_profiles (user_id and reviewed_by) — the bare
+    // `user_profiles(...)` embed is ambiguous to PostgREST ("more than one relationship
+    // was found"). Qualify with the real FK name so it resolves to the claimant (user_id),
+    // not reviewed_by (unused by this screen).
+    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), claimant:user_profiles!business_claims_user_id_fkey(full_name, email)')?.order('created_at', { ascending: false });
     if (status) query = query?.eq('claim_status', status);
     const { data, error } = await query;
     if (error) throw error;

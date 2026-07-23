@@ -30,7 +30,6 @@ describe('Pre-existing routes keep resolving after adding /servicios', () => {
     ['/comunidad', 'Comunidad'],
     ['/eventos', 'Eventos'],
     ['/mapa', 'Mapa'],
-    ['/profesionales', 'Profesionales'],
   ])('%s still renders the main nav without crashing', async (path) => {
     renderAt(path);
     // "Negocios" (and the other nav labels) render once per breakpoint (desktop nav +

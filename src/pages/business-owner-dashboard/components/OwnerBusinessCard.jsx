@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
+import WalinkaSection from './WalinkaSection';
 
 const STATUS_CONFIG = {
   published: { label: 'Publicado', color: '#16a34a', bg: '#dcfce7' },
@@ -92,6 +93,8 @@ export default function OwnerBusinessCard({ business, onEdit }) {
           </Link>
         )}
       </div>
+
+      <WalinkaSection business={business} />
     </div>
   );
 }

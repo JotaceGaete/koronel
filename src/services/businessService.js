@@ -88,23 +88,34 @@ export const businessService = {
 
   async getById(id) {
     try {
+      // Aliased as category_ref, never `category` — businesses.category is already a
+      // plain text column, and aliasing the embed with the same name silently
+      // overwrote that string with an object (crashed AdminBusinessForm, which
+      // renders `category` expecting a string).
       const { data, error } = await supabase
         ?.from('businesses')
         ?.select(`
           *,
           business_images(storage_path, alt_text, is_primary, sort_order),
-          category:categories(id, name, name_key, parent_id)
+          category_ref:categories(id, name, name_key, parent_id)
         `)
         ?.eq('id', id)
         ?.single();
       if (error) throw error;
-      if (data?.category?.parent_id) {
+      // PostgREST normally embeds a to-one relation as a single object, but
+      // returns an array if it can't disambiguate the relationship (or if the
+      // schema cache is stale) — normalize to a single object (or null) so
+      // every caller can rely on one shape regardless of what came back.
+      if (Array.isArray(data?.category_ref)) {
+        data.category_ref = data.category_ref?.[0] ?? null;
+      }
+      if (data?.category_ref?.parent_id) {
         const { data: parent } = await supabase
           ?.from('categories')
           ?.select('id, name')
-          ?.eq('id', data.category.parent_id)
+          ?.eq('id', data.category_ref.parent_id)
           ?.single();
-        if (parent) data.category.parent = parent;
+        if (parent) data.category_ref.parent = parent;
       }
       return { data, error: null };
     } catch (error) {

@@ -26,7 +26,8 @@ export default function AdminBusinesses() {
   // Form state — null = hidden, object = edit item, 'new' = create
   const [formItem, setFormItem] = useState(null); // null | editItem | { _new: true }
   const [showForm, setShowForm] = useState(false);
-  const [editLoading, setEditLoading] = useState(false);
+  const [editLoadingId, setEditLoadingId] = useState(null);
+  const [editError, setEditError] = useState(null); // { id, kind: 'not_found' | 'query_error', message }
 
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -57,21 +58,40 @@ export default function AdminBusinesses() {
   useEffect(() => { load(); }, [load]);
 
   const openCreate = () => {
+    setEditError(null);
     setFormItem(null);
     setShowForm(true);
   };
 
   const openEdit = async (b) => {
-    setEditLoading(true);
+    setEditError(null);
+    setEditLoadingId(b?.id);
     try {
       const { data, error } = await businessService?.getById(b?.id);
-      setFormItem(error || !data ? b : data);
-    } catch (e) {
-      setFormItem(b);
+      if (error) {
+        // PGRST116 = .single() matched zero (or more than one) rows — the
+        // business is gone, not a transient failure. Any other error is a
+        // real query failure (network, permissions, etc.). Neither case
+        // opens the form with partial/stale data — editing on top of an
+        // incomplete record is how the category-object crash happened.
+        setEditError({
+          id: b?.id,
+          kind: error?.code === 'PGRST116' ? 'not_found' : 'query_error',
+          message: error?.code === 'PGRST116'
+            ? `No se encontró el negocio "${b?.name}". Puede que ya se haya eliminado.`
+            : 'No se pudo cargar el negocio para editarlo. Intenta de nuevo.',
+        });
+        return;
+      }
+      if (!data) {
+        setEditError({ id: b?.id, kind: 'not_found', message: `No se encontró el negocio "${b?.name}". Puede que ya se haya eliminado.` });
+        return;
+      }
+      setFormItem(data);
+      setShowForm(true);
     } finally {
-      setEditLoading(false);
+      setEditLoadingId(null);
     }
-    setShowForm(true);
   };
 
   const handleFormSave = () => {
@@ -165,6 +185,16 @@ export default function AdminBusinesses() {
       )}
 
       {error && <div className="mb-4 p-3 rounded-md text-sm" style={{ background: '#fee2e2', color: 'var(--color-error)' }}>{error}</div>}
+      {editError && (
+        <div
+          role="alert"
+          className="mb-4 p-3 rounded-md text-sm flex items-center justify-between gap-3"
+          style={{ background: editError?.kind === 'not_found' ? '#fef3c7' : '#fee2e2', color: editError?.kind === 'not_found' ? '#92400e' : 'var(--color-error)' }}
+        >
+          <span>{editError?.message}</span>
+          <button onClick={() => setEditError(null)} className="shrink-0 hover:opacity-70"><Icon name="X" size={14} color="currentColor" /></button>
+        </div>
+      )}
 
       {/* Pending Tab */}
       {activeTab === 'pending' ? (
@@ -261,7 +291,13 @@ export default function AdminBusinesses() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openEdit(b)} disabled={editLoading} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"><Icon name="Pencil" size={15} color="currentColor" /></button>
+                        <button onClick={() => openEdit(b)} disabled={editLoadingId === b?.id} aria-label={`Editar ${b?.name}`} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50">
+                          {editLoadingId === b?.id ? (
+                            <div className="w-[15px] h-[15px] border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }} />
+                          ) : (
+                            <Icon name="Pencil" size={15} color="currentColor" />
+                          )}
+                        </button>
                         <button onClick={() => handleDelete(b?.id)} className="p-1.5 rounded hover:bg-muted transition-colors" style={{ color: 'var(--color-error)' }}><Icon name="Trash2" size={15} color="currentColor" /></button>
                       </div>
                     </td>

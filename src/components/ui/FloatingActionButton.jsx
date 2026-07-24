@@ -7,7 +7,7 @@ const ACTIONS = [
   { label: 'Agregar negocio', path: '/publicar-negocio', icon: 'Building2' },
 ];
 
-const HIDE_PATHS = ['/post-classified-ad', '/publicar-negocio', '/publish-business-form', '/login', '/signup'];
+const HIDE_PATHS = ['/post-classified-ad', '/publicar-negocio', '/publish-business-form', '/login'];
 
 export default function FloatingActionButton() {
   const [open, setOpen] = useState(false);

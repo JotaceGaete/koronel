@@ -24,9 +24,13 @@ export default function LoginPage() {
     if (msg) setError(msg);
   }, [location?.state?.error]);
 
-  const from = (typeof location?.state?.from === 'string'
+  // Ruta que originó el login (guardada por ProtectedRoute en location.state.from).
+  // Sin fallback aquí: la usamos tal cual para el botón de Google (que la persiste
+  // en sessionStorage vía authReturnTo) y con fallback propio para el submit de email/password.
+  const rawFrom = typeof location?.state?.from === 'string'
     ? location.state.from
-    : (location?.state?.from?.pathname && (location.state.from.pathname + (location.state.from.search || '')))) || '/homepage';
+    : (location?.state?.from?.pathname && (location.state.from.pathname + (location.state.from.search || '')));
+  const from = rawFrom || '/homepage';
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -116,7 +120,7 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-            <GoogleLoginButton />
+            <GoogleLoginButton returnTo={rawFrom} />
           </form>
 
           <div className="mt-6 text-center">

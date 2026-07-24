@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { saveReturnTo } from '../lib/authReturnTo';
 
 /**
  * Inicia el flujo OAuth de Google con Supabase.
  * Si el usuario ya está logueado, redirige a /dashboard.
  */
-export default function GoogleLoginButton({ className = '', children }) {
+export default function GoogleLoginButton({ className = '', children, returnTo }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,6 +21,9 @@ export default function GoogleLoginButton({ className = '', children }) {
     }
     setError('');
     setLoading(true);
+    // Se guarda ANTES del redirect de página completa a Google: el estado de
+    // React Router (location.state) no sobrevive ese salto.
+    saveReturnTo(returnTo || `${location?.pathname || ''}${location?.search || ''}`);
     const { error: err } = await signInWithGoogle();
     setLoading(false);
     if (err) setError(err?.message || 'Error al iniciar sesión con Google.');

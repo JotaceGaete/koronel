@@ -289,12 +289,6 @@ export default function CommunityDetailPage() {
                   >
                     Iniciar Sesión
                   </Link>
-                  <Link
-                    to="/signup"
-                    className="px-5 py-2.5 rounded-lg text-sm font-medium border border-border text-foreground hover:bg-muted transition-colors"
-                  >
-                    Crear Cuenta
-                  </Link>
                 </div>
               </div>
             )}

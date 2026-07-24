@@ -235,14 +235,6 @@ export default function Header() {
                         <Icon name="LogIn" size={16} color="currentColor" />
                         Iniciar Sesión
                       </Link>
-                      <Link
-                        to="/signup"
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-caption text-card-foreground hover:bg-muted transition-colors duration-150"
-                        role="menuitem"
-                      >
-                        <Icon name="UserPlus" size={16} color="currentColor" />
-                        Crear Cuenta
-                      </Link>
                     </>
                   )}
                 </div>
@@ -407,14 +399,6 @@ export default function Header() {
                 >
                   <Icon name="LogIn" size={20} color="currentColor" />
                   Iniciar Sesión
-                </Link>
-                <Link
-                  to="/signup"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-md text-base font-caption text-foreground hover:bg-muted transition-colors duration-150 min-h-[44px]"
-                >
-                  <Icon name="UserPlus" size={20} color="currentColor" />
-                  Crear Cuenta
                 </Link>
               </>
             )}

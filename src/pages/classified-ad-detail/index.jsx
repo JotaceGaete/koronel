@@ -431,17 +431,6 @@ export default function ClassifiedAdDetail() {
                       >
                         Iniciar sesión
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="md"
-                        iconName="UserPlus"
-                        iconPosition="left"
-                        iconSize={15}
-                        onClick={() => navigate('/signup')}
-                        className="w-full"
-                      >
-                        Crear cuenta
-                      </Button>
                     </>
                   )
                 ) : (

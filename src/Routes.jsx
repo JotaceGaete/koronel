@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
+import { BrowserRouter, Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
 import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import FloatingActionButton from "components/ui/FloatingActionButton";
@@ -13,7 +13,6 @@ import ClassifiedAdsListing from './pages/classified-ads-listing';
 import BusinessDirectoryListing from './pages/business-directory-listing';
 import Homepage from './pages/homepage';
 import LoginPage from './pages/auth/LoginPage';
-import SignupPage from './pages/auth/SignupPage';
 import AuthCallbackPage from './pages/auth/AuthCallbackPage';
 import AdminDashboard from './pages/admin-dashboard';
 import AdminQuickBusinessEntry from './pages/admin-dashboard/AdminQuickBusinessEntry';
@@ -49,7 +48,8 @@ const Routes = () => {
           <Route path="/business-profile-page" element={<BusinessProfilePage />} />
           <Route path="/classified-ads-listing" element={<ClassifiedAdsListing />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          {/* Registro manual eliminado: Koronel solo permite login con Google. */}
+          <Route path="/signup" element={<Navigate to="/login" replace />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/post-classified-ad" element={<PostClassifiedAd />} />
           <Route path="/dashboard" element={

@@ -8,6 +8,13 @@ vi.mock('./lib/supabase', () => ({
       getSession: () => Promise.resolve({ data: { session: null } }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
     },
+    // CityProvider consulta la tabla `cities` al montar; sin filas, cae al
+    // fallback seguro (ver src/contexts/CityContext.jsx).
+    from: () => ({
+      select: () => ({
+        eq: () => Promise.resolve({ data: [], error: null }),
+      }),
+    }),
   },
 }));
 

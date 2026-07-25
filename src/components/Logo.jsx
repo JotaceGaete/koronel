@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { siteConfig } from '../config/siteConfig';
 
 /**
  * Logo Koronel.cl. Usado en header, login, footer, etc.
@@ -25,8 +26,8 @@ export default function Logo({ className = '', imgClassName = '', variant = 'hea
       aria-label="Ir al inicio"
     >
       <img
-        src="/koronel-logo.png"
-        alt="Koronel.cl"
+        src={siteConfig?.branding?.logoPath}
+        alt={siteConfig?.branding?.logoAlt}
         className={`object-contain object-left ${h} w-auto ${imgClassName}`}
         width={variant === 'auth' ? 180 : 140}
         height={variant === 'auth' ? 40 : 32}

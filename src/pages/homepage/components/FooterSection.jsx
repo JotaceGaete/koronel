@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Logo from 'components/Logo';
+import { siteConfig } from '../../../config/siteConfig';
 
 export default function FooterSection() {
   const currentYear = new Date()?.getFullYear();
@@ -75,7 +76,7 @@ export default function FooterSection() {
 
         <div className="border-t border-border pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs font-caption text-muted-foreground">
-            &copy; {currentYear} CoronelLocal. Todos los derechos reservados.
+            &copy; {currentYear} {siteConfig?.brandName}. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
             <Icon name="MapPin" size={12} color="var(--color-primary)" />

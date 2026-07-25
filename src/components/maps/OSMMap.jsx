@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { siteConfig } from '../../config/siteConfig';
 
 // Fix Leaflet default icon with bundlers
 delete L?.Icon?.Default?.prototype?._getIconUrl;
@@ -11,7 +12,7 @@ L?.Icon?.Default?.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const CORONEL_DEFAULT = [-37.0167, -73.1500];
+const CORONEL_DEFAULT = [siteConfig?.map?.defaultCenter?.lat, siteConfig?.map?.defaultCenter?.lng];
 
 // Inner component: handles map click in picker mode
 function PickerEvents({ onChange }) {

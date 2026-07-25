@@ -12,6 +12,7 @@ import AccountSettingsTab from './components/AccountSettingsTab';
 import MyMessagesTab from './components/MyMessagesTab';
 import { useAuth } from '../../contexts/AuthContext';
 import { messageService } from '../../services/messageService';
+import { siteConfig } from '../../config/siteConfig';
 
 export default function UserAccountDashboard() {
   const [activeTab, setActiveTab] = useState('ads');
@@ -150,7 +151,7 @@ export default function UserAccountDashboard() {
             </span>
           </div>
           <p className="text-xs font-caption text-muted-foreground">
-            © {new Date()?.getFullYear()} CoronelLocal. Todos los derechos reservados.
+            © {new Date()?.getFullYear()} {siteConfig?.brandName}. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-4">
             <Link to="/homepage" className="text-xs font-caption text-muted-foreground hover:text-foreground transition-colors">Inicio</Link>

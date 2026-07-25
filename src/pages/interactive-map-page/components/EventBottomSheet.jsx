@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { mapService } from '../../../services/mapService';
+import { siteConfig } from '../../../config/siteConfig';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
@@ -19,7 +20,7 @@ export default function EventBottomSheet({ event, onClose }) {
   const handleWhatsApp = () => {
     if (!event?.contact_whatsapp) return;
     const phone = event?.contact_whatsapp?.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en CoronelLocal y me gustaría más información.`);
+    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en ${siteConfig?.brandName} y me gustaría más información.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 

@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
 import BusinessCard from './components/BusinessCard';
 import EditBusinessModal from './components/EditBusinessModal';
+import { siteConfig } from '../../config/siteConfig';
 
 export default function UserBusinessDashboard() {
   const { user } = useAuth();
@@ -72,7 +73,7 @@ export default function UserBusinessDashboard() {
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div>
               <h1 className="font-heading font-bold text-xl text-white">Mis negocios</h1>
-              <p className="text-white/80 text-sm font-caption mt-0.5">Gestiona tus negocios publicados en CoronelLocal</p>
+              <p className="text-white/80 text-sm font-caption mt-0.5">Gestiona tus negocios publicados en {siteConfig?.brandName}</p>
             </div>
             <Link
               to="/publicar-negocio"

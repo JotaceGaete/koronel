@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
+import { siteConfig } from '../../../config/siteConfig';
 
 export default function AdCard({ ad }) {
   const formatPrice = (price) => {
@@ -13,7 +14,7 @@ export default function AdCard({ ad }) {
   const handleWhatsApp = (e) => {
     e?.preventDefault();
     e?.stopPropagation();
-    window.open(`https://wa.me/56${ad?.phone}?text=Hola, vi tu aviso "${ad?.title}" en CoronelLocal`, '_blank');
+    window.open(`https://wa.me/56${ad?.phone}?text=Hola, vi tu aviso "${ad?.title}" en ${siteConfig?.brandName}`, '_blank');
   };
 
   const handleCall = (e) => {

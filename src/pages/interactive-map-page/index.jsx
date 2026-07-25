@@ -11,9 +11,10 @@ import EventBottomSheet from './components/EventBottomSheet';
 import UpcomingEventsPanel from './components/UpcomingEventsPanel';
 import { BusinessMarker, EventMarker, CommunityPostMarker } from './components/MapMarkers';
 import { Link } from 'react-router-dom';
+import { siteConfig } from '../../config/siteConfig';
 
-// Coronel, Chile coordinates
-const CORONEL_CENTER = [-37.0298, -73.1429];
+// Centro del mapa interactivo de ciudad — ver src/config/siteConfig.js (map.interactiveMapCenter)
+const CORONEL_CENTER = [siteConfig?.map?.interactiveMapCenter?.lat, siteConfig?.map?.interactiveMapCenter?.lng];
 const DEFAULT_ZOOM = 14;
 
 // Fix Leaflet default icon issue with bundlers

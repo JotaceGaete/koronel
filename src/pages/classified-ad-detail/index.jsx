@@ -7,6 +7,7 @@ import Button from 'components/ui/Button';
 import { adService } from '../../services/adService';
 import { messageService } from '../../services/messageService';
 import { useAuth } from '../../contexts/AuthContext';
+import { siteConfig } from '../../config/siteConfig';
 
 export default function ClassifiedAdDetail() {
   const { id } = useParams();
@@ -88,7 +89,7 @@ export default function ClassifiedAdDetail() {
   const handleWhatsApp = () => {
     const phone = ad?.phone?.replace(/\D/g, '');
     const fullPhone = phone?.startsWith('56') ? phone : `56${phone}`;
-    window.open(`https://wa.me/${fullPhone}?text=Hola, vi tu aviso "${ad?.title}" en CoronelLocal`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=Hola, vi tu aviso "${ad?.title}" en ${siteConfig?.brandName}`, '_blank');
   };
 
   const handleCall = () => {
@@ -284,12 +285,12 @@ export default function ClassifiedAdDetail() {
                   )}
                   {ad?.isNew && (
                     <span className="text-xs font-caption px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
-                      {/* "CoronelLocal" (marca/plataforma) es intencional, no "Coronel" (ciudad):
-                          esta rama no tiene CityContext/useCity, y "Nuevo en X" indica que el
-                          profesional se unió recientemente a la plataforma, igual que
-                          handleWhatsApp() más arriba y los ~15 usos de "en CoronelLocal" en
-                          el resto del sitio (footer, mensajes de compartir, modales de éxito). */}
-                      🆕 Nuevo en CoronelLocal
+                      {/* siteConfig.brandName (marca/plataforma), no siteConfig.cityName (ciudad):
+                          "Nuevo en X" indica que el profesional se unió recientemente a la
+                          plataforma, igual que handleWhatsApp() más arriba. Antes era un literal
+                          "CoronelLocal" repetido en ~15 sitios del código (footer, mensajes de
+                          compartir, modales de éxito) — todos centralizados en src/config/siteConfig.js. */}
+                      🆕 Nuevo en {siteConfig?.brandName}
                     </span>
                   )}
                   {ad?.ratings_enabled && (

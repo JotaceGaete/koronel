@@ -17,7 +17,7 @@ const navItems = [
   { label: 'Servicios', path: '/servicios', icon: 'Landmark' },
 ];
 
-function isAdminUser(user) {
+export function isAdminUser(user) {
   if (!user) return false;
   return user?.app_metadata?.role === 'admin';
 }

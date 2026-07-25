@@ -15,7 +15,7 @@ const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
 const MIN_TOUCH = 44;
 
-function isAdminUser(user) {
+export function isAdminUser(user) {
   if (!user) return false;
   return user?.app_metadata?.role === 'admin';
 }

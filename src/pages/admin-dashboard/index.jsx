@@ -49,7 +49,7 @@ const SECTION_MAP = {
   'public-services': AdminPublicServices,
 };
 
-function isAdminUser(user) {
+export function isAdminUser(user) {
   if (!user) return false;
   return user?.app_metadata?.role === 'admin';
 }

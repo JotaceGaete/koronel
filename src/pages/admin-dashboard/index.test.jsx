@@ -61,9 +61,20 @@ describe('AdminDashboard — guard de administrador', () => {
     expect(await screen.findByText('Página de login'))?.toBeInTheDocument();
   });
 
+  it('redirige a /login para un usuario con role=admin solo en user_metadata (auto-asignable por el cliente)', async () => {
+    mockUseAuth?.mockReturnValue({
+      user: { id: 'u2', email: 'vecino@example.com', user_metadata: { role: 'admin' }, app_metadata: {} },
+      userProfile: { role: 'user' },
+      loading: false,
+    });
+    renderDashboard();
+
+    expect(await screen.findByText('Página de login'))?.toBeInTheDocument();
+  });
+
   it('muestra el panel y la opción "Servicios públicos" en el menú solo para un admin real', async () => {
     mockUseAuth?.mockReturnValue({
-      user: { id: 'admin1', email: 'admin@example.com', user_metadata: { role: 'admin' }, app_metadata: {} },
+      user: { id: 'admin1', email: 'admin@example.com', user_metadata: {}, app_metadata: { role: 'admin' } },
       userProfile: { role: 'admin' },
       loading: false,
     });
@@ -79,7 +90,7 @@ describe('AdminDashboard — guard de administrador', () => {
 
   it('clicking "Servicios públicos" activa esa sección', async () => {
     mockUseAuth?.mockReturnValue({
-      user: { id: 'admin1', email: 'admin@example.com', user_metadata: { role: 'admin' }, app_metadata: {} },
+      user: { id: 'admin1', email: 'admin@example.com', user_metadata: {}, app_metadata: { role: 'admin' } },
       userProfile: { role: 'admin' },
       loading: false,
     });

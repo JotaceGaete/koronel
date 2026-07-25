@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const BATCH_SIZE = 5;
 
-function isAdminUser(user) {
+export function isAdminUser(user) {
   if (!user) return false;
   return user?.app_metadata?.role === 'admin';
 }

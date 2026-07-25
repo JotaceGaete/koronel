@@ -16,6 +16,7 @@ import ShareButtons from 'components/ui/ShareButtons';
 import BusinessJobs from './components/BusinessJobs';
 import { businessService } from '../../services/businessService';
 import { siteConfig } from '../../config/siteConfig';
+import { useCity } from '../../contexts/CityContext';
 
 const BUSINESS = {
   id: 1,
@@ -141,6 +142,8 @@ const RELATED = [
 
 
 export default function BusinessProfilePage() {
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [shareToast, setShareToast] = useState(false);
@@ -372,7 +375,7 @@ export default function BusinessProfilePage() {
                   {[
                   { icon: 'ShieldCheck', label: 'Resolución Sanitaria vigente', color: 'var(--color-success)' },
                   { icon: 'FileCheck', label: 'Patente Municipal 2026', color: 'var(--color-primary)' },
-                  { icon: 'Star', label: `Negocio recomendado ${siteConfig?.brandName}`, color: 'var(--color-accent)' }]?.
+                  { icon: 'Star', label: `Negocio recomendado ${brandName}`, color: 'var(--color-accent)' }]?.
                   map(({ icon, label, color }) =>
                   <div key={label} className="flex items-center gap-2.5">
                       <Icon name={icon} size={16} color={color} />
@@ -392,7 +395,7 @@ export default function BusinessProfilePage() {
                 
                 <Icon name="Tag" size={28} color="white" className="mx-auto mb-2" />
                 <h3 className="font-heading font-semibold text-base text-white mb-1">¿Tienes algo que vender?</h3>
-                <p className="text-xs font-caption text-white/80 mb-3">Publica tu aviso clasificado gratis en {siteConfig?.brandName}</p>
+                <p className="text-xs font-caption text-white/80 mb-3">Publica tu aviso clasificado gratis en {brandName}</p>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -425,7 +428,7 @@ export default function BusinessProfilePage() {
                 </span>
               </div>
               <p className="text-xs font-caption text-muted-foreground text-center">
-                &copy; {new Date()?.getFullYear()} {siteConfig?.brandName}. Todos los derechos reservados.
+                &copy; {new Date()?.getFullYear()} {brandName}. Todos los derechos reservados.
               </p>
               <div className="flex items-center gap-4">
                 <Link to="/business-directory-listing" className="text-xs font-caption text-muted-foreground hover:text-primary transition-colors duration-150">Negocios</Link>

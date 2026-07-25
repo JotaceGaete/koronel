@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 
 import Button from 'components/ui/Button';
 import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 export default function EventActions({ event }) {
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
   const [copied, setCopied] = useState(false);
 
   const handleWhatsApp = () => {
     if (!event?.contactWhatsapp) return;
     const num = event?.contactWhatsapp?.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en ${siteConfig?.brandName} y me gustaría más información.`);
+    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en ${brandName} y me gustaría más información.`);
     window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   };
 

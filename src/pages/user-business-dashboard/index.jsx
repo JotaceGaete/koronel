@@ -9,9 +9,12 @@ import { businessService } from '../../services/businessService';
 import BusinessCard from './components/BusinessCard';
 import EditBusinessModal from './components/EditBusinessModal';
 import { siteConfig } from '../../config/siteConfig';
+import { useCity } from '../../contexts/CityContext';
 
 export default function UserBusinessDashboard() {
   const { user } = useAuth();
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +76,7 @@ export default function UserBusinessDashboard() {
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div>
               <h1 className="font-heading font-bold text-xl text-white">Mis negocios</h1>
-              <p className="text-white/80 text-sm font-caption mt-0.5">Gestiona tus negocios publicados en {siteConfig?.brandName}</p>
+              <p className="text-white/80 text-sm font-caption mt-0.5">Gestiona tus negocios publicados en {brandName}</p>
             </div>
             <Link
               to="/publicar-negocio"

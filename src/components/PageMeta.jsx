@@ -1,9 +1,8 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { siteConfig } from '../config/siteConfig';
+import { useCity } from '../contexts/CityContext';
 
-const SITE_NAME = siteConfig?.brandName;
-const DEFAULT_DESCRIPTION = siteConfig?.seo?.defaultDescription;
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 /**
@@ -11,6 +10,10 @@ const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
  * Usar en cada página para mejor indexación y preview en redes.
  */
 export default function PageMeta({ title, description, image, path }) {
+  const { city } = useCity();
+  const SITE_NAME = city?.brand_name ?? siteConfig?.brandName;
+  const DEFAULT_DESCRIPTION = city?.seo_description ?? siteConfig?.seo?.defaultDescription;
+
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
   const desc = description || DEFAULT_DESCRIPTION;
   const url = path ? `${BASE_URL}${path}` : (typeof window !== 'undefined' ? window.location.href : '');

@@ -12,9 +12,8 @@ import UpcomingEventsPanel from './components/UpcomingEventsPanel';
 import { BusinessMarker, EventMarker, CommunityPostMarker } from './components/MapMarkers';
 import { Link } from 'react-router-dom';
 import { siteConfig } from '../../config/siteConfig';
+import { useCity } from '../../contexts/CityContext';
 
-// Centro del mapa interactivo de ciudad — ver src/config/siteConfig.js (map.interactiveMapCenter)
-const CORONEL_CENTER = [siteConfig?.map?.interactiveMapCenter?.lat, siteConfig?.map?.interactiveMapCenter?.lng];
 const DEFAULT_ZOOM = 14;
 
 // Fix Leaflet default icon issue with bundlers
@@ -34,6 +33,24 @@ function MapFlyTo({ target }) {
       map?.flyTo([target?.lat, target?.lng], 16, { duration: 1.2 });
     }
   }, [target, map]);
+  return null;
+}
+
+// Reposiciona el mapa (map.setView, sin animación) cuando cambia el centro
+// de la ciudad activa después del montaje inicial — p. ej. cuando
+// CityContext resuelve la ciudad después del primer render. No toca el
+// zoom actual. Distinto de MapFlyTo (que anima hacia un marcador cuando el
+// usuario hace click en uno) — este no depende de ninguna interacción.
+function MapRecenterOnCityChange({ lat, lng }) {
+  const map = useMap();
+  const prevRef = useRef({ lat, lng });
+  useEffect(() => {
+    if (lat == null || lng == null) return;
+    if (prevRef?.current?.lat !== lat || prevRef?.current?.lng !== lng) {
+      map?.setView([lat, lng], map?.getZoom());
+      prevRef.current = { lat, lng };
+    }
+  }, [lat, lng, map]);
   return null;
 }
 
@@ -85,6 +102,12 @@ function CommunityPostBottomSheet({ post, onClose }) {
 }
 
 export default function InteractiveMapPage() {
+  const { city } = useCity();
+  const cityCenter = [
+    city?.interactive_map_lat ?? siteConfig?.map?.interactiveMapCenter?.lat,
+    city?.interactive_map_lng ?? siteConfig?.map?.interactiveMapCenter?.lng,
+  ];
+
   const [businesses, setBusinesses] = useState([]);
   const [events, setEvents] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);
@@ -182,7 +205,7 @@ export default function InteractiveMapPage() {
       <div className="relative flex-1" style={{ marginTop: '64px' }}>
         {/* Leaflet Map */}
         <MapContainer
-          center={CORONEL_CENTER}
+          center={cityCenter}
           zoom={DEFAULT_ZOOM}
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}
@@ -191,6 +214,9 @@ export default function InteractiveMapPage() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
+          {/* Reposiciona si la ciudad activa resuelve después del montaje */}
+          <MapRecenterOnCityChange lat={cityCenter?.[0]} lng={cityCenter?.[1]} />
 
           {/* Fly to target */}
           {flyTarget && <MapFlyTo target={flyTarget} />}

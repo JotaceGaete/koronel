@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { siteConfig } from '../config/siteConfig';
+import { useCity } from '../contexts/CityContext';
 
 /**
  * Logo Koronel.cl. Usado en header, login, footer, etc.
@@ -10,6 +11,7 @@ import { siteConfig } from '../config/siteConfig';
  * @param {function} [onClick] - Opcional (ej. cerrar menú móvil)
  */
 export default function Logo({ className = '', imgClassName = '', variant = 'header', to = '/homepage', onClick }) {
+  const { city } = useCity();
   const heights = {
     header: 'h-8',
     headerMobile: 'h-7',
@@ -26,8 +28,8 @@ export default function Logo({ className = '', imgClassName = '', variant = 'hea
       aria-label="Ir al inicio"
     >
       <img
-        src={siteConfig?.branding?.logoPath}
-        alt={siteConfig?.branding?.logoAlt}
+        src={city?.logo_path ?? siteConfig?.branding?.logoPath}
+        alt={city?.logo_alt ?? siteConfig?.branding?.logoAlt}
         className={`object-contain object-left ${h} w-auto ${imgClassName}`}
         width={variant === 'auth' ? 180 : 140}
         height={variant === 'auth' ? 40 : 32}

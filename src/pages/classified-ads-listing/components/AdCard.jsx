@@ -4,8 +4,12 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 export default function AdCard({ ad }) {
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
+
   const formatPrice = (price) => {
     if (!price) return 'Precio a convenir';
     return `$${price?.toLocaleString('es-CL')}`;
@@ -14,7 +18,7 @@ export default function AdCard({ ad }) {
   const handleWhatsApp = (e) => {
     e?.preventDefault();
     e?.stopPropagation();
-    window.open(`https://wa.me/56${ad?.phone}?text=Hola, vi tu aviso "${ad?.title}" en ${siteConfig?.brandName}`, '_blank');
+    window.open(`https://wa.me/56${ad?.phone}?text=Hola, vi tu aviso "${ad?.title}" en ${brandName}`, '_blank');
   };
 
   const handleCall = (e) => {

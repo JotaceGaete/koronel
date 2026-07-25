@@ -4,6 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { mapService } from '../../../services/mapService';
 import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
@@ -13,6 +14,9 @@ const CATEGORY_CONFIG = {
 };
 
 export default function EventBottomSheet({ event, onClose }) {
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
+
   if (!event) return null;
 
   const cat = CATEGORY_CONFIG?.[event?.category] || { label: event?.category || '', color: '#6b7280', bg: '#f3f4f6' };
@@ -20,7 +24,7 @@ export default function EventBottomSheet({ event, onClose }) {
   const handleWhatsApp = () => {
     if (!event?.contact_whatsapp) return;
     const phone = event?.contact_whatsapp?.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en ${siteConfig?.brandName} y me gustaría más información.`);
+    const msg = encodeURIComponent(`Hola, vi el evento "${event?.title}" en ${brandName} y me gustaría más información.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 

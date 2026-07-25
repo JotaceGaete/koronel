@@ -7,6 +7,10 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: null }),
 }));
 
+// Header -> Logo ahora usa CityContext, que importa lib/supabase (exige
+// VITE_SUPABASE_URL). Sin relación con lo que prueba este archivo.
+vi.mock('../../lib/supabase', () => ({ supabase: {} }));
+
 vi.mock('../../services/publicServicesService', () => ({
   publicServicesService: {
     getById: vi.fn(),

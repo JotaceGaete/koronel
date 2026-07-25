@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 const CATEGORY_CONFIG = {
   supermercados: { label: 'Supermercados', color: '#0891b2', bg: '#e0f2fe' },
@@ -13,6 +14,9 @@ const CATEGORY_CONFIG = {
 };
 
 export default function BusinessBottomSheet({ business, onClose }) {
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
+
   if (!business) return null;
 
   const cat = CATEGORY_CONFIG?.[business?.category_key] || { label: business?.category || '', color: '#6b7280', bg: '#f3f4f6' };
@@ -20,7 +24,7 @@ export default function BusinessBottomSheet({ business, onClose }) {
   const handleWhatsApp = () => {
     if (!business?.phone) return;
     const phone = business?.phone?.replace(/\D/g, '');
-    const msg = encodeURIComponent(`Hola, vi ${business?.name} en ${siteConfig?.brandName} y me gustaría más información.`);
+    const msg = encodeURIComponent(`Hola, vi ${business?.name} en ${brandName} y me gustaría más información.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 

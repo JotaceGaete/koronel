@@ -11,6 +11,10 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: mockUser, signInWithGoogle: signInWithGoogleMock }),
 }));
 
+// Header -> Logo ahora usa CityContext, que importa lib/supabase (exige
+// VITE_SUPABASE_URL). Sin relación con lo que prueba este archivo.
+vi.mock('../../lib/supabase', () => ({ supabase: {} }));
+
 function LocationProbe() {
   const location = useLocation();
   return <div data-testid="location">{location.pathname}</div>;

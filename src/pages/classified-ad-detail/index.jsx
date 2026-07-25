@@ -8,11 +8,14 @@ import { adService } from '../../services/adService';
 import { messageService } from '../../services/messageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { siteConfig } from '../../config/siteConfig';
+import { useCity } from '../../contexts/CityContext';
 
 export default function ClassifiedAdDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
   const [ad, setAd] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -89,7 +92,7 @@ export default function ClassifiedAdDetail() {
   const handleWhatsApp = () => {
     const phone = ad?.phone?.replace(/\D/g, '');
     const fullPhone = phone?.startsWith('56') ? phone : `56${phone}`;
-    window.open(`https://wa.me/${fullPhone}?text=Hola, vi tu aviso "${ad?.title}" en ${siteConfig?.brandName}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=Hola, vi tu aviso "${ad?.title}" en ${brandName}`, '_blank');
   };
 
   const handleCall = () => {
@@ -285,12 +288,13 @@ export default function ClassifiedAdDetail() {
                   )}
                   {ad?.isNew && (
                     <span className="text-xs font-caption px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
-                      {/* siteConfig.brandName (marca/plataforma), no siteConfig.cityName (ciudad):
-                          "Nuevo en X" indica que el profesional se unió recientemente a la
-                          plataforma, igual que handleWhatsApp() más arriba. Antes era un literal
-                          "CoronelLocal" repetido en ~15 sitios del código (footer, mensajes de
-                          compartir, modales de éxito) — todos centralizados en src/config/siteConfig.js. */}
-                      🆕 Nuevo en {siteConfig?.brandName}
+                      {/* brandName = city?.brand_name ?? siteConfig?.brandName (marca/plataforma
+                          de la ciudad activa), no la ciudad en sí: "Nuevo en X" indica que el
+                          profesional se unió recientemente a la plataforma, igual que
+                          handleWhatsApp() más arriba. Mismo patrón centralizado en los demás
+                          consumidores de brandName (ver PR-3: CityContext + siteConfig como
+                          fallback explícito). */}
+                      🆕 Nuevo en {brandName}
                     </span>
                   )}
                   {ad?.ratings_enabled && (

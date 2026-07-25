@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { businessService } from '../../../services/businessService';
 import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: 'Clock', bg: '#fef3c7', color: '#92400e' },
@@ -12,6 +13,8 @@ const STATUS_CONFIG = {
 };
 
 export default function BusinessCard({ business, onEdit }) {
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
   const status = business?.status || 'pending';
   const statusCfg = STATUS_CONFIG?.[status] || STATUS_CONFIG?.pending;
 
@@ -54,7 +57,7 @@ export default function BusinessCard({ business, onEdit }) {
           </p>
         )}
         {status === 'pending' && (
-          <p className="text-xs text-muted-foreground mb-2">En revisión por el equipo de {siteConfig?.brandName}</p>
+          <p className="text-xs text-muted-foreground mb-2">En revisión por el equipo de {brandName}</p>
         )}
         {business?.rejection_reason && status === 'rejected' && (
           <p className="text-xs mb-2" style={{ color: '#991b1b' }}>Motivo: {business?.rejection_reason}</p>

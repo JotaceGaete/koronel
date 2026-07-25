@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { siteConfig } from '../../config/siteConfig';
+import { useCity } from '../../contexts/CityContext';
 
 // Fix Leaflet default icon with bundlers
 delete L?.Icon?.Default?.prototype?._getIconUrl;
@@ -11,8 +12,6 @@ L?.Icon?.Default?.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
-
-const CORONEL_DEFAULT = [siteConfig?.map?.defaultCenter?.lat, siteConfig?.map?.defaultCenter?.lng];
 
 // Inner component: handles map click in picker mode
 function PickerEvents({ onChange }) {
@@ -46,8 +45,14 @@ export default function OSMMap({
   zoom = 15,
   readonly = true,
 }) {
+  const { city } = useCity();
+  const cityDefault = [
+    city?.default_lat ?? siteConfig?.map?.defaultCenter?.lat,
+    city?.default_lng ?? siteConfig?.map?.defaultCenter?.lng,
+  ];
+
   const hasCoords = lat != null && lng != null && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng));
-  const center = hasCoords ? [parseFloat(lat), parseFloat(lng)] : CORONEL_DEFAULT;
+  const center = hasCoords ? [parseFloat(lat), parseFloat(lng)] : cityDefault;
 
   const markerPosition = hasCoords ? [parseFloat(lat), parseFloat(lng)] : null;
 
@@ -68,7 +73,11 @@ export default function OSMMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {!readonly && <PickerEvents onChange={onChange} />}
-      {hasCoords && <MapRecenter lat={parseFloat(lat)} lng={parseFloat(lng)} />}
+      {/* Siempre montado (no solo cuando hasCoords): así, si no hay coords
+          explícitas y el centro por defecto cambia porque CityContext
+          resuelve la ciudad activa después del primer render, el mapa
+          también se reposiciona — no solo cuando el usuario mueve el pin. */}
+      <MapRecenter lat={center?.[0]} lng={center?.[1]} />
       {markerPosition && (
         <Marker
           position={markerPosition}

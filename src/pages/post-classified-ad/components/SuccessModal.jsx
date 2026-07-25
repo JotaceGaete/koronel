@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 const ADMIN_WHATSAPP = '56993443682';
 
 export default function SuccessModal({ onClose, isGuest = false, guestEmail = '', verificationCode = '', adTitle = '', adPhone = '' }) {
   const navigate = useNavigate();
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
 
   const handleWhatsAppVerify = () => {
     const msg = encodeURIComponent(
@@ -77,7 +80,7 @@ export default function SuccessModal({ onClose, isGuest = false, guestEmail = ''
           ¡Aviso publicado!
         </h2>
         <p className="text-sm font-body text-muted-foreground mb-6">
-          Tu aviso ha sido publicado exitosamente en {siteConfig?.brandName}. Los interesados podrán contactarte pronto.
+          Tu aviso ha sido publicado exitosamente en {brandName}. Los interesados podrán contactarte pronto.
         </p>
         <div className="flex flex-col gap-3">
           <Button variant="default" fullWidth iconName="LayoutDashboard" iconPosition="left" iconSize={16}

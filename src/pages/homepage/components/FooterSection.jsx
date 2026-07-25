@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Logo from 'components/Logo';
 import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 export default function FooterSection() {
+  const { city } = useCity();
+  const brandName = city?.brand_name ?? siteConfig?.brandName;
   const currentYear = new Date()?.getFullYear();
 
   return (
@@ -76,7 +79,7 @@ export default function FooterSection() {
 
         <div className="border-t border-border pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs font-caption text-muted-foreground">
-            &copy; {currentYear} {siteConfig?.brandName}. Todos los derechos reservados.
+            &copy; {currentYear} {brandName}. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-1 text-xs font-caption text-muted-foreground">
             <Icon name="MapPin" size={12} color="var(--color-primary)" />

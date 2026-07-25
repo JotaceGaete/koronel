@@ -31,10 +31,13 @@
 -- abajo.
 --
 -- Nota: el historial de migraciones de este proyecto apuntaba a
--- carlos@coronellocal.cl como admin, pero el admin real confirmado es
--- contacto@walinka.com — el historial de datos NO era una fuente
--- confiable para esta decisión, por eso el paso 2 usa una lista explícita
--- en vez de derivarla automáticamente.
+-- carlos@coronellocal.cl como admin — el historial de datos NO era una
+-- fuente confiable para esta decisión, por eso el paso 2 usa una lista
+-- explícita en vez de derivarla automáticamente. Los 4 admins reales
+-- confirmados (ver auditoria-admins-previa-hotfix.sql, ejecutada de
+-- solo lectura antes de aplicar esta migración) ya tienen hoy
+-- raw_app_meta_data.role = 'admin', así que ninguno se pierde al
+-- aplicar este hotfix.
 
 -- ============================================================
 -- 1. TABLA DE AUDITORÍA (para poder revertir el paso 3 con precisión)
@@ -58,8 +61,15 @@ ON CONFLICT (user_id) DO NOTHING;
 DO $$
 DECLARE
   v_admin_emails TEXT[] := ARRAY[
-    'contacto@walinka.com'
-    -- agregar acá cualquier otro admin real, confirmado contra el paso 0
+    -- Confirmado contra el paso 0 (auditoría de solo lectura,
+    -- auditoria-admins-previa-hotfix.sql): los 4 ya tienen
+    -- raw_app_meta_data.role = 'admin' hoy, ninguno se pierde con este
+    -- hotfix. Se listan explícitamente de todos modos, como exige este
+    -- paso, en vez de derivarlos del campo inseguro.
+    'artesellos@outlook.com',
+    'contacto@ventalink.app',
+    'contacto@walinka.com',
+    'jotacegaete@gmail.com'
   ];
   v_updated INTEGER;
 BEGIN

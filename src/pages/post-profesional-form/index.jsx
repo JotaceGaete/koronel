@@ -50,11 +50,9 @@ function validate(form) {
   return errs;
 }
 
-function isAdminUser(user, userProfile) {
+export function isAdminUser(user) {
   if (!user) return false;
-  const meta = user?.user_metadata || {};
-  const appMeta = user?.app_metadata || {};
-  return meta?.role === 'admin' || appMeta?.role === 'admin' || userProfile?.role === 'admin';
+  return user?.app_metadata?.role === 'admin';
 }
 
 async function getClientIP() {
@@ -69,7 +67,7 @@ async function getClientIP() {
 
 export default function PostProfesionalForm() {
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [profilePhoto, setProfilePhoto] = useState(null);
@@ -101,7 +99,7 @@ export default function PostProfesionalForm() {
       setShowGuestModal(true);
       return;
     }
-    const isAdmin = isAdminUser(user, userProfile);
+    const isAdmin = isAdminUser(user);
     if (!isAdmin) {
       const ok = await adService.checkDailyLimit(user.id, 'user_id', user.id);
       if (!ok) {
@@ -129,7 +127,7 @@ export default function PostProfesionalForm() {
 
     try {
       const ipAddress = await getClientIP();
-      const isAdmin = isAdminUser(user, userProfile);
+      const isAdmin = isAdminUser(user);
       if (!isAdmin) {
         const ipOk = await adService.checkDailyLimit(ipAddress, 'ip');
         if (!ipOk) {

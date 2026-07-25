@@ -4,12 +4,20 @@ const CACHE = new Map();
 export const CORONEL_DEFAULT = siteConfig?.map?.defaultCenter;
 const USER_AGENT = 'CoronelPortal/1.0 (coronellocal.cl)';
 
-export async function geocode(addressText) {
+export async function geocode(addressText, config = {}) {
   if (!addressText?.trim()) return null;
-  const key = addressText?.trim()?.toLowerCase();
+
+  const geocodingSuffix = config?.geocodingSuffix ?? siteConfig?.map?.geocodingSuffix;
+
+  // La clave debe incluir el suffix efectivo: la misma dirección con un
+  // suffix de ciudad distinto es una consulta distinta, no debe compartir
+  // (ni contaminar) el resultado cacheado de otra ciudad.
+  const normalizedAddress = addressText?.trim()?.toLowerCase();
+  const normalizedSuffix = geocodingSuffix?.trim?.()?.toLowerCase();
+  const key = `${normalizedAddress}|${normalizedSuffix}`;
   if (CACHE?.has(key)) return CACHE?.get(key);
 
-  const query = encodeURIComponent(addressText?.trim() + ', ' + siteConfig?.map?.geocodingSuffix);
+  const query = encodeURIComponent(addressText?.trim() + ', ' + geocodingSuffix);
   const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
 
   try {

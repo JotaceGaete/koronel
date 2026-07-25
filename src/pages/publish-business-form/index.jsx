@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { businessService } from '../../services/businessService';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../services/geocodingService';
+import { siteConfig } from '../../config/siteConfig';
+import { useCity } from '../../contexts/CityContext';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -61,6 +63,7 @@ const INITIAL_FORM = {
 
 export default function PublishBusinessForm() {
   const { user } = useAuth();
+  const { city } = useCity();
   const navigate = useNavigate();
 
   const [form, setForm] = useState(INITIAL_FORM);
@@ -409,7 +412,8 @@ export default function PublishBusinessForm() {
     if (!query) { setGeocodeError('Ingresa una direcci\u00f3n primero.'); return; }
     setGeocoding(true);
     setGeocodeError(null);
-    const result = await geocode(query);
+    const geocodingConfig = { geocodingSuffix: city?.geocoding_suffix ?? siteConfig?.map?.geocodingSuffix };
+    const result = await geocode(query, geocodingConfig);
     setGeocoding(false);
     if (!result) {
       setGeocodeError('No se encontr\u00f3 la direcci\u00f3n. Intenta ser m\u00e1s espec\u00edfico.');

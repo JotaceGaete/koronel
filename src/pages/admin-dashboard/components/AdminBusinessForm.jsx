@@ -5,6 +5,8 @@ import { businessService } from '../../../services/businessService';
 import { supabase } from '../../../lib/supabase';
 import OSMMap from 'components/maps/OSMMap';
 import { geocode } from '../../../services/geocodingService';
+import { siteConfig } from '../../../config/siteConfig';
+import { useCity } from '../../../contexts/CityContext';
 
 const DAYS = [
   { key: 'monday', label: 'Lunes' },
@@ -82,6 +84,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
+  const { city } = useCity();
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -628,7 +631,8 @@ export default function AdminBusinessForm({ editItem, onSave, onCancel }) {
     setGeocoding(true);
     setGeocodeError(null);
     try {
-      const result = await geocode(addressToGeocode);
+      const geocodingConfig = { geocodingSuffix: city?.geocoding_suffix ?? siteConfig?.map?.geocodingSuffix };
+      const result = await geocode(addressToGeocode, geocodingConfig);
       if (result?.lat && result?.lng) {
         setForm(f => ({ ...f, lat: result.lat, lng: result.lng }));
         setGeocodeError(null);

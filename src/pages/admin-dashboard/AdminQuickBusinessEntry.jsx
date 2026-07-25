@@ -9,7 +9,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { adminBusinessService } from '../../services/adminService';
 import { businessService } from '../../services/businessService';
 import { geocode } from '../../services/geocodingService';
-import { CORONEL_DEFAULT } from '../../services/geocodingService';
+import { siteConfig } from '../../config/siteConfig';
+import { useCity } from '../../contexts/CityContext';
 
 const SAFE_TOP = 'env(safe-area-inset-top, 0px)';
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)';
@@ -34,6 +35,11 @@ const INITIAL = {
 
 export default function AdminQuickBusinessEntry() {
   const { user } = useAuth();
+  const { city } = useCity();
+  const cityDefaultCenter = {
+    lat: city?.default_lat ?? siteConfig?.map?.defaultCenter?.lat,
+    lng: city?.default_lng ?? siteConfig?.map?.defaultCenter?.lng,
+  };
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -96,15 +102,16 @@ export default function AdminQuickBusinessEntry() {
       return;
     }
     setError('');
-    const result = await geocode(form.address);
+    const geocodingConfig = { geocodingSuffix: city?.geocoding_suffix ?? siteConfig?.map?.geocodingSuffix };
+    const result = await geocode(form.address, geocodingConfig);
     if (result?.lat != null && result?.lng != null) {
       handleChange('lat', result.lat);
       handleChange('lng', result.lng);
     } else {
       setError('No se encontró la dirección. Ajusta el marcador en el mapa.');
       if (!form.lat) {
-        handleChange('lat', CORONEL_DEFAULT?.lat ?? -37.0167);
-        handleChange('lng', CORONEL_DEFAULT?.lng ?? -73.15);
+        handleChange('lat', cityDefaultCenter?.lat);
+        handleChange('lng', cityDefaultCenter?.lng);
       }
     }
   };
@@ -365,8 +372,8 @@ export default function AdminQuickBusinessEntry() {
           </div>
           <div className="rounded-lg overflow-hidden border border-border" style={{ height: '220px' }}>
             <OSMMap
-              lat={form.lat ?? CORONEL_DEFAULT?.lat}
-              lng={form.lng ?? CORONEL_DEFAULT?.lng}
+              lat={form.lat ?? cityDefaultCenter?.lat}
+              lng={form.lng ?? cityDefaultCenter?.lng}
               height="220px"
               zoom={15}
               readonly={false}

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { applyCityFilter } from '../lib/cityFilter';
 
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
@@ -95,14 +96,20 @@ export const communityService = {
     }
   },
 
-  async getCommunityPostsForMap() {
+  async getCommunityPostsForMap({ communityCityId = null } = {}) {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         ?.from('community_posts')
         ?.select('id, title, sector, lat, lng, upvote_count')
         ?.eq('status', 'active')
         ?.not('lat', 'is', null)
         ?.not('lng', 'is', null);
+
+      query = applyCityFilter(query, communityCityId, {
+        source: 'communityService.getCommunityPostsForMap',
+      });
+
+      const { data, error } = await query;
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {

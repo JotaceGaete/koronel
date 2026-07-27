@@ -124,6 +124,7 @@ export default function InteractiveMapPage() {
   const [flyTarget, setFlyTarget] = useState(null);
   const [upcomingPanelOpen, setUpcomingPanelOpen] = useState(true);
   const searchTimeout = useRef(null);
+  const requestIdRef = useRef(0);
 
   // Leídos por la carga que reacciona a un cambio de comunidad/ciudad (más
   // abajo), sin ser dependencia de esa carga — así un cambio de search o de
@@ -138,14 +139,21 @@ export default function InteractiveMapPage() {
   // identidad de loadData no depende de la ciudad, así que nunca queda
   // obsoleta ni provoca que otros efectos se reejecuten por su causa.
   const loadData = useCallback(async (searchVal, catVal, communityCityIdVal) => {
+    // Cada llamada a loadData (por ciudad, búsqueda o categoría) reclama un
+    // id propio; si al resolver ya no es la más reciente, se descarta sin
+    // tocar el estado — así una respuesta tardía de una carga anterior
+    // nunca puede sobrescribir una más nueva, sin depender de cuál de las
+    // tres causas la disparó.
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const [bizResult, evResult, upResult, communityResult] = await Promise.all([
         mapService?.getBusinessesForMap({ search: searchVal, category: catVal, communityCityId: communityCityIdVal }),
-        mapService?.getEventsForMap({ search: searchVal, category: catVal }),
-        mapService?.getUpcomingEvents(5),
-        communityService?.getCommunityPostsForMap(),
+        mapService?.getEventsForMap({ search: searchVal, category: catVal, communityCityId: communityCityIdVal }),
+        mapService?.getUpcomingEvents({ limit: 5, communityCityId: communityCityIdVal }),
+        communityService?.getCommunityPostsForMap({ communityCityId: communityCityIdVal }),
       ]);
+      if (requestId !== requestIdRef.current) return;
       setBusinesses(bizResult?.data || []);
       setEvents(evResult?.data || []);
       setUpcomingEvents(upResult?.data || []);
@@ -153,7 +161,7 @@ export default function InteractiveMapPage() {
     } catch (e) {
       console.error('Map load error:', e);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, []);
 
@@ -164,6 +172,13 @@ export default function InteractiveMapPage() {
   // aplicado. Un solo efecto, una sola dependencia real: no se duplica con
   // handleSearchChange/handleCategoryChange, que ya disparan su propia carga.
   useEffect(() => {
+    // Limpia las cuatro capas de inmediato: evita que, mientras resuelve la
+    // ciudad nueva, queden visibles marcadores/eventos/publicaciones de la
+    // ciudad anterior.
+    setBusinesses([]);
+    setEvents([]);
+    setUpcomingEvents([]);
+    setCommunityPosts([]);
     loadData(searchRef.current, categoryRef.current, communityCityId);
   }, [communityCityId, loadData]);
 

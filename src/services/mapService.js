@@ -49,7 +49,7 @@ export const mapService = {
     }
   },
 
-  async getEventsForMap({ search = '', category = '' } = {}) {
+  async getEventsForMap({ search = '', category = '', communityCityId = null } = {}) {
     try {
       let query = supabase
         ?.from('events')
@@ -62,6 +62,10 @@ export const mapService = {
       if (category && category !== 'all') {
         query = query?.eq('category', category);
       }
+
+      query = applyCityFilter(query, communityCityId, {
+        source: 'mapService.getEventsForMap',
+      });
 
       const { data, error } = await query;
       if (error) throw error;
@@ -86,13 +90,19 @@ export const mapService = {
     }
   },
 
-  async getUpcomingEvents(limit = 5) {
+  async getUpcomingEvents({ limit = 5, communityCityId = null } = {}) {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         ?.from('events')
         ?.select('id, title, category, start_datetime, venue_name, address_text, address, lat, lng, organizer_business_id, organizer:businesses(id, name, lat, lng)')
         ?.in('status', ['approved', 'active'])
-        ?.gte('start_datetime', new Date()?.toISOString())
+        ?.gte('start_datetime', new Date()?.toISOString());
+
+      query = applyCityFilter(query, communityCityId, {
+        source: 'mapService.getUpcomingEvents',
+      });
+
+      const { data, error } = await query
         ?.order('start_datetime', { ascending: true })
         ?.limit(limit);
       if (error) throw error;

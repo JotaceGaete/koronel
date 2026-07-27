@@ -4,6 +4,7 @@ import Button from 'components/ui/Button';
 import Icon from 'components/AppIcon';
 import FeaturedContentCarousel from 'components/ui/FeaturedContentCarousel';
 import { businessService } from '../../../services/businessService';
+import { useCity } from '../../../contexts/CityContext';
 
 function formatBusiness(b) {
   const primaryImg = b?.business_images?.find(img => img?.is_primary) || b?.business_images?.[0];
@@ -25,23 +26,26 @@ function formatBusiness(b) {
 }
 
 export default function FeaturedBusinesses() {
+  const { communityCityId } = useCity();
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
 
     const load = async () => {
+      setBusinesses([]);
+
       const { data: featured, error: featError } = await businessService?.getFeatured(6) ?? {};
-      if (!mounted) return;
+      if (cancelled) return;
       if (!featError && Array.isArray(featured) && featured?.length > 0) {
         setBusinesses(featured?.map(formatBusiness) ?? []);
         setLoading(false);
         return;
       }
       // Si no hay destacados, mostrar los últimos negocios publicados
-      const { data: recent, error: recentError } = await businessService?.getAll({ page: 1, pageSize: 6, sort: 'newest' }) ?? {};
-      if (!mounted) return;
+      const { data: recent, error: recentError } = await businessService?.getAll({ page: 1, pageSize: 6, sort: 'newest', communityCityId }) ?? {};
+      if (cancelled) return;
       if (!recentError && Array.isArray(recent) && recent?.length > 0) {
         setBusinesses(recent?.map(formatBusiness) ?? []);
       }
@@ -49,8 +53,8 @@ export default function FeaturedBusinesses() {
     };
 
     load();
-    return () => { mounted = false; };
-  }, []);
+    return () => { cancelled = true; };
+  }, [communityCityId]);
 
   return (
     <section className="w-full py-12 md:py-14 lg:py-16 px-4 md:px-6 lg:px-8" style={{ background: 'var(--color-muted)' }}>

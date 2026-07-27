@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { applyCityFilter } from '../lib/cityFilter';
 
 const R2_PUBLIC = import.meta.env?.VITE_R2_PUBLIC_URL || 'https://multimedia.koronel.cl';
 
@@ -92,20 +93,29 @@ export const adService = {
     }
   },
 
-  async getRecent(limit = 6) {
+  async getRecent({ limit = 6, communityCityId = null } = {}) {
     try {
       // Contrato: "Reciente" del home no debe mezclar profesionales.
-      let { data, error } = await supabase
+      let query = supabase
         ?.from('classified_ads')
         ?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')
         ?.eq('ad_status', 'active')
-        ?.neq('listing_type', 'oficio')
+        ?.neq('listing_type', 'oficio');
+      query = applyCityFilter(query, communityCityId, { source: 'adService.getRecent' });
+      let { data, error } = await query
         ?.order('created_at', { ascending: false })
         ?.limit(limit);
       if (error?.code === '42703') {
         // listing_type puede no existir todavía en algún entorno — caemos
         // al comportamiento anterior en vez de romper el home.
-        const fallback = await supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')?.eq('ad_status', 'active')?.order('created_at', { ascending: false })?.limit(limit);
+        let fallbackQuery = supabase
+          ?.from('classified_ads')
+          ?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)')
+          ?.eq('ad_status', 'active');
+        fallbackQuery = applyCityFilter(fallbackQuery, communityCityId, { source: 'adService.getRecent' });
+        const fallback = await fallbackQuery
+          ?.order('created_at', { ascending: false })
+          ?.limit(limit);
         data = fallback?.data;
         error = fallback?.error;
       }

@@ -4,6 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { businessService } from '../../../services/businessService';
 import { adService } from '../../../services/adService';
+import { useCity } from '../../../contexts/CityContext';
 
 const LIMIT = 8;
 
@@ -15,6 +16,7 @@ function humanizeCategory(key) {
 }
 
 function useRecentContent() {
+  const { communityCityId } = useCity();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,9 +24,11 @@ function useRecentContent() {
     let cancelled = false;
 
     async function load() {
+      setItems([]);
+
       const [businessRes, adsRes] = await Promise.all([
-        businessService?.getAll({ sort: 'newest', page: 1, pageSize: LIMIT }),
-        adService?.getRecent(LIMIT),
+        businessService?.getAll({ sort: 'newest', page: 1, pageSize: LIMIT, communityCityId }),
+        adService?.getRecent({ limit: LIMIT, communityCityId }),
       ]);
 
       if (cancelled) return;
@@ -78,7 +82,7 @@ function useRecentContent() {
 
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [communityCityId]);
 
   return { items, loading };
 }

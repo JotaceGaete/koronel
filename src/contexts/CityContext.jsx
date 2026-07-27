@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { siteConfig } from '../config/siteConfig';
+// Renombrado en el import para no colisionar con el campo `siteConfig` que
+// expone este mismo contexto (la fila resuelta de public.cities) — este es
+// el módulo de configuración estática (PR-1), no el contexto de ciudad.
+import { siteConfig as siteConfigDefaults } from '../config/siteConfig';
 
 // Ciudad activa mientras se resuelve la consulta, si ningún hostname hace
 // match, o si la consulta falla — la app nunca debe quedar sin ciudad
@@ -8,18 +11,21 @@ import { siteConfig } from '../config/siteConfig';
 export const FALLBACK_CITY = {
   id: null,
   slug: 'coronel',
-  brand_name: siteConfig?.brandName,
-  city_name: siteConfig?.cityName,
-  country_name: siteConfig?.countryName,
+  brand_name: siteConfigDefaults?.brandName,
+  city_name: siteConfigDefaults?.cityName,
+  country_name: siteConfigDefaults?.countryName,
   domains: [],
-  logo_path: siteConfig?.branding?.logoPath,
-  logo_alt: siteConfig?.branding?.logoAlt,
-  seo_description: siteConfig?.seo?.defaultDescription,
-  default_lat: siteConfig?.map?.defaultCenter?.lat,
-  default_lng: siteConfig?.map?.defaultCenter?.lng,
-  interactive_map_lat: siteConfig?.map?.interactiveMapCenter?.lat,
-  interactive_map_lng: siteConfig?.map?.interactiveMapCenter?.lng,
-  geocoding_suffix: siteConfig?.map?.geocodingSuffix,
+  logo_path: siteConfigDefaults?.branding?.logoPath,
+  logo_alt: siteConfigDefaults?.branding?.logoAlt,
+  seo_description: siteConfigDefaults?.seo?.defaultDescription,
+  default_lat: siteConfigDefaults?.map?.defaultCenter?.lat,
+  default_lng: siteConfigDefaults?.map?.defaultCenter?.lng,
+  interactive_map_lat: siteConfigDefaults?.map?.interactiveMapCenter?.lat,
+  interactive_map_lng: siteConfigDefaults?.map?.interactiveMapCenter?.lng,
+  geocoding_suffix: siteConfigDefaults?.map?.geocodingSuffix,
+  // Vínculo con la entidad operativa (public.community_cities), agregado
+  // en la migración de Fase 2 — null hasta que el backfill lo resuelva.
+  community_city_id: null,
   status: 'active',
 };
 
@@ -44,7 +50,16 @@ export function resolveCityForHostname(hostname, cities) {
   ) || null;
 }
 
-const CityContext = createContext({ city: FALLBACK_CITY, loading: true, resolutionStatus: 'fallback' });
+const CityContext = createContext({
+  siteConfig: FALLBACK_CITY,
+  communityCityId: null,
+  // `city` es un alias temporal de `siteConfig`, mantenido por
+  // compatibilidad con los consumidores existentes (Fase 3). El nombre
+  // correcto para código nuevo es `siteConfig`.
+  city: FALLBACK_CITY,
+  loading: true,
+  resolutionStatus: 'fallback',
+});
 
 export const useCity = () => useContext(CityContext);
 
@@ -62,9 +77,20 @@ export const useCity = () => useContext(CityContext);
  *   - 'fallback': la consulta funcionó, pero no hubo match (tabla vacía o
  *     ningún dominio coincide) — comportamiento esperado hoy.
  *   - 'error': la consulta a Supabase falló (excepción o error de la API).
+ *
+ * `siteConfig` (Fase 3) es la misma fila de `cities` que antes se exponía
+ * como `city` — configuración de presentación de sitio (marca, SEO, mapa,
+ * dominios), resuelta por hostname. `communityCityId` es
+ * `siteConfig.community_city_id` (columna agregada en la migración de
+ * Fase 2): el vínculo hacia la entidad operativa real en
+ * `community_cities`, o `null` mientras no exista ese vínculo. `city`
+ * sigue expuesto como alias exacto de `siteConfig` — misma referencia —
+ * únicamente por compatibilidad temporal con los consumidores actuales;
+ * no se agrega ninguna consulta nueva ni se trae la fila completa de
+ * `community_cities` en esta fase.
  */
 export const CityProvider = ({ children }) => {
-  const [city, setCity] = useState(FALLBACK_CITY);
+  const [siteConfig, setSiteConfig] = useState(FALLBACK_CITY);
   const [loading, setLoading] = useState(true);
   const [resolutionStatus, setResolutionStatus] = useState('fallback');
 
@@ -84,7 +110,7 @@ export const CityProvider = ({ children }) => {
         if (data?.length) {
           const match = resolveCityForHostname(hostname, data);
           if (match) {
-            setCity(match);
+            setSiteConfig(match);
             setResolutionStatus('resolved');
             return;
           }
@@ -103,8 +129,12 @@ export const CityProvider = ({ children }) => {
     return () => { mounted = false; };
   }, []);
 
+  const communityCityId = siteConfig?.community_city_id ?? null;
+
   return (
-    <CityContext.Provider value={{ city, loading, resolutionStatus }}>
+    <CityContext.Provider
+      value={{ siteConfig, communityCityId, city: siteConfig, loading, resolutionStatus }}
+    >
       {children}
     </CityContext.Provider>
   );

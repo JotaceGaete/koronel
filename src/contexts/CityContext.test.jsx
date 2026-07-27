@@ -76,11 +76,14 @@ describe('resolveCityForHostname (función pura)', () => {
 });
 
 function CityProbe() {
-  const { city, loading, resolutionStatus } = useCity();
+  const { city, siteConfig, communityCityId, loading, resolutionStatus } = useCity();
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
       <span data-testid="slug">{city?.slug}</span>
+      <span data-testid="site-config-slug">{siteConfig?.slug}</span>
+      <span data-testid="city-is-site-config">{String(city === siteConfig)}</span>
+      <span data-testid="community-city-id">{String(communityCityId)}</span>
       <span data-testid="status">{resolutionStatus}</span>
     </div>
   );
@@ -97,6 +100,7 @@ describe('CityProvider', () => {
     await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
     expect(screen.getByTestId('slug')?.textContent).toBe(FALLBACK_CITY?.slug);
     expect(screen.getByTestId('status')?.textContent).toBe('fallback');
+    expect(screen.getByTestId('community-city-id')?.textContent).toBe('null');
     expect(FALLBACK_CITY?.brand_name).toBe(siteConfig?.brandName);
   });
 
@@ -113,6 +117,7 @@ describe('CityProvider', () => {
     await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
     expect(screen.getByTestId('slug')?.textContent).toBe('coronel');
     expect(screen.getByTestId('status')?.textContent).toBe('fallback');
+    expect(screen.getByTestId('community-city-id')?.textContent).toBe('null');
   });
 
   it('hay match con el hostname actual (jsdom: localhost): ciudad resuelta con resolutionStatus "resolved"', async () => {
@@ -143,6 +148,7 @@ describe('CityProvider', () => {
     await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
     expect(screen.getByTestId('slug')?.textContent).toBe('coronel');
     expect(screen.getByTestId('status')?.textContent).toBe('error');
+    expect(screen.getByTestId('community-city-id')?.textContent).toBe('null');
   });
 
   it('la consulta a Supabase responde con error (no excepción): FALLBACK_CITY con resolutionStatus "error"', async () => {
@@ -155,5 +161,73 @@ describe('CityProvider', () => {
     await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
     expect(screen.getByTestId('slug')?.textContent).toBe('coronel');
     expect(screen.getByTestId('status')?.textContent).toBe('error');
+    expect(screen.getByTestId('community-city-id')?.textContent).toBe('null');
+  });
+
+  it('siteConfig contiene la misma fila resuelta desde cities, y city es la misma referencia que siteConfig', async () => {
+    mockEq.mockResolvedValue({
+      data: [{ slug: 'coronel-real', domains: ['localhost'], community_city_id: null }],
+      error: null,
+    });
+    render(
+      <CityProvider>
+        <CityProbe />
+      </CityProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
+    expect(screen.getByTestId('site-config-slug')?.textContent).toBe('coronel-real');
+    expect(screen.getByTestId('slug')?.textContent).toBe('coronel-real');
+    expect(screen.getByTestId('city-is-site-config')?.textContent).toBe('true');
+  });
+
+  it('communityCityId entrega el UUID cuando existe vínculo (cities.community_city_id no nulo)', async () => {
+    mockEq.mockResolvedValue({
+      data: [{
+        slug: 'coronel-real',
+        domains: ['localhost'],
+        community_city_id: '8aa2d628-719d-4810-9ee3-8efd230ab000',
+      }],
+      error: null,
+    });
+    render(
+      <CityProvider>
+        <CityProbe />
+      </CityProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
+    expect(screen.getByTestId('status')?.textContent).toBe('resolved');
+    expect(screen.getByTestId('community-city-id')?.textContent).toBe(
+      '8aa2d628-719d-4810-9ee3-8efd230ab000'
+    );
+  });
+
+  it('communityCityId es null cuando la columna viene nula en la fila resuelta', async () => {
+    mockEq.mockResolvedValue({
+      data: [{ slug: 'coronel-real', domains: ['localhost'], community_city_id: null }],
+      error: null,
+    });
+    render(
+      <CityProvider>
+        <CityProbe />
+      </CityProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
+    expect(screen.getByTestId('status')?.textContent).toBe('resolved');
+    expect(screen.getByTestId('community-city-id')?.textContent).toBe('null');
+  });
+
+  it('communityCityId es null cuando la columna viene ausente en la fila resuelta (entorno sin la migración de Fase 2 aplicada)', async () => {
+    mockEq.mockResolvedValue({
+      data: [{ slug: 'coronel-real', domains: ['localhost'] }],
+      error: null,
+    });
+    render(
+      <CityProvider>
+        <CityProbe />
+      </CityProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
+    expect(screen.getByTestId('status')?.textContent).toBe('resolved');
+    expect(screen.getByTestId('community-city-id')?.textContent).toBe('null');
   });
 });

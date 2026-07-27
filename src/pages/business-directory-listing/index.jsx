@@ -10,6 +10,7 @@ import BusinessCardSkeleton from './components/BusinessCardSkeleton';
 import FilterPanel from './components/FilterPanel';
 import ResultsHeader from './components/ResultsHeader';
 import { businessService } from '../../services/businessService';
+import { useCity } from '../../contexts/CityContext';
 
 const DEFAULT_FILTERS = { rating: 'all', radius: 'all', sort: 'relevance', openNow: false };
 const PAGE_SIZE = 6;
@@ -18,6 +19,7 @@ export default function BusinessDirectoryListing() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { communityCityId } = useCity();
   const params = new URLSearchParams(location.search);
   const initialQuery = params?.get('q') || '';
   const initialCategoryKey = params?.get('category') || '';
@@ -93,6 +95,7 @@ export default function BusinessDirectoryListing() {
       sort: filters?.sort,
       page: currentPage,
       pageSize: PAGE_SIZE,
+      communityCityId,
     });
     if (!error) {
       if (resetPage || currentPage === 1) {
@@ -103,12 +106,16 @@ export default function BusinessDirectoryListing() {
       setTotalCount(count);
     }
     setLoading(false);
-  }, [selectedParent, selectedCategoryKey, categoryTree, searchQuery, filters, page]);
+  }, [selectedParent, selectedCategoryKey, categoryTree, searchQuery, filters, page, communityCityId]);
 
+  // Un cambio de ciudad se trata igual que cualquier otro cambio de filtro:
+  // reinicia a página 1 y reemplaza los resultados (resetPage=true en
+  // fetchBusinesses) — no se agrega ningún efecto ni ref nuevo, reutiliza
+  // el mismo mecanismo que ya existía para selectedParent/searchQuery/etc.
   useEffect(() => {
     setPage(1);
     fetchBusinesses(true);
-  }, [selectedParent, selectedCategoryKey, filters, searchQuery]);
+  }, [selectedParent, selectedCategoryKey, filters, searchQuery, communityCityId]);
 
   useEffect(() => {
     if (page > 1) fetchBusinesses(false);

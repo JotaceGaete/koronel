@@ -277,3 +277,105 @@ describe('businessService.searchSuggestions — filtrado por city_id (Fase 4)', 
     expect(result?.error)?.toBeNull();
   });
 });
+
+describe('businessService.getAll — filtrado por city_id (Fase 4)', () => {
+  let warnSpy;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn')?.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy?.mockRestore();
+  });
+
+  // Encadenable (select/in/eq/ilike/gte/order/range) y "thenable" — igual
+  // que el query builder real de Supabase, awaitable directamente.
+  function makeGetAllBuilder(result) {
+    const builder = {};
+    ['select', 'in', 'eq', 'ilike', 'gte', 'order', 'range']?.forEach((method) => {
+      builder[method] = vi.fn(() => builder);
+    });
+    builder.then = (resolve, reject) => Promise.resolve(result)?.then(resolve, reject);
+    return builder;
+  }
+
+  function mockGetAllQuery(result) {
+    const builder = makeGetAllBuilder(result);
+    supabase?.from?.mockImplementation((table) => {
+      expect(table)?.toBe('businesses');
+      return builder;
+    });
+    return builder;
+  }
+
+  it('con communityCityId válido, filtra por city_id exactamente una vez', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = mockGetAllQuery({ data: [], count: 0, error: null });
+
+    await businessService?.getAll({ communityCityId: cityId });
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(1);
+    expect(cityCalls?.[0])?.toEqual(['city_id', cityId]);
+  });
+
+  it('con communityCityId null: sin filtro territorial, emite el warning centralizado, y conserva el comportamiento previo', async () => {
+    const builder = mockGetAllQuery({ data: [{ id: 'b1' }], count: 1, error: null });
+
+    const result = await businessService?.getAll({ communityCityId: null });
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+    expect(warnSpy?.mock?.calls?.[0]?.[0])?.toContain('businessService.getAll');
+    expect(result?.data)?.toHaveLength(1);
+    expect(result?.count)?.toBe(1);
+    expect(result?.error)?.toBeNull();
+  });
+
+  it('sin communityCityId (parámetro omitido → default null): mismo comportamiento que pasarlo explícito', async () => {
+    const builder = mockGetAllQuery({ data: [], count: 0, error: null });
+
+    await businessService?.getAll();
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+  });
+
+  it('conserva categoría, búsqueda, rating, openNow, orden y paginación existentes junto al filtro de ciudad', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = mockGetAllQuery({ data: [], count: 0, error: null });
+
+    await businessService?.getAll({
+      category: 'ferreteria',
+      search: 'martillo',
+      rating: '4',
+      openNow: true,
+      sort: 'rating',
+      page: 2,
+      pageSize: 10,
+      communityCityId: cityId,
+    });
+
+    expect(builder?.in)?.toHaveBeenCalledWith('status', ['published', 'premium']);
+    expect(builder?.eq)?.toHaveBeenCalledWith('category_key', 'ferreteria');
+    expect(builder?.ilike)?.toHaveBeenCalledWith('name', '%martillo%');
+    expect(builder?.gte)?.toHaveBeenCalledWith('rating', 4);
+    expect(builder?.eq)?.toHaveBeenCalledWith('is_open', true);
+    expect(builder?.eq)?.toHaveBeenCalledWith('city_id', cityId);
+    expect(builder?.order)?.toHaveBeenCalledWith('rating', { ascending: false });
+    expect(builder?.range)?.toHaveBeenCalledWith(10, 19);
+  });
+
+  it('conserva el orden por defecto (featured + rating) y la paginación de página 1 cuando no se especifica sort', async () => {
+    const builder = mockGetAllQuery({ data: [], count: 0, error: null });
+
+    await businessService?.getAll({ communityCityId: '8aa2d628-719d-4810-9ee3-8efd230ab000' });
+
+    expect(builder?.order)?.toHaveBeenCalledWith('featured', { ascending: false });
+    expect(builder?.order)?.toHaveBeenCalledWith('rating', { ascending: false });
+    expect(builder?.range)?.toHaveBeenCalledWith(0, 11);
+  });
+});

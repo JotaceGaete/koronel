@@ -45,7 +45,7 @@ function sanitizeBusinessPayload(payload = {}) {
 }
 
 export const businessService = {
-  async getAll({ category, search, rating, openNow, sort = 'relevance', page = 1, pageSize = 12 } = {}) {
+  async getAll({ category, search, rating, openNow, sort = 'relevance', page = 1, pageSize = 12, communityCityId = null } = {}) {
     try {
       // Check premium expiry before fetching
       await businessService?.checkPremiumExpiry();
@@ -64,6 +64,8 @@ export const businessService = {
       if (openNow) {
         query = query?.eq('is_open', true);
       }
+
+      query = applyCityFilter(query, communityCityId, { source: 'businessService.getAll' });
 
       if (sort === 'rating') {
         query = query?.order('rating', { ascending: false });

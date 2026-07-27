@@ -379,3 +379,84 @@ describe('businessService.getAll — filtrado por city_id (Fase 4)', () => {
     expect(builder?.range)?.toHaveBeenCalledWith(0, 11);
   });
 });
+
+describe('businessService.getFeatured — filtrado por city_id (Fase 4 / B2)', () => {
+  let warnSpy;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn')?.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy?.mockRestore();
+  });
+
+  // Encadenable (select/eq/in/order/limit) y "thenable" — igual que el
+  // query builder real de Supabase, awaitable directamente sin un método
+  // terminal explícito.
+  function makeFeaturedBuilder(result) {
+    const builder = {};
+    ['select', 'eq', 'in', 'order', 'limit']?.forEach((method) => {
+      builder[method] = vi.fn(() => builder);
+    });
+    builder.then = (resolve, reject) => Promise.resolve(result)?.then(resolve, reject);
+    return builder;
+  }
+
+  it('acepta la firma por objeto { limit, communityCityId } y filtra por city_id exactamente una vez', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeFeaturedBuilder({ data: [], error: null });
+    supabase?.from?.mockImplementation((table) => {
+      expect(table)?.toBe('businesses');
+      return builder;
+    });
+
+    await businessService?.getFeatured({ limit: 6, communityCityId: cityId });
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(1);
+    expect(cityCalls?.[0])?.toEqual(['city_id', cityId]);
+  });
+
+  it('conserva select, featured=true, status published/premium, orden por rating y límite existentes junto al filtro de ciudad', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeFeaturedBuilder({ data: [], error: null });
+    supabase?.from?.mockImplementation((table) => {
+      expect(table)?.toBe('businesses');
+      return builder;
+    });
+
+    await businessService?.getFeatured({ limit: 6, communityCityId: cityId });
+
+    expect(builder?.select)?.toHaveBeenCalledWith('*, business_images(storage_path, alt_text, is_primary)');
+    expect(builder?.eq)?.toHaveBeenCalledWith('featured', true);
+    expect(builder?.in)?.toHaveBeenCalledWith('status', ['published', 'premium']);
+    expect(builder?.order)?.toHaveBeenCalledWith('rating', { ascending: false });
+    expect(builder?.limit)?.toHaveBeenCalledWith(6);
+  });
+
+  it('con communityCityId null: sin filtro territorial, emite el warning centralizado, y conserva el comportamiento previo', async () => {
+    const builder = makeFeaturedBuilder({ data: [{ id: 'b1' }], error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    const result = await businessService?.getFeatured({ limit: 6, communityCityId: null });
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+    expect(warnSpy?.mock?.calls?.[0]?.[0])?.toContain('businessService.getFeatured');
+    expect(result?.data)?.toHaveLength(1);
+    expect(result?.error)?.toBeNull();
+  });
+
+  it('sin argumentos (todo por defecto): limit=6 y sin filtro de ciudad', async () => {
+    const builder = makeFeaturedBuilder({ data: [], error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    await businessService?.getFeatured();
+
+    expect(builder?.limit)?.toHaveBeenCalledWith(6);
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+  });
+});

@@ -57,20 +57,20 @@ describe('FeaturedBusinesses — filtrado por communityCityId (Fase 4)', () => {
     await waitFor(() =>
       expect(screen.getAllByTestId('carousel-item')?.map((el) => el.textContent)).toEqual(['a1'])
     );
-    expect(mockGetFeatured).toHaveBeenCalledWith(6);
+    expect(mockGetFeatured).toHaveBeenCalledWith({ limit: 6, communityCityId: 'city-a' });
     expect(mockGetAll).toHaveBeenCalledWith(
       expect.objectContaining({ page: 1, pageSize: 6, sort: 'newest', communityCityId: 'city-a' })
     );
   });
 
-  it('getFeatured no recibe communityCityId — el aislamiento por ciudad es solo del fallback', async () => {
+  it('getFeatured recibe communityCityId (Fase 4 / B2) — el aislamiento por ciudad ya no es exclusivo del fallback', async () => {
     mockGetFeatured.mockResolvedValue({ data: [{ id: 'f1' }], error: null });
     mockGetAll.mockResolvedValue({ data: [], error: null });
 
     render(<FeaturedBusinesses />);
 
     await waitFor(() => expect(mockGetFeatured).toHaveBeenCalled());
-    expect(mockGetFeatured).toHaveBeenCalledWith(6);
+    expect(mockGetFeatured).toHaveBeenCalledWith({ limit: 6, communityCityId: 'city-a' });
     expect(mockGetAll).not.toHaveBeenCalled();
   });
 
@@ -207,6 +207,52 @@ describe('FeaturedBusinesses — filtrado por communityCityId (Fase 4)', () => {
     await new Promise((r) => setTimeout(r, 0));
 
     expect(screen.getAllByTestId('carousel-item')?.map((el) => el.textContent)).toEqual(['b1']);
+  });
+
+  it('un cambio de ciudad reemplaza por completo los destacados de getFeatured (no los mezcla) cuando ambas ciudades tienen destacados propios', async () => {
+    mockGetFeatured.mockResolvedValueOnce({ data: [{ id: 'f-a1' }], error: null });
+    const { rerender } = render(<FeaturedBusinesses />);
+    await waitFor(() =>
+      expect(screen.getAllByTestId('carousel-item')?.map((el) => el.textContent)).toEqual(['f-a1'])
+    );
+    expect(mockGetAll).not.toHaveBeenCalled();
+
+    mockGetFeatured.mockResolvedValueOnce({ data: [{ id: 'f-b1' }], error: null });
+    mockUseCity.mockReturnValue({ communityCityId: 'city-b' });
+    rerender(<FeaturedBusinesses />);
+
+    await waitFor(() =>
+      expect(screen.getAllByTestId('carousel-item')?.map((el) => el.textContent)).toEqual(['f-b1'])
+    );
+    expect(mockGetFeatured).toHaveBeenLastCalledWith({ limit: 6, communityCityId: 'city-b' });
+    expect(mockGetAll).not.toHaveBeenCalled();
+  });
+
+  it('una respuesta tardía de getFeatured de la ciudad anterior (ya cancelada) no sobrescribe los destacados de la ciudad vigente', async () => {
+    const deferredFeaturedA = createDeferred();
+    mockGetFeatured.mockReturnValueOnce(deferredFeaturedA.promise);
+
+    const { rerender } = render(<FeaturedBusinesses />);
+    await waitFor(() => expect(mockGetFeatured).toHaveBeenCalledTimes(1));
+
+    const deferredFeaturedB = createDeferred();
+    mockGetFeatured.mockReturnValueOnce(deferredFeaturedB.promise);
+    mockUseCity.mockReturnValue({ communityCityId: 'city-b' });
+    rerender(<FeaturedBusinesses />);
+    await waitFor(() => expect(mockGetFeatured).toHaveBeenCalledTimes(2));
+
+    // La ciudad vigente (B) resuelve primero.
+    deferredFeaturedB.resolve({ data: [{ id: 'f-b1' }], error: null });
+    await waitFor(() =>
+      expect(screen.getAllByTestId('carousel-item')?.map((el) => el.textContent)).toEqual(['f-b1'])
+    );
+
+    // La respuesta de la ciudad anterior (A), ya cancelada, llega después.
+    deferredFeaturedA.resolve({ data: [{ id: 'f-a1' }], error: null });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(screen.getAllByTestId('carousel-item')?.map((el) => el.textContent)).toEqual(['f-b1']);
+    expect(mockGetAll).not.toHaveBeenCalled();
   });
 
   it('re-renderizar sin que communityCityId cambie no dispara una carga adicional', async () => {

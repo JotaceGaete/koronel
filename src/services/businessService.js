@@ -126,9 +126,19 @@ export const businessService = {
     }
   },
 
-  async getFeatured(limit = 6) {
+  async getFeatured({ limit = 6, communityCityId = null } = {}) {
     try {
-      const { data, error } = await supabase?.from('businesses')?.select('*, business_images(storage_path, alt_text, is_primary)')?.eq('featured', true)?.in('status', ['published', 'premium'])?.order('rating', { ascending: false })?.limit(limit);
+      let query = supabase
+        ?.from('businesses')
+        ?.select('*, business_images(storage_path, alt_text, is_primary)')
+        ?.eq('featured', true)
+        ?.in('status', ['published', 'premium']);
+
+      query = applyCityFilter(query, communityCityId, { source: 'businessService.getFeatured' });
+
+      const { data, error } = await query
+        ?.order('rating', { ascending: false })
+        ?.limit(limit);
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {

@@ -36,7 +36,7 @@ export default function FeaturedBusinesses() {
     const load = async () => {
       setBusinesses([]);
 
-      const { data: featured, error: featError } = await businessService?.getFeatured(6) ?? {};
+      const { data: featured, error: featError } = await businessService?.getFeatured({ limit: 6, communityCityId }) ?? {};
       if (cancelled) return;
       if (!featError && Array.isArray(featured) && featured?.length > 0) {
         setBusinesses(featured?.map(formatBusiness) ?? []);

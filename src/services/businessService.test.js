@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../lib/supabase', () => ({
   supabase: { from: vi.fn() },
@@ -13,6 +13,19 @@ function makeBuilder(result) {
     eq: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
   };
+  return builder;
+}
+
+// Para searchSuggestions: encadenable (select/in/or/eq/limit) y "thenable"
+// — igual que el query builder real de Supabase, awaitable directamente
+// sin un método terminal explícito, para que Promise.all([...]) funcione
+// sin importar en qué paso de la cadena se inserte applyCityFilter.
+function makeListBuilder(result) {
+  const builder = {};
+  ['select', 'in', 'or', 'eq', 'limit']?.forEach((method) => {
+    builder[method] = vi.fn(() => builder);
+  });
+  builder.then = (resolve, reject) => Promise.resolve(result)?.then(resolve, reject);
   return builder;
 }
 
@@ -185,5 +198,82 @@ describe('businessService.getById — category embed does not shadow the plain c
     expect(secondCall)?.toBe('categories');
     expect(data?.category_ref?.parent)?.toEqual({ id: 'cat-parent', name: 'Restaurantes' });
     expect(data?.category)?.toBe('Pizzería');
+  });
+});
+
+describe('businessService.searchSuggestions — filtrado por city_id (Fase 4)', () => {
+  let warnSpy;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn')?.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy?.mockRestore();
+  });
+
+  function mockBusinessesAndCategories(businessResult, categoryResult) {
+    const businessBuilder = makeListBuilder(businessResult);
+    const categoryBuilder = makeListBuilder(categoryResult);
+    supabase?.from?.mockImplementation((table) => {
+      if (table === 'businesses') return businessBuilder;
+      if (table === 'categories') return categoryBuilder;
+      throw new Error(`tabla inesperada en el mock: ${table}`);
+    });
+    return { businessBuilder, categoryBuilder };
+  }
+
+  it('con communityCityId válido, filtra la rama de negocios por city_id exactamente una vez, y la rama de categorías nunca recibe ese filtro', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const { businessBuilder, categoryBuilder } = mockBusinessesAndCategories(
+      { data: [{ id: 'b1', name: 'Negocio Uno' }], error: null },
+      { data: [{ id: 'c1', name: 'Categoría Uno', name_key: 'cat-1' }], error: null }
+    );
+
+    await businessService?.searchSuggestions('pizza', 6, cityId);
+
+    const businessCityCalls = businessBuilder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(businessCityCalls)?.toHaveLength(1);
+    expect(businessCityCalls?.[0])?.toEqual(['city_id', cityId]);
+
+    const categoryCityCalls = categoryBuilder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(categoryCityCalls)?.toHaveLength(0);
+    // La única llamada .eq() de categorías sigue siendo is_active, sin tocar.
+    expect(categoryBuilder?.eq)?.toHaveBeenCalledWith('is_active', true);
+  });
+
+  it('con communityCityId null: la consulta de negocios continúa sin filtro, se emite el warning centralizado, y categorías se sigue consultando con normalidad', async () => {
+    const { businessBuilder } = mockBusinessesAndCategories(
+      { data: [{ id: 'b1', name: 'Negocio Uno' }], error: null },
+      { data: [{ id: 'c1', name: 'Categoría Uno', name_key: 'cat-1' }], error: null }
+    );
+
+    const { businesses, categories } = await businessService?.searchSuggestions('pizza', 6, null);
+
+    const businessCityCalls = businessBuilder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(businessCityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+    expect(warnSpy?.mock?.calls?.[0]?.[0])?.toContain('businessService.searchSuggestions');
+    expect(businesses)?.toHaveLength(1);
+    expect(categories)?.toHaveLength(1);
+  });
+
+  it('conserva el comportamiento previo de límite (6 negocios, 5 categorías) y de combinación de resultados', async () => {
+    const { businessBuilder, categoryBuilder } = mockBusinessesAndCategories(
+      { data: [{ id: 'b1', name: 'Negocio Uno', business_images: [] }], error: null },
+      { data: [{ id: 'c1', name: 'Categoría Uno', name_key: 'cat-1' }], error: null }
+    );
+
+    const result = await businessService?.searchSuggestions(
+      'pizza',
+      6,
+      '8aa2d628-719d-4810-9ee3-8efd230ab000'
+    );
+
+    expect(businessBuilder?.limit)?.toHaveBeenCalledWith(6);
+    expect(categoryBuilder?.limit)?.toHaveBeenCalledWith(5);
+    expect(result?.businesses)?.toHaveLength(1);
+    expect(result?.categories)?.toEqual([{ id: 'c1', name: 'Categoría Uno', name_key: 'cat-1' }]);
+    expect(result?.error)?.toBeNull();
   });
 });

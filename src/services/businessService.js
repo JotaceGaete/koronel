@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { applyCityFilter } from '../lib/cityFilter';
 
 const BUSINESS_COLUMNS = new Set([
   'owner_id',
@@ -279,27 +280,34 @@ export const businessService = {
   },
 
   /** Búsqueda para sugerencias: negocios por nombre/dirección y categorías por nombre/key. */
-  async searchSuggestions(query, limit = 8) {
+  async searchSuggestions(query, limit = 8, communityCityId = null) {
     const q = String(query || '').trim();
     if (!q || q.length < 2) return { businesses: [], categories: [], error: null };
     const safe = q.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const pattern = `%${safe}%`;
     try {
       await businessService?.checkPremiumExpiry();
-      const [businessRes, categoryRes] = await Promise.all([
-        supabase
-          ?.from('businesses')
-          ?.select('id, name, address, category_key, business_images(storage_path, alt_text, is_primary)')
-          ?.in('status', ['published', 'premium'])
-          ?.or(`name.ilike.${pattern},address.ilike.${pattern}`)
-          ?.limit(limit),
-        supabase
-          ?.from('categories')
-          ?.select('id, name, name_key, icon')
-          ?.eq('is_active', true)
-          ?.or(`name.ilike.${pattern},name_key.ilike.${pattern}`)
-          ?.limit(5),
-      ]);
+
+      let businessQuery = supabase
+        ?.from('businesses')
+        ?.select('id, name, address, category_key, business_images(storage_path, alt_text, is_primary)')
+        ?.in('status', ['published', 'premium'])
+        ?.or(`name.ilike.${pattern},address.ilike.${pattern}`);
+      businessQuery = applyCityFilter(businessQuery, communityCityId, {
+        source: 'businessService.searchSuggestions',
+      });
+      businessQuery = businessQuery?.limit(limit);
+
+      // categories es taxonomía global (decisión de arquitectura) — nunca
+      // pasa por applyCityFilter ni recibe city_id.
+      const categoryQuery = supabase
+        ?.from('categories')
+        ?.select('id, name, name_key, icon')
+        ?.eq('is_active', true)
+        ?.or(`name.ilike.${pattern},name_key.ilike.${pattern}`)
+        ?.limit(5);
+
+      const [businessRes, categoryRes] = await Promise.all([businessQuery, categoryQuery]);
       const businesses = (businessRes?.data || []).map((b) => {
         const img = b?.business_images?.find((i) => i?.is_primary) || b?.business_images?.[0];
         const image = img?.storage_path

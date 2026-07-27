@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import { businessService } from '../../services/businessService';
+import { useCity } from '../../contexts/CityContext';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -20,6 +21,16 @@ export default function SmartSearchInput({
   onSearch,
 }) {
   const navigate = useNavigate();
+  const { communityCityId } = useCity();
+  // Leído dentro de fetchSuggestions vía ref, no como dependencia directa
+  // del useCallback: así fetchSuggestions mantiene la misma identidad entre
+  // renders (deps == []) y el efecto de debounce de más abajo (que depende
+  // de [query, fetchSuggestions]) no se reinicia cada vez que la ciudad
+  // cambia — solo la búsqueda siguiente usa el valor nuevo.
+  const communityCityIdRef = useRef(communityCityId);
+  useEffect(() => {
+    communityCityIdRef.current = communityCityId;
+  }, [communityCityId]);
   const [internalQuery, setInternalQuery] = useState('');
   const isControlled = value !== undefined && onChange !== undefined;
   const query = isControlled ? (value || '') : internalQuery;
@@ -49,7 +60,11 @@ export default function SmartSearchInput({
       return;
     }
     setLoading(true);
-    const { businesses, categories } = await businessService?.searchSuggestions(q, 6);
+    const { businesses, categories } = await businessService?.searchSuggestions(
+      q,
+      6,
+      communityCityIdRef.current
+    );
     setSuggestions({ businesses: businesses || [], categories: categories || [] });
     setLoading(false);
     setActiveIndex(-1);

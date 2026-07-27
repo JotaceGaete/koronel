@@ -5,12 +5,14 @@ import Icon from 'components/AppIcon';
 import { businessService } from '../../services/businessService';
 import SearchMapLeftPanel from './components/SearchMapLeftPanel';
 import SearchMapRightPanel from './components/SearchMapRightPanel';
+import { useCity } from '../../contexts/CityContext';
 
 const LIMIT = 50;
 
 export default function BusinessSearchMapPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { communityCityId } = useCity();
 
   const getParams = () => new URLSearchParams(location.search);
 
@@ -64,15 +66,16 @@ export default function BusinessSearchMapPage() {
       search: searchQuery,
       page: 1,
       pageSize: LIMIT,
+      communityCityId,
     });
     if (!error) setBusinesses(data || []);
     setLoading(false);
-  }, [selectedParent, categoryTree, searchQuery]);
+  }, [selectedParent, categoryTree, searchQuery, communityCityId]);
 
   useEffect(() => {
     fetchBusinesses();
     syncUrl(searchQuery, selectedParent);
-  }, [selectedParent, searchQuery, categoryTree]);
+  }, [selectedParent, searchQuery, categoryTree, communityCityId]);
 
   const formatBusiness = useCallback(
     (b) => {

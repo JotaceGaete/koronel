@@ -1,13 +1,23 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { siteConfig } from '../../config/siteConfig';
+
+const { mockGetBusinessesForMap } = vi.hoisted(() => ({
+  mockGetBusinessesForMap: vi.fn(),
+}));
 
 let lastMapContainerProps = null;
 const mockFlyTo = vi.fn();
 const mockSetView = vi.fn();
 const mockGetZoom = vi.fn(() => 14);
 const mockUseCity = vi.fn();
+
+// Ids de negocio renderizados en la pasada de render ACTUAL únicamente — se
+// reinicia en cada render de MapContainer (el padre), así nunca acumula
+// marcadores de una pasada de render anterior (Fase 4: prueba de que los
+// resultados de una ciudad no quedan mezclados con los de la siguiente).
+let currentBusinessMarkerIds = [];
 
 vi.mock('leaflet', () => ({
   default: {
@@ -23,6 +33,7 @@ vi.mock('leaflet', () => ({
 vi.mock('react-leaflet', () => ({
   MapContainer: (props) => {
     lastMapContainerProps = props;
+    currentBusinessMarkerIds = [];
     return <div data-testid="map-container">{props?.children}</div>;
   },
   TileLayer: () => null,
@@ -39,7 +50,7 @@ vi.mock('../../contexts/CityContext', () => ({
 vi.mock('components/ui/Header', () => ({ default: () => <div /> }));
 vi.mock('../../services/mapService', () => ({
   mapService: {
-    getBusinessesForMap: vi.fn().mockResolvedValue({ data: [] }),
+    getBusinessesForMap: mockGetBusinessesForMap,
     getEventsForMap: vi.fn().mockResolvedValue({ data: [] }),
     getUpcomingEvents: vi.fn().mockResolvedValue({ data: [] }),
   },
@@ -54,7 +65,7 @@ vi.mock('./components/BusinessBottomSheet', () => ({ default: () => <div /> }));
 vi.mock('./components/EventBottomSheet', () => ({ default: () => <div /> }));
 vi.mock('./components/UpcomingEventsPanel', () => ({ default: () => <div /> }));
 vi.mock('./components/MapMarkers', () => ({
-  BusinessMarker: () => null,
+  BusinessMarker: (props) => { currentBusinessMarkerIds?.push(props?.business?.id); return null; },
   EventMarker: () => null,
   CommunityPostMarker: () => null,
 }));
@@ -63,11 +74,14 @@ import InteractiveMapPage from './index';
 
 beforeEach(() => {
   lastMapContainerProps = null;
+  currentBusinessMarkerIds = [];
   mockFlyTo.mockClear();
   mockSetView.mockClear();
   mockGetZoom.mockClear();
+  mockGetBusinessesForMap.mockReset();
+  mockGetBusinessesForMap.mockResolvedValue({ data: [] });
   // Por defecto: sin ciudad resuelta — mismo comportamiento que antes de PR-3.
-  mockUseCity.mockReturnValue({ city: null, loading: false, resolutionStatus: 'fallback' });
+  mockUseCity.mockReturnValue({ city: null, communityCityId: null, loading: false, resolutionStatus: 'fallback' });
 });
 
 /**
@@ -152,5 +166,102 @@ describe('InteractiveMapPage', () => {
     rerender(<InteractiveMapPage />);
 
     expect(mockSetView).not.toHaveBeenCalled();
+  });
+});
+
+describe('InteractiveMapPage — carga de negocios filtrada por communityCityId (Fase 4)', () => {
+  it('pasa communityCityId a mapService.getBusinessesForMap junto con search/category vigentes', async () => {
+    mockUseCity.mockReturnValue({
+      city: null,
+      communityCityId: 'city-a',
+      loading: false,
+      resolutionStatus: 'resolved',
+    });
+    render(<InteractiveMapPage />);
+
+    await waitFor(() =>
+      expect(mockGetBusinessesForMap).toHaveBeenCalledWith({
+        search: '',
+        category: 'all',
+        communityCityId: 'city-a',
+      })
+    );
+    expect(mockGetBusinessesForMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('un cambio real de communityCityId recarga el mapa con el identificador nuevo, sin cargas duplicadas', async () => {
+    mockUseCity.mockReturnValue({
+      city: null,
+      communityCityId: 'city-a',
+      loading: false,
+      resolutionStatus: 'resolved',
+    });
+    const { rerender } = render(<InteractiveMapPage />);
+
+    await waitFor(() => expect(mockGetBusinessesForMap).toHaveBeenCalledTimes(1));
+    expect(mockGetBusinessesForMap).toHaveBeenLastCalledWith({
+      search: '',
+      category: 'all',
+      communityCityId: 'city-a',
+    });
+
+    mockUseCity.mockReturnValue({
+      city: null,
+      communityCityId: 'city-b',
+      loading: false,
+      resolutionStatus: 'resolved',
+    });
+    rerender(<InteractiveMapPage />);
+
+    await waitFor(() => expect(mockGetBusinessesForMap).toHaveBeenCalledTimes(2));
+    expect(mockGetBusinessesForMap).toHaveBeenLastCalledWith({
+      search: '',
+      category: 'all',
+      communityCityId: 'city-b',
+    });
+  });
+
+  it('re-renderizar sin que communityCityId cambie no dispara una carga adicional', async () => {
+    mockUseCity.mockReturnValue({
+      city: null,
+      communityCityId: 'city-a',
+      loading: false,
+      resolutionStatus: 'resolved',
+    });
+    const { rerender } = render(<InteractiveMapPage />);
+    await waitFor(() => expect(mockGetBusinessesForMap).toHaveBeenCalledTimes(1));
+
+    rerender(<InteractiveMapPage />);
+
+    expect(mockGetBusinessesForMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('los negocios de la ciudad anterior no quedan mezclados con los de la ciudad nueva', async () => {
+    mockUseCity.mockReturnValue({
+      city: null,
+      communityCityId: 'city-a',
+      loading: false,
+      resolutionStatus: 'resolved',
+    });
+    mockGetBusinessesForMap.mockResolvedValueOnce({
+      data: [{ id: 'biz-city-a', lat: -37.03, lng: -73.14 }],
+    });
+    const { rerender } = render(<InteractiveMapPage />);
+
+    await waitFor(() => expect(currentBusinessMarkerIds).toEqual(['biz-city-a']));
+
+    mockUseCity.mockReturnValue({
+      city: null,
+      communityCityId: 'city-b',
+      loading: false,
+      resolutionStatus: 'resolved',
+    });
+    mockGetBusinessesForMap.mockResolvedValueOnce({
+      data: [{ id: 'biz-city-b', lat: -34.6, lng: -58.38 }],
+    });
+    rerender(<InteractiveMapPage />);
+
+    await waitFor(() => expect(currentBusinessMarkerIds).toEqual(['biz-city-b']));
+    expect(currentBusinessMarkerIds).not.toContain('biz-city-a');
   });
 });

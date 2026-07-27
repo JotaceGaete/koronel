@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase';
+import { applyCityFilter } from '../lib/cityFilter';
 
 export const mapService = {
-  async getBusinessesForMap({ search = '', category = '' } = {}) {
+  async getBusinessesForMap({ search = '', category = '', communityCityId = null } = {}) {
     try {
       let query = supabase
         ?.from('businesses')
@@ -14,6 +15,10 @@ export const mapService = {
       if (category && category !== 'all') {
         query = query?.eq('category_key', category);
       }
+
+      query = applyCityFilter(query, communityCityId, {
+        source: 'mapService.getBusinessesForMap',
+      });
 
       const { data, error } = await query;
       if (error) throw error;

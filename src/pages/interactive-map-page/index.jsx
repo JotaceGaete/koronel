@@ -102,7 +102,7 @@ function CommunityPostBottomSheet({ post, onClose }) {
 }
 
 export default function InteractiveMapPage() {
-  const { city } = useCity();
+  const { city, communityCityId } = useCity();
   const cityCenter = [
     city?.interactive_map_lat ?? siteConfig?.map?.interactiveMapCenter?.lat,
     city?.interactive_map_lng ?? siteConfig?.map?.interactiveMapCenter?.lng,
@@ -125,11 +125,23 @@ export default function InteractiveMapPage() {
   const [upcomingPanelOpen, setUpcomingPanelOpen] = useState(true);
   const searchTimeout = useRef(null);
 
-  const loadData = useCallback(async (searchVal, catVal) => {
+  // Leídos por la carga que reacciona a un cambio de comunidad/ciudad (más
+  // abajo), sin ser dependencia de esa carga — así un cambio de search o de
+  // category no dispara esa misma carga por su cuenta (ya la disparan
+  // handleSearchChange/handleCategoryChange), evitando una carga doble.
+  const searchRef = useRef(search);
+  const categoryRef = useRef(category);
+  useEffect(() => { searchRef.current = search; }, [search]);
+  useEffect(() => { categoryRef.current = category; }, [category]);
+
+  // communityCityId es un parámetro explícito, no leído del closure — la
+  // identidad de loadData no depende de la ciudad, así que nunca queda
+  // obsoleta ni provoca que otros efectos se reejecuten por su causa.
+  const loadData = useCallback(async (searchVal, catVal, communityCityIdVal) => {
     setLoading(true);
     try {
       const [bizResult, evResult, upResult, communityResult] = await Promise.all([
-        mapService?.getBusinessesForMap({ search: searchVal, category: catVal }),
+        mapService?.getBusinessesForMap({ search: searchVal, category: catVal, communityCityId: communityCityIdVal }),
         mapService?.getEventsForMap({ search: searchVal, category: catVal }),
         mapService?.getUpcomingEvents(5),
         communityService?.getCommunityPostsForMap(),
@@ -145,21 +157,27 @@ export default function InteractiveMapPage() {
     }
   }, []);
 
+  // Carga inicial, y recarga cada vez que communityCityId cambie de verdad
+  // (ciudad resuelta tarde, o cambio real de ciudad activa) — usa el
+  // search/category vigentes al momento del cambio (vía ref), no los
+  // valores iniciales, para no descartar un filtro que el usuario ya haya
+  // aplicado. Un solo efecto, una sola dependencia real: no se duplica con
+  // handleSearchChange/handleCategoryChange, que ya disparan su propia carga.
   useEffect(() => {
-    loadData('', 'all');
-  }, [loadData]);
+    loadData(searchRef.current, categoryRef.current, communityCityId);
+  }, [communityCityId, loadData]);
 
   const handleSearchChange = (val) => {
     setSearch(val);
     clearTimeout(searchTimeout?.current);
     searchTimeout.current = setTimeout(() => {
-      loadData(val, category);
+      loadData(val, category, communityCityId);
     }, 400);
   };
 
   const handleCategoryChange = (cat) => {
     setCategory(cat);
-    loadData(search, cat);
+    loadData(search, cat, communityCityId);
   };
 
   const handleBusinessClick = (business) => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../../lib/supabase';
+import { popupService } from '../../../services/popupService';
+import { useCity } from '../../../contexts/CityContext';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80';
 
@@ -11,30 +12,45 @@ const BENEFITS = [
 ];
 
 export default function WelcomePopup() {
+  const { communityCityId } = useCity();
   const [popup, setPopup] = useState(null);
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Una vez descartado, se respeta esa decisión durante toda la sesión de
+    // la pestaña sin importar si la ciudad cambia después — es la misma
+    // semántica de "no mostrar de nuevo" que ya existía antes de este
+    // bloque; este cambio solo agrega aislamiento por ciudad mientras el
+    // popup no haya sido descartado.
     const dismissed = sessionStorage.getItem('welcome_popup_dismissed');
     if (dismissed) return;
 
-    const fetchPopup = async () => {
-      try {
-        const now = new Date()?.toISOString();
-        const { data, error } = await supabase?.from('popups')?.select('*')?.eq('active', true)?.or(`starts_at.is.null,starts_at.lte.${now}`)?.or(`ends_at.is.null,ends_at.gte.${now}`)?.order('created_at', { ascending: false })?.limit(1)?.single();
+    let cancelled = false;
+    let revealTimeout;
 
-        if (error || !data) return;
-        setPopup(data);
-        // Small delay for smooth entrance
-        setTimeout(() => setVisible(true), 400);
-      } catch {
-        // Silently fail — popup is non-critical
-      }
+    // Limpia de inmediato: evita que, mientras resuelve la ciudad nueva,
+    // quede visible el popup de la ciudad anterior.
+    setPopup(null);
+    setVisible(false);
+
+    const fetchPopup = async () => {
+      const { data, error } = await popupService?.getActivePopup({ communityCityId }) ?? {};
+      if (cancelled) return;
+      if (error || !data) return;
+      setPopup(data);
+      // Small delay for smooth entrance
+      revealTimeout = setTimeout(() => {
+        if (!cancelled) setVisible(true);
+      }, 400);
     };
 
     fetchPopup();
-  }, []);
+    return () => {
+      cancelled = true;
+      clearTimeout(revealTimeout);
+    };
+  }, [communityCityId]);
 
   const handleClose = () => {
     setVisible(false);

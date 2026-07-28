@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { jobService } from '../../../services/jobService';
+import { useCity } from '../../../contexts/CityContext';
 
 const MODALITY_COLORS = {
   'Presencial': { bg: '#d1fae5', color: '#065f46' },
@@ -53,18 +54,25 @@ function JobMiniCard({ job }) {
 }
 
 export default function LatestJobs() {
+  const { communityCityId } = useCity();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    jobService?.getLatest(4)?.then(({ data }) => {
-      if (!mounted) return;
-      setJobs(data || []);
+    let cancelled = false;
+
+    // Limpia de inmediato: evita que, mientras resuelve la ciudad nueva,
+    // queden visibles empleos de la ciudad anterior.
+    setJobs([]);
+
+    jobService?.getLatest({ limit: 4, communityCityId })?.then(({ data, error }) => {
+      if (cancelled) return;
+      if (!error) setJobs(data || []);
       setLoading(false);
     });
-    return () => { mounted = false; };
-  }, []);
+
+    return () => { cancelled = true; };
+  }, [communityCityId]);
 
   if (!loading && jobs?.length === 0) return null;
 

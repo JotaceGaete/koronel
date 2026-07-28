@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
@@ -6,6 +6,7 @@ import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { jobService } from '../../services/jobService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCity } from '../../contexts/CityContext';
 import JobCard from './components/JobCard';
 import JobFilters from './components/JobFilters';
 import JobsEmptyState from './components/JobsEmptyState';
@@ -13,6 +14,7 @@ import JobsEmptyState from './components/JobsEmptyState';
 export default function JobsListing() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { communityCityId } = useCity();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [count, setCount] = useState(0);
@@ -21,8 +23,10 @@ export default function JobsListing() {
   const [filters, setFilters] = useState({ category: 'all', modality: 'all', type: 'all' });
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 12;
+  const requestIdRef = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     const { data, count: total, error } = await jobService?.getPublished({
       search,
@@ -31,13 +35,23 @@ export default function JobsListing() {
       type: filters?.type,
       page,
       pageSize: PAGE_SIZE,
+      communityCityId,
     });
+    if (requestId !== requestIdRef.current) return;
     if (!error) {
       setJobs(data);
       setCount(total);
     }
     setLoading(false);
-  }, [search, filters, page]);
+  }, [search, filters, page, communityCityId]);
+
+  // Al cambiar de ciudad: limpia de inmediato y reinicia la paginación a la
+  // página 1 — ambas actualizaciones se agrupan en el mismo render, así
+  // `load` cambia de identidad una sola vez y dispara una única carga nueva.
+  useEffect(() => {
+    setJobs([]);
+    setPage(1);
+  }, [communityCityId]);
 
   useEffect(() => { load(); }, [load]);
 

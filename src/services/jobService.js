@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { applyCityFilter } from '../lib/cityFilter';
 
 const CATEGORIES = ['Tecnología', 'Salud', 'Comercio', 'Construcción', 'Educación', 'Gastronomía', 'Administración', 'Otro'];
 const MODALITIES = ['Presencial', 'Remoto', 'Híbrido'];
@@ -24,7 +25,7 @@ export const jobService = {
     }
   },
 
-  async getPublished({ search, category, modality, type, page = 1, pageSize = 12 } = {}) {
+  async getPublished({ search, category, modality, type, page = 1, pageSize = 12, communityCityId = null } = {}) {
     try {
       await jobService?.checkExpiry();
       let query = supabase
@@ -45,6 +46,8 @@ export const jobService = {
         query = query?.eq('type', type);
       }
 
+      query = applyCityFilter(query, communityCityId, { source: 'jobService.getPublished' });
+
       query = query?.order('created_at', { ascending: false });
 
       const from = (page - 1) * pageSize;
@@ -60,12 +63,16 @@ export const jobService = {
     }
   },
 
-  async getLatest(limit = 4) {
+  async getLatest({ limit = 4, communityCityId = null } = {}) {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         ?.from('jobs')
         ?.select('*')
-        ?.eq('status', 'published')
+        ?.eq('status', 'published');
+
+      query = applyCityFilter(query, communityCityId, { source: 'jobService.getLatest' });
+
+      const { data, error } = await query
         ?.order('created_at', { ascending: false })
         ?.limit(limit);
       if (error) throw error;

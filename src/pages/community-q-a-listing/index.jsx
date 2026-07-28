@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
@@ -6,6 +6,7 @@ import Icon from 'components/AppIcon';
 import Button from 'components/ui/Button';
 import { communityService } from '../../services/communityService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCity } from '../../contexts/CityContext';
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Más recientes' },
@@ -107,6 +108,7 @@ function QuestionCard({ post, coverImage }) {
 export default function CommunityQAListing() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { communityCityId } = useCity();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -115,8 +117,10 @@ export default function CommunityQAListing() {
   const [totalCount, setTotalCount] = useState(0);
   const [coverImages, setCoverImages] = useState({});
   const PAGE_SIZE = 12;
+  const requestIdRef = useRef(0);
 
   const load = useCallback(async (pg = 1) => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const { data, count } = await communityService?.getPosts({
@@ -125,7 +129,9 @@ export default function CommunityQAListing() {
         sort,
         page: pg,
         pageSize: PAGE_SIZE,
+        communityCityId,
       });
+      if (requestId !== requestIdRef.current) return;
       if (pg === 1) {
         setPosts(data || []);
       } else {
@@ -135,9 +141,16 @@ export default function CommunityQAListing() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [search, sort]);
+  }, [search, sort, communityCityId]);
+
+  // Limpia de inmediato al cambiar de ciudad: evita que, mientras corre el
+  // debounce de 300ms y resuelve la ciudad nueva, queden visibles preguntas
+  // de la ciudad anterior.
+  useEffect(() => {
+    setPosts([]);
+  }, [communityCityId]);
 
   useEffect(() => {
     setPage(1);

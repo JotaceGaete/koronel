@@ -4,7 +4,7 @@ import { applyCityFilter } from '../lib/cityFilter';
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
 
-  async getPosts({ sector = '', search = '', sort = 'recent', page = 1, pageSize = 12 } = {}) {
+  async getPosts({ sector = '', search = '', sort = 'recent', page = 1, pageSize = 12, communityCityId = null } = {}) {
     try {
       let query = supabase
         ?.from('community_posts')
@@ -17,6 +17,8 @@ export const communityService = {
       if (search?.trim()) {
         query = query?.or(`title.ilike.%${search}%,body.ilike.%${search}%`);
       }
+
+      query = applyCityFilter(query, communityCityId, { source: 'communityService.getPosts' });
 
       if (sort === 'votes') {
         query = query?.order('upvote_count', { ascending: false });

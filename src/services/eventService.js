@@ -1,8 +1,9 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
+import { applyCityFilter } from '../lib/cityFilter';
 
 export const eventService = {
-  async getAll({ category, search, status = 'approved', upcoming = true, page = 1, pageSize = 12 } = {}) {
+  async getAll({ category, search, status = 'approved', upcoming = true, page = 1, pageSize = 12, communityCityId = null } = {}) {
     try {
       let query = supabase
         ?.from('events')
@@ -21,6 +22,8 @@ export const eventService = {
         query = query?.gte('start_datetime', new Date()?.toISOString());
       }
 
+      query = applyCityFilter(query, communityCityId, { source: 'eventService.getAll' });
+
       query = query?.order('start_datetime', { ascending: true });
 
       const from = (page - 1) * pageSize;
@@ -36,13 +39,28 @@ export const eventService = {
     }
   },
 
-  async getUpcoming(limit = 4) {
+  // Acepta tanto la firma posicional heredada getUpcoming(4) (usada por
+  // event-detail-page, fuera de este bloque) como la firma por objeto
+  // getUpcoming({ limit, communityCityId }). Se normaliza explícitamente al
+  // inicio en vez de desestructurar options directamente en los parámetros:
+  // desestructurar { limit = 4 } sobre un número siempre habría aplicado el
+  // valor por defecto (4), sin importar el número recibido — por ejemplo
+  // getUpcoming(8) habría usado límite 4, no 8.
+  async getUpcoming(options = {}) {
+    const { limit, communityCityId } = typeof options === 'number'
+      ? { limit: options, communityCityId: null }
+      : { limit: 4, communityCityId: null, ...options };
+
     try {
-      const { data, error } = await supabase
+      let query = supabase
         ?.from('events')
         ?.select('*, organizer:businesses(id, name)')
         ?.eq('status', 'approved')
-        ?.gte('start_datetime', new Date()?.toISOString())
+        ?.gte('start_datetime', new Date()?.toISOString());
+
+      query = applyCityFilter(query, communityCityId, { source: 'eventService.getUpcoming' });
+
+      const { data, error } = await query
         ?.order('start_datetime', { ascending: true })
         ?.limit(limit);
       if (error) throw error;

@@ -4,45 +4,7 @@ import Icon from 'components/AppIcon';
 import Image from 'components/AppImage';
 import Button from 'components/ui/Button';
 import { eventService } from '../../../services/eventService';
-
-const FALLBACK_EVENTS = [
-{
-  id: '1',
-  title: 'Feria Gastronómica de Coronel',
-  category: 'meetups',
-  start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(),
-  venue_name: 'Plaza de Armas de Coronel',
-  image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1b7319b13-1772644649238.png",
-  status: 'approved'
-},
-{
-  id: '2',
-  title: 'Taller de Emprendimiento Digital',
-  category: 'courses',
-  start_datetime: new Date(Date.now() + 7 * 86400000)?.toISOString(),
-  venue_name: 'Centro Comunitario Coronel Norte',
-  image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1a3248069-1772644647717.png",
-  status: 'approved'
-},
-{
-  id: '3',
-  title: 'Culto de Alabanza y Adoración',
-  category: 'church',
-  start_datetime: new Date(Date.now() + 5 * 86400000)?.toISOString(),
-  venue_name: 'Iglesia Evangélica Coronel',
-  image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_190940992-1772644647591.png",
-  status: 'approved'
-},
-{
-  id: '4',
-  title: 'Encuentro de Vecinos Boca Sur',
-  category: 'meetups',
-  start_datetime: new Date(Date.now() + 10 * 86400000)?.toISOString(),
-  venue_name: 'Sede Social Boca Sur',
-  image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_1fcda0865-1772644648705.png",
-  status: 'approved'
-}];
-
+import { useCity } from '../../../contexts/CityContext';
 
 const CATEGORY_CONFIG = {
   church: { label: 'Iglesia', color: '#7c3aed', bg: '#f3e8ff' },
@@ -112,20 +74,25 @@ function EventCard({ event }) {
 }
 
 export default function UpcomingEvents() {
-  const [events, setEvents] = useState(FALLBACK_EVENTS);
+  const { communityCityId } = useCity();
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    eventService?.getUpcoming(4)?.then(({ data, error }) => {
-      if (!mounted) return;
-      if (!error && data?.length > 0) {
-        setEvents(data);
-      }
+    let cancelled = false;
+
+    // Limpia de inmediato: evita que, mientras resuelve la ciudad nueva,
+    // queden visibles eventos de la ciudad anterior.
+    setEvents([]);
+
+    eventService?.getUpcoming({ limit: 4, communityCityId })?.then(({ data, error }) => {
+      if (cancelled) return;
+      if (!error) setEvents(data || []);
       setLoading(false);
     });
-    return () => {mounted = false;};
-  }, []);
+
+    return () => { cancelled = true; };
+  }, [communityCityId]);
 
   return (
     <section className="w-full py-12 md:py-14 lg:py-16 px-4 md:px-6 lg:px-8" style={{ background: 'var(--color-background)' }}>

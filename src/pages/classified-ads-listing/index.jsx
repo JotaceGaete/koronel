@@ -11,12 +11,14 @@ import SortBar from './components/SortBar';
 import AdCardSkeleton from './components/AdCardSkeleton';
 import EmptyState from './components/EmptyState';
 import { adService } from '../../services/adService';
+import { useCity } from '../../contexts/CityContext';
 
 const DEFAULT_FILTERS = { priceRange: 'all', dateFilter: 'all', condition: 'all' };
 const PAGE_SIZE = 8;
 
 export default function ClassifiedAdsListing() {
   const location = useLocation();
+  const { communityCityId } = useCity();
   const params = new URLSearchParams(location.search);
   const initialQuery = params?.get('q') || '';
 
@@ -31,8 +33,10 @@ export default function ClassifiedAdsListing() {
   const [totalCount, setTotalCount] = useState(0);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const loaderRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   const fetchAds = useCallback(async (resetPage = false) => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     const currentPage = resetPage ? 1 : page;
     const { data, count, error } = await adService?.getAll({
@@ -45,7 +49,9 @@ export default function ClassifiedAdsListing() {
       sort,
       page: currentPage,
       pageSize: PAGE_SIZE,
+      communityCityId,
     });
+    if (requestId !== requestIdRef.current) return;
     if (!error) {
       const formatted = (data || [])?.map(ad => adService?.formatAd(ad));
       if (resetPage || currentPage === 1) {
@@ -56,12 +62,18 @@ export default function ClassifiedAdsListing() {
       setTotalCount(count);
     }
     setLoading(false);
-  }, [selectedCategory, searchQuery, filters, sort, page]);
+  }, [selectedCategory, searchQuery, filters, sort, page, communityCityId]);
+
+  // Limpia de inmediato al cambiar de ciudad: evita que, mientras resuelve
+  // la ciudad nueva, queden visibles clasificados de la ciudad anterior.
+  useEffect(() => {
+    setAds([]);
+  }, [communityCityId]);
 
   useEffect(() => {
     setPage(1);
     fetchAds(true);
-  }, [selectedCategory, searchQuery, filters, sort]);
+  }, [selectedCategory, searchQuery, filters, sort, communityCityId]);
 
   useEffect(() => {
     if (page > 1) fetchAds(false);

@@ -21,7 +21,7 @@ export const adService = {
     }
   },
 
-  async getAll({ listingType, category, search, priceRange, dateFilter, condition, sort = 'newest', page = 1, pageSize = 12 } = {}) {
+  async getAll({ listingType, category, search, priceRange, dateFilter, condition, sort = 'newest', page = 1, pageSize = 12, communityCityId = null } = {}) {
     const buildQuery = (applyListingTypeFilter) => {
       let query = supabase?.from('classified_ads')?.select('*, ad_images(storage_path, alt_text, is_primary, image_type)', { count: 'exact' })?.eq('ad_status', 'active');
 
@@ -62,6 +62,8 @@ export const adService = {
           query = query?.gte('created_at', monthAgo);
         }
       }
+
+      query = applyCityFilter(query, communityCityId, { source: 'adService.getAll' });
 
       if (sort === 'price_asc') {
         query = query?.order('price', { ascending: true, nullsFirst: false });

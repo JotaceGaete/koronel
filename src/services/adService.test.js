@@ -130,3 +130,144 @@ describe('adService.getRecent — filtrado por city_id (Fase 4)', () => {
     expect(result?.error)?.toEqual({ code: '500', message: 'fail' });
   });
 });
+
+describe('adService.getAll — filtrado por city_id (Fase 4 / B1)', () => {
+  let warnSpy;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn')?.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy?.mockRestore();
+  });
+
+  // Encadenable (select/eq/neq/ilike/gte/lte/order/range) y "thenable" —
+  // igual que el query builder real de Supabase, awaitable directamente
+  // sin un método terminal explícito.
+  function makeGetAllBuilder(result) {
+    const builder = {};
+    ['select', 'eq', 'neq', 'ilike', 'gte', 'lte', 'order', 'range']?.forEach((method) => {
+      builder[method] = vi.fn(() => builder);
+    });
+    builder.then = (resolve, reject) => Promise.resolve(result)?.then(resolve, reject);
+    return builder;
+  }
+
+  it('con communityCityId válido, filtra por city_id exactamente una vez', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeGetAllBuilder({ data: [], count: 0, error: null });
+    supabase?.from?.mockImplementation((table) => {
+      expect(table)?.toBe('classified_ads');
+      return builder;
+    });
+
+    await adService?.getAll({ communityCityId: cityId });
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(1);
+    expect(cityCalls?.[0])?.toEqual(['city_id', cityId]);
+  });
+
+  it('conserva select, ad_status, listing_type, categoría, búsqueda, condición, rango de precio, fecha, orden y paginación existentes junto al filtro de ciudad', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeGetAllBuilder({ data: [], count: 0, error: null });
+    supabase?.from?.mockImplementation((table) => {
+      expect(table)?.toBe('classified_ads');
+      return builder;
+    });
+
+    await adService?.getAll({
+      listingType: 'clasificados',
+      category: 'hogar',
+      search: 'sofá',
+      condition: 'usado',
+      priceRange: '10000-50000',
+      dateFilter: 'week',
+      sort: 'price_asc',
+      page: 2,
+      pageSize: 10,
+      communityCityId: cityId,
+    });
+
+    expect(builder?.select)?.toHaveBeenCalledWith(
+      '*, ad_images(storage_path, alt_text, is_primary, image_type)',
+      { count: 'exact' }
+    );
+    expect(builder?.eq)?.toHaveBeenCalledWith('ad_status', 'active');
+    expect(builder?.neq)?.toHaveBeenCalledWith('listing_type', 'oficio');
+    expect(builder?.eq)?.toHaveBeenCalledWith('category_key', 'hogar');
+    expect(builder?.ilike)?.toHaveBeenCalledWith('title', '%sofá%');
+    expect(builder?.eq)?.toHaveBeenCalledWith('condition', 'usado');
+    expect(builder?.gte)?.toHaveBeenCalledWith('price', 10000);
+    expect(builder?.lte)?.toHaveBeenCalledWith('price', 50000);
+    expect(builder?.gte)?.toHaveBeenCalledWith('created_at', expect.any(String));
+    expect(builder?.eq)?.toHaveBeenCalledWith('city_id', cityId);
+    expect(builder?.order)?.toHaveBeenCalledWith('price', { ascending: true, nullsFirst: false });
+    expect(builder?.range)?.toHaveBeenCalledWith(10, 19);
+  });
+
+  it('con communityCityId null: sin filtro territorial, emite el warning centralizado, y conserva el comportamiento previo', async () => {
+    const builder = makeGetAllBuilder({ data: [{ id: 'ad-1' }], count: 1, error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    const result = await adService?.getAll({ communityCityId: null });
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+    expect(warnSpy?.mock?.calls?.[0]?.[0])?.toContain('adService.getAll');
+    expect(result?.data)?.toHaveLength(1);
+    expect(result?.count)?.toBe(1);
+    expect(result?.error)?.toBeNull();
+  });
+
+  it('sin communityCityId (parámetro omitido → default null): mismo comportamiento que pasarlo explícito', async () => {
+    const builder = makeGetAllBuilder({ data: [], count: 0, error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    await adService?.getAll();
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+  });
+
+  it('fallback por error 42703 (listing_type inexistente): repite sin ese filtro, aplica el filtro de ciudad exactamente una vez en ese camino, y conserva orden/paginación', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    let callCount = 0;
+    const failingBuilder = makeGetAllBuilder({ data: null, count: 0, error: { code: '42703', message: 'column does not exist' } });
+    const fallbackBuilder = makeGetAllBuilder({ data: [{ id: 'ad-2' }], count: 1, error: null });
+    supabase?.from?.mockImplementation(() => {
+      callCount += 1;
+      return callCount === 1 ? failingBuilder : fallbackBuilder;
+    });
+
+    const result = await adService?.getAll({ listingType: 'clasificados', communityCityId: cityId });
+
+    expect(failingBuilder?.neq)?.toHaveBeenCalledWith('listing_type', 'oficio');
+    expect(fallbackBuilder?.neq)?.not?.toHaveBeenCalled();
+
+    const failingCityCalls = failingBuilder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    const fallbackCityCalls = fallbackBuilder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(failingCityCalls)?.toHaveLength(1);
+    expect(fallbackCityCalls)?.toHaveLength(1);
+
+    expect(fallbackBuilder?.order)?.toHaveBeenCalledWith('featured', { ascending: false });
+    expect(fallbackBuilder?.range)?.toHaveBeenCalledWith(0, 11);
+    expect(result?.data)?.toEqual([{ id: 'ad-2' }]);
+    expect(result?.count)?.toBe(1);
+    expect(result?.error)?.toBeNull();
+  });
+
+  it('errores no-42703 se devuelven controlados, sin lanzar excepción', async () => {
+    const builder = makeGetAllBuilder({ data: null, count: 0, error: { code: '500', message: 'fail' } });
+    supabase?.from?.mockImplementation(() => builder);
+
+    const result = await adService?.getAll({ communityCityId: null });
+
+    expect(result?.data)?.toEqual([]);
+    expect(result?.count)?.toBe(0);
+    expect(result?.error)?.toEqual({ code: '500', message: 'fail' });
+  });
+});

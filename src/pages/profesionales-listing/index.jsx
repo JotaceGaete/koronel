@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import PageMeta from 'components/PageMeta';
 import Header from 'components/ui/Header';
@@ -10,11 +10,13 @@ import EmptyState from '../classified-ads-listing/components/EmptyState';
 import SortBar from '../classified-ads-listing/components/SortBar';
 import ProfesionalCard from './components/ProfesionalCard';
 import { adService } from '../../services/adService';
+import { useCity } from '../../contexts/CityContext';
 
 const PAGE_SIZE = 8;
 
 export default function ProfesionalesListing() {
   const location = useLocation();
+  const { communityCityId } = useCity();
   const params = new URLSearchParams(location.search);
   const initialQuery = params?.get('q') || '';
 
@@ -26,8 +28,10 @@ export default function ProfesionalesListing() {
   const [loading, setLoading] = useState(true);
   const [ads, setAds] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const requestIdRef = useRef(0);
 
   const fetchAds = useCallback(async (resetPage = false) => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     const currentPage = resetPage ? 1 : page;
     const { data, count, error } = await adService?.getAll({
@@ -37,7 +41,9 @@ export default function ProfesionalesListing() {
       sort,
       page: currentPage,
       pageSize: PAGE_SIZE,
+      communityCityId,
     });
+    if (requestId !== requestIdRef.current) return;
     if (!error) {
       const formatted = (data || [])?.map(ad => adService?.formatAd(ad));
       if (resetPage || currentPage === 1) {
@@ -48,12 +54,18 @@ export default function ProfesionalesListing() {
       setTotalCount(count);
     }
     setLoading(false);
-  }, [selectedCategory, searchQuery, sort, page]);
+  }, [selectedCategory, searchQuery, sort, page, communityCityId]);
+
+  // Limpia de inmediato al cambiar de ciudad: evita que, mientras resuelve
+  // la ciudad nueva, queden visibles profesionales de la ciudad anterior.
+  useEffect(() => {
+    setAds([]);
+  }, [communityCityId]);
 
   useEffect(() => {
     setPage(1);
     fetchAds(true);
-  }, [selectedCategory, searchQuery, sort]);
+  }, [selectedCategory, searchQuery, sort, communityCityId]);
 
   useEffect(() => {
     if (page > 1) fetchAds(false);

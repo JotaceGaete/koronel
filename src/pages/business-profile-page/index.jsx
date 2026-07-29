@@ -18,175 +18,96 @@ import { businessService } from '../../services/businessService';
 import { siteConfig } from '../../config/siteConfig';
 import { useCity } from '../../contexts/CityContext';
 
-const BUSINESS = {
-  id: 1,
-  name: "Restaurante El Rincón Chileno",
-  claimed: false,
-  category_key: "restaurantes",
-  rating: 4.3,
-  reviewCount: 87,
-  address: "Av. Capitán Ávalos 1245, Coronel, Biobío, Chile",
-  phone: "+56 41 261 4500",
-  whatsapp: "+56 9 8765 4321",
-  email: "contacto@rinconchileno.cl",
-  website: "https://rinconchileno.cl",
-  description: `Bienvenidos a El Rincón Chileno, el restaurante familiar más tradicional de Coronel. Llevamos más de 20 años sirviendo la auténtica cocina chilena con ingredientes frescos y locales.\n\nNuestro menú incluye cazuela de vacuno, pastel de choclo, empanadas al horno, y los mejores mariscos frescos del Golfo de Arauco. Contamos con salón para eventos y celebraciones familiares.\n\nAceptamos reservas para grupos de más de 8 personas. Estacionamiento disponible en el local.`,
-  lat: -37.0297,
-  lng: -73.1597,
-  hours: {
-    monday: { open: '12:00', close: '22:00' },
-    tuesday: { open: '12:00', close: '22:00' },
-    wednesday: { open: '12:00', close: '22:00' },
-    thursday: { open: '12:00', close: '22:00' },
-    friday: { open: '12:00', close: '23:00' },
-    saturday: { open: '11:00', close: '23:00' },
-    sunday: { open: '11:00', close: '21:00' }
-  },
-  images: [
-  {
-    src: "https://img.rocket.new/generatedImages/rocket_gen_img_18e375330-1772638689943.png",
-    alt: "Interior acogedor del restaurante con mesas de madera y decoración chilena tradicional con cuadros en las paredes"
-  },
-  {
-    src: "https://images.unsplash.com/photo-1571681686550-12fabad16788",
-    alt: "Plato de cazuela de vacuno chilena con papas, zanahoria y carne servida en bowl de barro artesanal"
-  },
-  {
-    src: "https://img.rocket.new/generatedImages/rocket_gen_img_1c3f2ddaa-1772088788103.png",
-    alt: "Empanadas al horno doradas y crujientes recién salidas del horno sobre tabla de madera rústica"
-  },
-  {
-    src: "https://images.unsplash.com/photo-1691496750571-6a2b42d979a3",
-    alt: "Salón del restaurante con iluminación cálida, mesas con manteles blancos y sillas de madera para familias"
-  },
-  {
-    src: "https://img.rocket.new/generatedImages/rocket_gen_img_10cae551f-1772638690262.png",
-    alt: "Plato de mariscos frescos con machas, choritos y camarones sobre cama de arroz blanco con limón"
-  }]
-
-};
-
-const REVIEWS = [
-{
-  id: 1,
-  author: "María González",
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1453e1878-1763300003100.png",
-  avatarAlt: "Mujer chilena de mediana edad con cabello oscuro y sonrisa amable en foto de perfil",
-  rating: 5,
-  date: "15/02/2026",
-  comment: "Excelente atención y comida deliciosa. La cazuela de vacuno es la mejor que he probado en Coronel. Muy recomendado para almuerzo familiar."
-},
-{
-  id: 2,
-  author: "Carlos Muñoz",
-  avatar: "https://images.unsplash.com/photo-1513835621271-c19c122e8fec",
-  avatarAlt: "Hombre joven con barba corta y camisa azul en fotografía de perfil casual",
-  rating: 4,
-  date: "28/01/2026",
-  comment: "Buena comida y ambiente familiar. El servicio fue rápido y los precios son muy razonables para la calidad que ofrecen."
-},
-{
-  id: 3,
-  author: "Ana Pérez",
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1ab326d20-1772164190408.png",
-  avatarAlt: "Mujer adulta con cabello castaño y expresión alegre en foto de perfil profesional",
-  rating: 5,
-  date: "10/01/2026",
-  comment: "Las empanadas son increíbles, crujientes por fuera y jugosas por dentro. Volveré pronto con toda la familia."
-},
-{
-  id: 4,
-  author: "Roberto Silva",
-  avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1203f053b-1763294451770.png",
-  avatarAlt: "Hombre mayor con cabello gris y bigote en fotografía de perfil con fondo neutro",
-  rating: 4,
-  date: "05/01/2026",
-  comment: "Muy buen restaurante tradicional. La atención es cordial y el local está muy limpio. Los mariscos frescos son el punto fuerte."
-},
-{
-  id: 5,
-  author: "Valentina Torres",
-  avatar: "https://images.unsplash.com/photo-1532369802437-77915edfbd6a",
-  avatarAlt: "Mujer joven con cabello largo y sonrisa en fotografía de perfil con fondo claro",
-  rating: 3,
-  date: "20/12/2025",
-  comment: "La comida está rica pero el servicio fue un poco lento el día que fui. Igual lo recomiendo para probar la comida chilena auténtica."
-}];
-
-
-const RELATED = [
-{
-  id: 2,
-  name: "Picada La Costanera",
-  category: "Restaurante",
-  rating: 4.1,
-  image: "https://images.unsplash.com/photo-1655132663689-094d942f5b86",
-  imageAlt: "Fachada de restaurante costero con mesas al aire libre y vista al mar en día soleado"
-},
-{
-  id: 3,
-  name: "Café Central Coronel",
-  category: "Café y Pastelería",
-  rating: 4.5,
-  image: "https://images.unsplash.com/photo-1677306963569-1b488022cfff",
-  imageAlt: "Interior de café moderno con barra de madera, máquina de espresso y pasteles en vitrina iluminada"
-},
-{
-  id: 4,
-  name: "Marisquería Don Pedro",
-  category: "Mariscos",
-  rating: 4.7,
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b8e310fb-1772249430013.png",
-  imageAlt: "Plato de mariscos frescos con langostinos y choritos sobre mesa de restaurante con decoración marina"
-}];
-
-
 export default function BusinessProfilePage() {
-  const { city } = useCity();
+  const { city, communityCityId } = useCity();
   const brandName = city?.brand_name ?? siteConfig?.brandName;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [shareToast, setShareToast] = useState(false);
   const [business, setBusiness] = useState(null);
-  const [loadingBusiness, setLoadingBusiness] = useState(false);
+  const [businessNotFound, setBusinessNotFound] = useState(false);
+  const [loadingBusiness, setLoadingBusiness] = useState(true);
+  const [relatedBusinesses, setRelatedBusinesses] = useState([]);
 
   const businessId = searchParams?.get('id');
 
-  // Load real business data if id param present, else fall back to mock
   useEffect(() => {
-    if (!businessId) return;
+    if (!businessId) {
+      setBusiness(null);
+      setBusinessNotFound(true);
+      setLoadingBusiness(false);
+      return;
+    }
+    let cancelled = false;
+    setBusiness(null);
+    setBusinessNotFound(false);
     setLoadingBusiness(true);
-    businessService?.getById(businessId)?.then(({ data }) => {
-      if (data) setBusiness(data);
-    })?.finally(() => setLoadingBusiness(false));
+    businessService?.getById(businessId)?.then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data) {
+        setBusinessNotFound(true);
+      } else {
+        setBusiness(data);
+      }
+    })?.finally(() => { if (!cancelled) setLoadingBusiness(false); });
+    return () => { cancelled = true; };
   }, [businessId]);
+
+  // Negocios similares reales, misma categoría, excluyendo el negocio actual.
+  useEffect(() => {
+    if (!business?.category_key || !business?.id) {
+      setRelatedBusinesses([]);
+      return;
+    }
+    let cancelled = false;
+    businessService?.getAll({ category: business?.category_key, communityCityId, pageSize: 4 })?.then(({ data }) => {
+      if (cancelled) return;
+      const mapped = (data || [])
+        ?.filter((b) => String(b?.id) !== String(business?.id))
+        ?.slice(0, 3)
+        ?.map((b) => {
+          const primaryImg = b?.business_images?.find((img) => img?.is_primary) || b?.business_images?.[0];
+          const image = primaryImg?.storage_path
+            ? (primaryImg?.storage_path?.startsWith('http') ? primaryImg?.storage_path : businessService?.getImageUrl(primaryImg?.storage_path))
+            : null;
+          return {
+            id: b?.id,
+            name: b?.name,
+            category: b?.category,
+            rating: b?.rating,
+            image,
+            imageAlt: b?.name ? `Foto de ${b?.name}` : '',
+          };
+        });
+      setRelatedBusinesses(mapped);
+    });
+    return () => { cancelled = true; };
+  }, [business?.category_key, business?.id, communityCityId]);
 
   // Build category labels from real hierarchy (category + parent from DB)
   const catRow = business?.category_ref;
   const parentCatName = catRow?.parent?.name ?? (catRow?.name || business?.category) ?? null;
   const subCatName = catRow?.parent_id && catRow?.name ? catRow?.name : null;
 
-  // Merge real data over mock for display
   const DISPLAY = business ? {
-    ...BUSINESS,
     ...business,
-    lat: business?.lat ?? business?.latitude ?? BUSINESS?.lat,
-    lng: business?.lng ?? business?.longitude ?? BUSINESS?.lng,
-    hours: business?.opening_hours ?? BUSINESS?.hours,
+    lat: business?.lat ?? business?.latitude,
+    lng: business?.lng ?? business?.longitude,
+    hours: business?.opening_hours,
     images: business?.business_images?.length
       ? business?.business_images?.map((img) => ({
           src: businessService?.getImageUrl(img?.storage_path),
           alt: img?.alt_text || business?.name,
         }))
-      : BUSINESS?.images,
+      : [],
     logoUrl: business?.logo_url || null,
     socialLinks: Array.isArray(business?.social_links) ? business?.social_links : [],
     websiteUrl: business?.website || null,
     parentCategoryName: parentCatName,
     subCategoryName: subCatName,
     category: parentCatName || business?.category,
-    reviewCount: business?.review_count ?? BUSINESS?.reviewCount,
-  } : { ...BUSINESS, logoUrl: null, socialLinks: [], websiteUrl: BUSINESS?.website };
+    reviewCount: business?.review_count ?? 0,
+  } : null;
 
   const handleShare = () => {
     if (navigator.share) {
@@ -201,6 +122,38 @@ export default function BusinessProfilePage() {
   const handleCall = () => {window.location.href = `tel:${DISPLAY?.phone}`;};
   const handleWhatsApp = () => {window.open(`https://wa.me/${DISPLAY?.whatsapp?.replace(/\D/g, '')}`, '_blank');};
   const handleDirections = () => {window.open(`https://www.google.com/maps?q=${DISPLAY?.lat},${DISPLAY?.lng}`, '_blank');};
+
+  if (loadingBusiness) {
+    return (
+      <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
+        <Header />
+        <div style={{ paddingTop: '64px' }}>
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 animate-pulse space-y-4">
+            <div className="h-6 bg-muted rounded w-1/3" />
+            <div className="bg-muted rounded-xl" style={{ aspectRatio: '16/7' }} />
+            <div className="h-8 bg-muted rounded w-2/3" />
+            <div className="h-4 bg-muted rounded" />
+            <div className="h-4 bg-muted rounded w-3/4" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (businessNotFound || !business) {
+    return (
+      <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
+        <Header />
+        <div className="flex items-center justify-center min-h-screen" style={{ paddingTop: '64px' }}>
+          <div className="text-center">
+            <Icon name="Store" size={40} color="var(--color-muted-foreground)" className="mx-auto mb-4" />
+            <h2 className="font-heading font-bold text-foreground mb-2">Negocio no encontrado</h2>
+            <Link to="/business-directory-listing"><Button variant="outline">Ver todos los negocios</Button></Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
@@ -386,7 +339,7 @@ export default function BusinessProfilePage() {
               </div>
 
               {/* Related Businesses */}
-              <RelatedBusinesses businesses={RELATED} />
+              <RelatedBusinesses businesses={relatedBusinesses} />
 
               {/* Post Ad CTA */}
               <div

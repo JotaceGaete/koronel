@@ -17,22 +17,6 @@ const CATEGORY_CONFIG = {
   other: { label: 'Otro', color: '#d97706', bg: '#fef3c7', icon: 'Tag' }
 };
 
-const FALLBACK_EVENT = {
-  id: '1',
-  title: 'Feria Gastronómica de Coronel',
-  description: 'Gran feria con los mejores sabores de la región. Disfruta de comida típica chilena, mariscos frescos y empanadas artesanales. Entrada liberada para toda la familia.\n\nHabrá stands de más de 30 emprendedores locales, música en vivo y actividades para niños.',
-  category: 'meetups',
-  start_datetime: new Date(Date.now() + 3 * 86400000)?.toISOString(),
-  end_datetime: new Date(Date.now() + 3 * 86400000 + 6 * 3600000)?.toISOString(),
-  venue_name: 'Plaza de Armas de Coronel',
-  address: 'Plaza de Armas, Coronel, Biobío',
-  address_text: 'Plaza de Armas, Coronel, Biobío',
-  image_url: "https://img.rocket.new/generatedImages/rocket_gen_img_14d5880d2-1772645297822.png",
-  contact_whatsapp: '+56912345678',
-  status: 'approved',
-  organizer: { name: 'Municipalidad de Coronel' }
-};
-
 function formatFullDate(dtStr) {
   if (!dtStr) return '';
   try {
@@ -63,7 +47,7 @@ export default function EventDetailPage() {
     if (!id) return;
     setLoading(true);
     eventService?.getById(id)?.then(({ data, error }) => {
-      setEvent(error || !data ? FALLBACK_EVENT : data);
+      setEvent(error || !data ? null : data);
       setLoading(false);
     });
     eventService?.getUpcoming(4)?.then(({ data }) => {

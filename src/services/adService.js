@@ -128,7 +128,7 @@ export const adService = {
     }
   },
 
-  async getByCategory(categoryKey, excludeId, limit = 4) {
+  async getByCategory(categoryKey, excludeId, limit = 4, communityCityId = null) {
     try {
       let query = supabase
         ?.from('classified_ads')
@@ -142,6 +142,7 @@ export const adService = {
       if (excludeId) {
         query = query?.neq('id', excludeId);
       }
+      query = applyCityFilter(query, communityCityId, { source: 'adService.getByCategory' });
       const { data, error } = await query;
       if (error) throw error;
       return { data: data || [], error: null };

@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { jobService } from '../../../services/jobService';
+import { useCity } from '../../../contexts/CityContext';
 
 export default function RelatedJobs({ category, excludeId }) {
+  const { communityCityId } = useCity();
   const [jobs, setJobs] = useState([]);
 
   useEffect(() => {
     if (!category || !excludeId) return;
-    jobService?.getRelated(category, excludeId, 3)?.then(({ data }) => {
+    jobService?.getRelated(category, excludeId, 3, communityCityId)?.then(({ data }) => {
       setJobs(data || []);
     });
-  }, [category, excludeId]);
+  }, [category, excludeId, communityCityId]);
 
   if (!jobs?.length) return null;
 

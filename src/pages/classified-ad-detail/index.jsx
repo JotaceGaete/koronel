@@ -14,7 +14,7 @@ export default function ClassifiedAdDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { city } = useCity();
+  const { city, communityCityId } = useCity();
   const brandName = city?.brand_name ?? siteConfig?.brandName;
   const [ad, setAd] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function ClassifiedAdDetail() {
         setAdOwner(ownerData);
         // Fetch similar ads by category
         if (data?.category_key) {
-          const { data: simData } = await adService?.getByCategory(data?.category_key, id, 4);
+          const { data: simData } = await adService?.getByCategory(data?.category_key, id, 4, communityCityId);
           if (simData?.length > 0) {
             setSimilarAds(simData?.map(a => adService?.formatAd(a)));
           }

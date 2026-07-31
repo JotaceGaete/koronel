@@ -271,3 +271,77 @@ describe('adService.getAll — filtrado por city_id (Fase 4 / B1)', () => {
     expect(result?.error)?.toEqual({ code: '500', message: 'fail' });
   });
 });
+
+describe('adService.getByCategory — filtrado por city_id (avisos similares)', () => {
+  let warnSpy;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn')?.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy?.mockRestore();
+  });
+
+  function makeGetByCategoryBuilder(result) {
+    const builder = {};
+    ['select', 'eq', 'neq', 'order', 'limit']?.forEach((method) => {
+      builder[method] = vi.fn(() => builder);
+    });
+    builder.then = (resolve, reject) => Promise.resolve(result)?.then(resolve, reject);
+    return builder;
+  }
+
+  it('con communityCityId válido, filtra por city_id exactamente una vez', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeGetByCategoryBuilder({ data: [], error: null });
+    supabase?.from?.mockImplementation((table) => {
+      expect(table)?.toBe('classified_ads');
+      return builder;
+    });
+
+    await adService?.getByCategory('hogar', 'ad-1', 4, cityId);
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(1);
+    expect(cityCalls?.[0])?.toEqual(['city_id', cityId]);
+  });
+
+  it('conserva ad_status, category_key, exclusión del aviso actual, orden y límite junto al filtro de ciudad', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeGetByCategoryBuilder({ data: [], error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    await adService?.getByCategory('hogar', 'ad-1', 4, cityId);
+
+    expect(builder?.eq)?.toHaveBeenCalledWith('ad_status', 'active');
+    expect(builder?.eq)?.toHaveBeenCalledWith('category_key', 'hogar');
+    expect(builder?.neq)?.toHaveBeenCalledWith('id', 'ad-1');
+    expect(builder?.order)?.toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(builder?.limit)?.toHaveBeenCalledWith(4);
+  });
+
+  it('con communityCityId null (u omitido): sin filtro territorial, emite el warning centralizado', async () => {
+    const builder = makeGetByCategoryBuilder({ data: [{ id: 'ad-2' }], error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    const result = await adService?.getByCategory('hogar', 'ad-1', 4);
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+    expect(warnSpy?.mock?.calls?.[0]?.[0])?.toContain('adService.getByCategory');
+    expect(result?.data)?.toHaveLength(1);
+    expect(result?.error)?.toBeNull();
+  });
+
+  it('un error se devuelve controlado, sin lanzar excepción', async () => {
+    const builder = makeGetByCategoryBuilder({ data: null, error: { code: '500', message: 'fail' } });
+    supabase?.from?.mockImplementation(() => builder);
+
+    const result = await adService?.getByCategory('hogar', 'ad-1', 4, '8aa2d628-719d-4810-9ee3-8efd230ab000');
+
+    expect(result?.data)?.toEqual([]);
+    expect(result?.error)?.toEqual({ code: '500', message: 'fail' });
+  });
+});

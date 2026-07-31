@@ -96,14 +96,16 @@ export const jobService = {
     }
   },
 
-  async getRelated(category, excludeId, limit = 3) {
+  async getRelated(category, excludeId, limit = 3, communityCityId = null) {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         ?.from('jobs')
         ?.select('*')
         ?.eq('status', 'published')
         ?.eq('category', category)
-        ?.neq('id', excludeId)
+        ?.neq('id', excludeId);
+      query = applyCityFilter(query, communityCityId, { source: 'jobService.getRelated' });
+      const { data, error } = await query
         ?.order('created_at', { ascending: false })
         ?.limit(limit);
       if (error) throw error;

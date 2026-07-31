@@ -199,3 +199,77 @@ describe('jobService.getLatest — filtrado por city_id (Fase 4 / B4)', () => {
     expect(cityCalls?.[0])?.toEqual(['city_id', 'city-a']);
   });
 });
+
+describe('jobService.getRelated — filtrado por city_id (empleos similares)', () => {
+  let warnSpy;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn')?.mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy?.mockRestore();
+  });
+
+  function makeGetRelatedBuilder(result) {
+    const builder = {};
+    ['select', 'eq', 'neq', 'order', 'limit']?.forEach((method) => {
+      builder[method] = vi.fn(() => builder);
+    });
+    builder.then = (resolve, reject) => Promise.resolve(result)?.then(resolve, reject);
+    return builder;
+  }
+
+  it('con communityCityId válido, filtra por city_id exactamente una vez', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeGetRelatedBuilder({ data: [], error: null });
+    supabase?.from?.mockImplementation((table) => {
+      expect(table)?.toBe('jobs');
+      return builder;
+    });
+
+    await jobService?.getRelated('Tecnología', 'job-1', 3, cityId);
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(1);
+    expect(cityCalls?.[0])?.toEqual(['city_id', cityId]);
+  });
+
+  it('conserva status published, categoría, exclusión del empleo actual, orden y límite junto al filtro de ciudad', async () => {
+    const cityId = '8aa2d628-719d-4810-9ee3-8efd230ab000';
+    const builder = makeGetRelatedBuilder({ data: [], error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    await jobService?.getRelated('Tecnología', 'job-1', 3, cityId);
+
+    expect(builder?.eq)?.toHaveBeenCalledWith('status', 'published');
+    expect(builder?.eq)?.toHaveBeenCalledWith('category', 'Tecnología');
+    expect(builder?.neq)?.toHaveBeenCalledWith('id', 'job-1');
+    expect(builder?.order)?.toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(builder?.limit)?.toHaveBeenCalledWith(3);
+  });
+
+  it('con communityCityId null (u omitido): sin filtro territorial, emite el warning centralizado', async () => {
+    const builder = makeGetRelatedBuilder({ data: [{ id: 'job-2' }], error: null });
+    supabase?.from?.mockImplementation(() => builder);
+
+    const result = await jobService?.getRelated('Tecnología', 'job-1', 3);
+
+    const cityCalls = builder?.eq?.mock?.calls?.filter(([col]) => col === 'city_id');
+    expect(cityCalls)?.toHaveLength(0);
+    expect(warnSpy)?.toHaveBeenCalledTimes(1);
+    expect(warnSpy?.mock?.calls?.[0]?.[0])?.toContain('jobService.getRelated');
+    expect(result?.data)?.toHaveLength(1);
+    expect(result?.error)?.toBeNull();
+  });
+
+  it('un error se devuelve controlado, sin lanzar excepción', async () => {
+    const builder = makeGetRelatedBuilder({ data: null, error: { code: '500', message: 'fail' } });
+    supabase?.from?.mockImplementation(() => builder);
+
+    const result = await jobService?.getRelated('Tecnología', 'job-1', 3, '8aa2d628-719d-4810-9ee3-8efd230ab000');
+
+    expect(result?.data)?.toEqual([]);
+    expect(result?.error)?.toEqual({ code: '500', message: 'fail' });
+  });
+});

@@ -1,18 +1,19 @@
--- Fase 2 del plan de reconciliación cities/community_cities: relación
--- entre la tabla de configuración de sitio (public.cities) y la entidad
--- operativa de ciudad (public.community_cities, ver baseline
--- 20260727000000_baseline_community_cities_legacy.sql).
+-- Activa el vínculo operativo entre public.cities y
+-- public.community_cities.
 --
--- Alcance EXCLUSIVO:
---   - columna nueva, nullable, en cities
---   - FK hacia community_cities(id), ON DELETE NO ACTION
---   - índice sobre la columna de relación
---   - backfill genérico por coincidencia de slug, sin conocimiento de
---     ninguna ciudad en particular
+-- En la auditoría F1-A0 se confirmó que producción todavía no contiene
+-- cities.community_city_id ni su FK asociada.
 --
--- NO incluye: cambios en CityContext, filtros por ciudad en servicios,
--- limpieza de campos duplicados, ni ninguna suposición sobre qué filas
--- existen hoy en ninguna de las dos tablas.
+-- Esta migración reemplaza, en el árbol ejecutable actual del repositorio,
+-- a 20260727010000_link_cities_to_community_cities.sql. El archivo anterior
+-- no se conserva como migración ejecutable para evitar dos migraciones que
+-- representen la misma operación.
+--
+-- Cambio estrictamente aditivo:
+--   1. columna nullable;
+--   2. FK;
+--   3. índice;
+--   4. backfill por coincidencia exacta de slug.
 
 -- ============================================================
 -- 1. Columna de relación

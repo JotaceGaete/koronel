@@ -85,6 +85,10 @@ function CityProbe() {
       <span data-testid="city-is-site-config">{String(city === siteConfig)}</span>
       <span data-testid="community-city-id">{String(communityCityId)}</span>
       <span data-testid="status">{resolutionStatus}</span>
+      <span data-testid="theme">{JSON.stringify(city?.theme)}</span>
+      <span data-testid="favicon-url">{String(city?.favicon_url)}</span>
+      <span data-testid="site-name">{String(city?.site_name)}</span>
+      <span data-testid="site-description">{String(city?.site_description)}</span>
     </div>
   );
 }
@@ -229,5 +233,76 @@ describe('CityProvider', () => {
     await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
     expect(screen.getByTestId('status')?.textContent).toBe('resolved');
     expect(screen.getByTestId('community-city-id')?.textContent).toBe('null');
+  });
+
+  it('fusiona theme/favicon_url/site_name/site_description desde community_cities embebido (objeto)', async () => {
+    mockEq.mockResolvedValue({
+      data: [{
+        slug: 'coronel-real',
+        domains: ['localhost'],
+        community_city_id: '8aa2d628-719d-4810-9ee3-8efd230ab000',
+        community_cities: {
+          theme: { colors: { primary: '#123456' }, texts: { heroTitle: 'Bienvenido' } },
+          favicon_url: 'https://cdn.example.com/favicon.ico',
+          site_name: 'CoronelLocal',
+          site_description: 'Descripción real',
+        },
+      }],
+      error: null,
+    });
+    render(
+      <CityProvider>
+        <CityProbe />
+      </CityProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
+    expect(screen.getByTestId('theme')?.textContent).toBe(
+      JSON.stringify({ colors: { primary: '#123456' }, texts: { heroTitle: 'Bienvenido' } })
+    );
+    expect(screen.getByTestId('favicon-url')?.textContent).toBe('https://cdn.example.com/favicon.ico');
+    expect(screen.getByTestId('site-name')?.textContent).toBe('CoronelLocal');
+    expect(screen.getByTestId('site-description')?.textContent).toBe('Descripción real');
+  });
+
+  it('normaliza community_cities embebido como arreglo (ambigüedad de PostgREST) al mismo objeto único', async () => {
+    mockEq.mockResolvedValue({
+      data: [{
+        slug: 'coronel-real',
+        domains: ['localhost'],
+        community_city_id: '8aa2d628-719d-4810-9ee3-8efd230ab000',
+        community_cities: [{
+          theme: { colors: { primary: '#abcdef' } },
+          favicon_url: null,
+          site_name: 'CoronelLocal',
+          site_description: null,
+        }],
+      }],
+      error: null,
+    });
+    render(
+      <CityProvider>
+        <CityProbe />
+      </CityProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
+    expect(screen.getByTestId('theme')?.textContent).toBe(JSON.stringify({ colors: { primary: '#abcdef' } }));
+    expect(screen.getByTestId('site-name')?.textContent).toBe('CoronelLocal');
+  });
+
+  it('sin community_cities embebido (null o ausente): theme queda en {} y el resto en null, sin lanzar', async () => {
+    mockEq.mockResolvedValue({
+      data: [{ slug: 'coronel-real', domains: ['localhost'], community_city_id: null, community_cities: null }],
+      error: null,
+    });
+    render(
+      <CityProvider>
+        <CityProbe />
+      </CityProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('loading')?.textContent).toBe('false'));
+    expect(screen.getByTestId('theme')?.textContent).toBe(JSON.stringify({}));
+    expect(screen.getByTestId('favicon-url')?.textContent).toBe('null');
+    expect(screen.getByTestId('site-name')?.textContent).toBe('null');
+    expect(screen.getByTestId('site-description')?.textContent).toBe('null');
   });
 });

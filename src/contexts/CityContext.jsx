@@ -27,6 +27,13 @@ export const FALLBACK_CITY = {
   // en la migración de Fase 2 — null hasta que el backfill lo resuelva.
   community_city_id: null,
   status: 'active',
+  // Campos que solo existen en community_cities (Bloque 1 del MVP de
+  // administración de ciudad) — theme trae color principal y textos de
+  // portada; sin fila resuelta, valores seguros por defecto.
+  theme: {},
+  favicon_url: null,
+  site_name: siteConfigDefaults?.brandName,
+  site_description: siteConfigDefaults?.seo?.defaultDescription,
 };
 
 // trim + minúsculas + sin punto final (FQDN trailing dot: "koronel.cl." es
@@ -85,9 +92,15 @@ export const useCity = () => useContext(CityContext);
  * Fase 2): el vínculo hacia la entidad operativa real en
  * `community_cities`, o `null` mientras no exista ese vínculo. `city`
  * sigue expuesto como alias exacto de `siteConfig` — misma referencia —
- * únicamente por compatibilidad temporal con los consumidores actuales;
- * no se agrega ninguna consulta nueva ni se trae la fila completa de
- * `community_cities` en esta fase.
+ * únicamente por compatibilidad temporal con los consumidores actuales.
+ *
+ * Bloque 1 del MVP de administración de ciudad: la consulta ahora trae
+ * también, embebida vía la FK community_city_id, la fila de
+ * `community_cities` — solo los campos que no tienen equivalente en
+ * `cities` (`theme`, `favicon_url`, `site_name`, `site_description`), ya
+ * fusionados en el objeto plano que expone `siteConfig`/`city`. No se
+ * agrega una segunda consulta: PostgREST resuelve el embed en la misma
+ * llamada.
  */
 export const CityProvider = ({ children }) => {
   const [siteConfig, setSiteConfig] = useState(FALLBACK_CITY);
@@ -100,7 +113,10 @@ export const CityProvider = ({ children }) => {
 
     async function loadCity() {
       try {
-        const { data, error } = await supabase?.from('cities')?.select('*')?.eq('status', 'active');
+        const { data, error } = await supabase
+          ?.from('cities')
+          ?.select('*, community_cities(theme, favicon_url, site_name, site_description)')
+          ?.eq('status', 'active');
         if (!mounted) return;
         if (error) {
           console.error('CityProvider query error:', error);
@@ -110,7 +126,18 @@ export const CityProvider = ({ children }) => {
         if (data?.length) {
           const match = resolveCityForHostname(hostname, data);
           if (match) {
-            setSiteConfig(match);
+            // PostgREST normalmente embebe una relación a-uno como objeto,
+            // pero devuelve un arreglo si no puede desambiguar — normalizar
+            // a un solo objeto (o null), igual que en businessService.getById.
+            const { community_cities: communityRowRaw, ...cityFields } = match;
+            const communityRow = Array.isArray(communityRowRaw) ? communityRowRaw?.[0] : communityRowRaw;
+            setSiteConfig({
+              ...cityFields,
+              theme: communityRow?.theme ?? {},
+              favicon_url: communityRow?.favicon_url ?? null,
+              site_name: communityRow?.site_name ?? null,
+              site_description: communityRow?.site_description ?? null,
+            });
             setResolutionStatus('resolved');
             return;
           }

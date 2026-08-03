@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import Icon from 'components/AppIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminBusinesses from './components/AdminBusinesses';
+import AdminCities from './components/AdminCities';
 import AdminCategories from './components/AdminCategories';
 import AdminClaimRequests from './components/AdminClaimRequests';
 import AdminClassifiedAds from './components/AdminClassifiedAds';
@@ -19,6 +20,7 @@ import AdminNotificationsPanel from 'components/admin/AdminNotificationsPanel';
 
 const NAV_ITEMS = [
   { id: 'businesses', label: 'Negocios', icon: 'Building2' },
+  { id: 'cities', label: 'Ciudades', icon: 'MapPin' },
   { id: 'incomplete', label: 'Negocios incompletos', icon: 'FileText' },
   { id: 'categories', label: 'Categorías', icon: 'LayoutGrid' },
   { id: 'claims', label: 'Reclamaciones', icon: 'FileCheck' },
@@ -35,6 +37,7 @@ const NAV_ITEMS = [
 
 const SECTION_MAP = {
   businesses: AdminBusinesses,
+  cities: AdminCities,
   incomplete: AdminIncompleteBusinesses,
   categories: AdminCategories,
   claims: AdminClaimRequests,

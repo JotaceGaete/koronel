@@ -11,6 +11,7 @@ vi.mock('../../contexts/AuthContext', () => ({
 // Every admin section component is heavy (own data fetching); stub them all so
 // this file only exercises the guard + the sidebar, not every section's internals.
 vi.mock('./components/AdminBusinesses', () => ({ default: () => <div>Sección: Negocios</div> }));
+vi.mock('./components/AdminCities', () => ({ default: () => <div>Sección: Ciudades</div> }));
 vi.mock('./components/AdminIncompleteBusinesses', () => ({ default: () => <div>Sección: Incompletos</div> }));
 vi.mock('./components/AdminCategories', () => ({ default: () => <div>Sección: Categorías</div> }));
 vi.mock('./components/AdminClaimRequests', () => ({ default: () => <div>Sección: Reclamaciones</div> }));

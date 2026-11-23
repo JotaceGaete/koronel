@@ -125,14 +125,16 @@ export const adminClaimService = {
     return data || [];
   },
 
-  async updateStatus(id, status) {
-    const { data: claim, error: fetchError } = await supabase?.from('business_claims')?.select('id, business_id, user_id')?.eq('id', id)?.single();
-    if (fetchError || !claim) throw fetchError || new Error('Solicitud no encontrada');
-    const { data, error } = await supabase?.from('business_claims')?.update({ claim_status: status })?.eq('id', id)?.select()?.single();
+  // Aprobar/rechazar pasa por las RPC del servidor: comprueban is_admin()
+  // (app_metadata), asignan owner_id/claimed/verified y dejan auditoría
+  // (reviewed_by, reviewed_at). business_claims no tiene política UPDATE.
+  async updateStatus(id, status, adminNotes = null) {
+    const fn = status === 'approved' ? 'approve_business_claim'
+      : status === 'rejected' ? 'reject_business_claim'
+        : null;
+    if (!fn) throw new Error(`Estado de reclamo no soportado: ${status}`);
+    const { data, error } = await supabase?.rpc(fn, { p_claim_id: id, p_admin_notes: adminNotes });
     if (error) throw error;
-    if (status === 'approved' && claim?.business_id && claim?.user_id) {
-      await supabase?.from('businesses')?.update({ owner_id: claim.user_id, claimed: true })?.eq('id', claim.business_id);
-    }
     return data;
   },
 };

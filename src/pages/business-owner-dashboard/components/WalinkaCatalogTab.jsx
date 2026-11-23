@@ -209,7 +209,9 @@ function BusinessWalinkaCard({ business, catalogs, catalogsLoading, onChanged })
         <p className="text-sm text-muted-foreground">Cargando tus catálogos…</p>
       ) : catalogs.length === 0 ? (
         <div className="text-sm text-muted-foreground space-y-2">
-          <p>No tienes catálogos Walinka activos y públicos.</p>
+          <p>
+            No tienes catálogos Walinka activos y públicos. Walinka te permite publicar un catálogo y recibir pedidos por WhatsApp.
+          </p>
           <a
             href={WALINKA_INFO_URL}
             target="_blank"
@@ -217,7 +219,7 @@ function BusinessWalinkaCard({ business, catalogs, catalogsLoading, onChanged })
             className="inline-flex items-center gap-1 underline"
             style={{ color: 'var(--color-primary)' }}
           >
-            Conoce Walinka y crea tu catálogo
+            Conoce Walinka
             <Icon name="ExternalLink" size={14} color="currentColor" />
           </a>
         </div>

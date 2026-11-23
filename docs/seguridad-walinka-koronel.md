@@ -22,6 +22,27 @@ Crea solo `public.get_public_walinka_link(uuid)`. No cambia tablas, políticas n
 
 La verificación posterior y el rollback están comentados al final del archivo.
 
+### Validación en Postgres local aislado (2026-11-23)
+`supabase/tests/walinka_public_link/` replica las tablas, la RLS y `wa_resolve_catalog_url` tal como están en producción, con datos ficticios, y aplica la migración tal cual. Resultados:
+
+| Caso | Resultado |
+|---|---|
+| Vínculo activo + negocio publicado (anon) | Devuelve nombre + `https://miralatienda.de/catalogo/<slug>` |
+| Negocio `pending` | 0 filas |
+| Vínculo revocado | 0 filas |
+| Catálogo inactivo | 0 filas |
+| Dominio propio activo (negocio `premium`) | Devuelve `https://<dominio>`; el dominio inactivo se ignora |
+| Catálogo sin slug ni dominio / dominio con caracteres inválidos | 0 filas |
+| UUID inexistente / NULL | 0 filas |
+| `authenticated` ajeno al negocio | Mismo resultado público, nada más |
+| Revocar y revincular | Desaparece y vuelve (los índices únicos son parciales) |
+| `search_path` hostil (tabla homónima en otro esquema) | No afecta |
+| Permisos | `SECURITY DEFINER`, `search_path=""`, `STABLE`; EXECUTE para anon, authenticated y service_role (este último por los privilegios por defecto de Supabase); 0 permisos a PUBLIC |
+| Escrituras | Hash de `wa_businesses` idéntico antes, después y tras el rollback |
+| Rollback | `DROP FUNCTION` OK |
+
+Limitación: es una réplica local, no el Supabase real. Antes de aplicar en el proyecto compartido conviene repetir los casos en una rama de Supabase o justo después de aplicar, con la verificación del final de la migración.
+
 ---
 
 ## 2. Impedir que los propietarios modifiquen `status` y `verified` (NO aplicado)
@@ -163,4 +184,5 @@ Riesgo: si alguna página anónima usa `select=*` o una columna fuera de la list
 - Las migraciones del repo de Koronel están desactualizadas respecto de producción (por ejemplo, `is_admin_user()` en el repo todavía acepta `user_metadata`). Conviene regenerar una línea base.
 - `get_my_walinka_catalogs()` devuelve también catálogos inactivos o sin URL. La interfaz los filtra.
 - El vínculo exige `businesses.claimed = true`, pero hoy el dueño puede escribir `claimed` (ver sección 2).
-- `WALINKA_INFO_URL` usa por defecto `https://miralatienda.de` (el dominio de catálogos que aparece en `wa_resolve_catalog_url`). Si la landing oficial de Walinka es otra, se configura con `VITE_WALINKA_INFO_URL`.
+- `WALINKA_INFO_URL` usa por defecto `https://walinka.com/` (la página informativa oficial; `miralatienda.de` es solo el origen técnico de los catálogos). Se puede cambiar con `VITE_WALINKA_INFO_URL`.
+- **Este flujo no está completamente protegido mientras sigan abiertos los riesgos de la sección 2**: un dueño puede marcar su negocio como `claimed`, `published` o `verified` por su cuenta, y la lectura pública de `businesses` es demasiado amplia. La vinculación en sí exige que el catálogo Walinka sea del mismo usuario, pero el lanzamiento debería esperar esas correcciones.

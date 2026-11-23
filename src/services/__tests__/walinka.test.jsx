@@ -96,7 +96,7 @@ describe('Panel: WalinkaCatalogTab', () => {
     });
     render(<WalinkaCatalogTab businesses={[BIZ]} />);
     expect(await screen.findByText(/No tienes catálogos Walinka/)).toBeInTheDocument();
-    expect(screen.getByText(/Conoce Walinka/).closest('a')).toHaveAttribute('href');
+    expect(screen.getByText(/Conoce Walinka/).closest('a')).toHaveAttribute('href', 'https://walinka.com/');
   });
 
   it('escenario 1: selecciona, confirma y vincula', async () => {

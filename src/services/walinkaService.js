@@ -1,8 +1,9 @@
 import { supabase } from '../lib/supabase';
 
-// Página informativa para comerciantes sin catálogo. Configurable por entorno.
+// Página informativa oficial de Walinka (desde ahí se accede a la plataforma).
+// No usar el origen técnico de catálogos (miralatienda.de). Configurable por entorno.
 export const WALINKA_INFO_URL =
-  import.meta.env?.VITE_WALINKA_INFO_URL || 'https://miralatienda.de';
+  import.meta.env?.VITE_WALINKA_INFO_URL || 'https://walinka.com/';
 
 const ERROR_MESSAGES = {
   WALINKA_AUTH_REQUIRED: 'Debes iniciar sesión para gestionar tu catálogo.',

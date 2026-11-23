@@ -12,12 +12,14 @@ import EditBusinessModal from '../user-business-dashboard/components/EditBusines
 import ReviewsTab from './components/ReviewsTab';
 import StatsTab from './components/StatsTab';
 import MessagesTab from './components/MessagesTab';
+import WalinkaCatalogTab from './components/WalinkaCatalogTab';
 
 const TABS = [
   { id: 'businesses', label: 'Mis Negocios', icon: 'Building2' },
   { id: 'reviews', label: 'Reseñas', icon: 'Star' },
   { id: 'stats', label: 'Estadísticas', icon: 'BarChart2' },
   { id: 'messages', label: 'Mensajes', icon: 'MessageSquare' },
+  { id: 'walinka', label: 'Mi catálogo Walinka', icon: 'ShoppingBag' },
 ];
 
 export default function BusinessOwnerDashboard() {
@@ -209,6 +211,11 @@ export default function BusinessOwnerDashboard() {
               {/* Tab: Mensajes */}
               {activeTab === 'messages' && (
                 <MessagesTab />
+              )}
+
+              {/* Tab: Mi catálogo Walinka */}
+              {activeTab === 'walinka' && !loading && (
+                <WalinkaCatalogTab businesses={businesses} />
               )}
             </main>
           </div>

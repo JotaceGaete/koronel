@@ -328,22 +328,21 @@ export default function PublishBusinessForm() {
       setShowPaymentModal(true);
       return;
     }
-    await doSubmit('pending');
+    await doSubmit();
   };
 
+  // El pago es simulado en el cliente, así que no puede activar Premium.
+  // El negocio se crea siempre como 'pending' (lo fuerza la base de datos) y
+  // un administrador asigna Premium cuando confirma el pago.
   const handleSimulatePayment = async () => {
     setShowPaymentModal(false);
-    await doSubmit('premium');
+    await doSubmit();
   };
 
-  const doSubmit = async (status) => {
+  const doSubmit = async () => {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const premiumUntil = status === 'premium'
-        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)?.toISOString()
-        : null;
-
       const finalCategoryId = form?.categoria_id || form?.parent_category_id;
       const finalCategoryName = form?.categoria_nombre || form?.parent_category_name;
       const finalCategoryKey = form?.categoria_key || '';
@@ -364,11 +363,6 @@ export default function PublishBusinessForm() {
         opening_hours: buildOpeningHours(),
         social_links: socialLinks?.filter(s => s?.url?.trim()),
         owner_id: user?.id,
-        claimed: true,
-        status,
-        premium_until: premiumUntil,
-        verified: false,
-        featured: false,
       };
 
       const { data: business, error: bizError } = await businessService?.create(payload);
@@ -428,10 +422,10 @@ export default function PublishBusinessForm() {
               <Icon name="CheckCircle" size={40} color="var(--color-success, #22c55e)" />
             </div>
             <h2 className="font-heading font-bold text-xl text-foreground mb-2">
-              {publicationType === 'premium' ? '¡Negocio publicado como Premium!' : '¡Negocio enviado para revisión!'}
+              {publicationType === 'premium' ? '¡Solicitud Premium recibida!' : '¡Negocio enviado para revisión!'}
             </h2>
             <p className="text-sm font-caption text-muted-foreground mb-6">
-              {publicationType === 'premium' ? 'Tu negocio ya aparece en el directorio como Premium por 30 días.' : 'Tu negocio quedará visible en el directorio una vez que sea aprobado por nuestro equipo.'}
+              {publicationType === 'premium' ? 'Nuestro equipo activará la publicación Premium por 30 días cuando confirme el pago.' : 'Tu negocio quedará visible en el directorio una vez que sea aprobado por nuestro equipo.'}
             </p>
             <div className="flex flex-col gap-3">
               <button
@@ -961,10 +955,10 @@ export default function PublishBusinessForm() {
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${publicationType === 'premium' ? 'border-primary' : 'border-border'}`}>
                       {publicationType === 'premium' && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-primary)' }} />}
                     </div>
-                    <span className="font-heading font-semibold text-foreground">Publicación Inmediata</span>
+                    <span className="font-heading font-semibold text-foreground">Publicación Destacada</span>
                     <span className="text-xs px-1.5 py-0.5 rounded text-white font-medium" style={{ background: 'var(--color-accent)' }}>Premium</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">Tu negocio aparece publicado de inmediato como Premium por 30 días.</p>
+                  <p className="text-xs text-muted-foreground mb-2">Nuestro equipo activa la publicación Premium por 30 días al confirmar el pago.</p>
                   <p className="text-xs text-muted-foreground">Aparece primero en el directorio y con insignia Premium.</p>
                   <div className="mt-3 pt-3 border-t border-border">
                     <span className="text-lg font-bold text-foreground">$2.000 CLP</span>
@@ -1010,14 +1004,14 @@ export default function PublishBusinessForm() {
             <div className="bg-muted rounded-lg p-4 mb-4 text-sm text-muted-foreground">
               <p className="font-medium text-foreground mb-2">Incluye:</p>
               <ul className="space-y-1">
-                <li className="flex items-center gap-2"><Icon name="Check" size={14} color="var(--color-success, #22c55e)" /> Publicación inmediata</li>
+                <li className="flex items-center gap-2"><Icon name="Check" size={14} color="var(--color-success, #22c55e)" /> Publicación al confirmar el pago</li>
                 <li className="flex items-center gap-2"><Icon name="Check" size={14} color="var(--color-success, #22c55e)" /> Insignia Premium por 30 días</li>
                 <li className="flex items-center gap-2"><Icon name="Check" size={14} color="var(--color-success, #22c55e)" /> Aparece primero en el directorio</li>
               </ul>
             </div>
             <div className="p-3 rounded-lg mb-4 text-xs text-center" style={{ background: '#fef3c7', color: '#92400e' }}>
               <Icon name="Info" size={14} color="currentColor" className="inline mr-1" />
-              Modo de prueba: el pago es simulado
+              Modo de prueba: el pago es simulado. Un administrador activará Premium tras confirmarlo.
             </div>
             <div className="flex gap-3">
               <button onClick={() => setShowPaymentModal(false)} className="flex-1 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors">Cancelar</button>

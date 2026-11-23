@@ -14,6 +14,7 @@ import AdminCommunity from './components/AdminCommunity';
 import AdminEmpleos from './components/AdminEmpleos';
 import AdminIncompleteBusinesses from './components/AdminIncompleteBusinesses';
 import AdminNotificationsPanel from 'components/admin/AdminNotificationsPanel';
+import { isAdminUser } from '../../utils/adminAuth';
 
 const NAV_ITEMS = [
   { id: 'businesses', label: 'Negocios', icon: 'Building2' },
@@ -43,17 +44,8 @@ const SECTION_MAP = {
   empleos: AdminEmpleos,
 };
 
-function isAdminUser(user, userProfile) {
-  if (!user) return false;
-  const meta = user?.user_metadata || {};
-  const appMeta = user?.app_metadata || {};
-  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
-  const profileAdmin = userProfile?.role === 'admin';
-  return authAdmin || profileAdmin;
-}
-
 export default function AdminDashboard() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const [activeSection, setActiveSection] = useState('businesses');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -78,7 +70,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!user || !isAdminUser(user, userProfile)) {
+  if (!user || !isAdminUser(user)) {
     return <Navigate to="/login" replace />;
   }
 

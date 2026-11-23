@@ -1,46 +1,64 @@
 import { supabase } from '../lib/supabase';
 import { uploadFile } from './uploadService';
 
-const BUSINESS_COLUMNS = new Set([
-  'owner_id',
+// Columnas que el comerciante puede escribir en su propia ficha.
+// Los campos reservados a la administración (status, verified, featured,
+// premium_until, claimed, owner_id en updates, rating, contadores,
+// rejection_reason, admin_notes, walinka_*) NO van aquí: además del filtro
+// del cliente, el trigger `businesses_guard_privileged_columns` los protege
+// en la base de datos.
+const OWNER_EDITABLE_COLUMNS = new Set([
   'name',
   'category',
   'category_key',
   'description',
   'address',
+  'address_text',
   'phone',
   'email',
   'website',
-  'rating',
-  'review_count',
   'is_open',
-  'featured',
-  'verified',
   'latitude',
   'longitude',
   'lat',
   'lng',
   'opening_hours',
-  'profile_visits',
-  'contacts_count',
-  'status',
-  'premium_until',
-  'rejection_reason',
   'whatsapp',
   'redes_sociales',
   'logo_url',
   'social_links',
   'category_id',
-  'claimed',
   'google_place_id',
 ]);
+
+// Columnas que se leen en las vistas públicas. No usar `*`: anon no tiene
+// permiso sobre las columnas internas (admin_notes, rejection_reason,
+// account_id, walinka_*), y un `select=*` fallaría.
+export const PUBLIC_BUSINESS_COLUMNS = [
+  'id', 'owner_id', 'name', 'category', 'category_key', 'category_id', 'description',
+  'address', 'address_text', 'phone', 'email', 'website', 'whatsapp', 'redes_sociales',
+  'social_links', 'logo_url', 'rating', 'review_count', 'is_open', 'featured', 'verified',
+  'claimed', 'status', 'premium_until', 'latitude', 'longitude', 'lat', 'lng',
+  'opening_hours', 'profile_visits', 'contacts_count', 'google_place_id', 'tags',
+  'city_id', 'created_at', 'updated_at',
+].join(', ');
 
 function sanitizeBusinessPayload(payload = {}) {
   return Object.fromEntries(
     Object.entries(payload).filter(([key, value]) => (
-      BUSINESS_COLUMNS.has(key) && value !== undefined
+      OWNER_EDITABLE_COLUMNS.has(key) && value !== undefined
     ))
   );
+}
+
+export function buildOwnerBusinessInsert(payload = {}, ownerId) {
+  // La base de datos fuerza status = 'pending', verified/featured = false,
+  // premium_until = NULL y claimed = true para altas hechas por comerciantes.
+  return { ...sanitizeBusinessPayload(payload), owner_id: ownerId ?? payload.owner_id };
+}
+
+export function buildOwnerBusinessUpdate(payload = {}) {
+  return sanitizeBusinessPayload(payload);
 }
 
 export const businessService = {
@@ -49,7 +67,7 @@ export const businessService = {
       // Check premium expiry before fetching
       await businessService?.checkPremiumExpiry();
 
-      let query = supabase?.from('businesses')?.select('*, business_images(storage_path, alt_text, is_primary)', { count: 'exact' })?.in('status', ['published', 'premium']);
+      let query = supabase?.from('businesses')?.select(`${PUBLIC_BUSINESS_COLUMNS}, business_images(storage_path, alt_text, is_primary)`, { count: 'exact' })?.in('status', ['published', 'premium']);
 
       if (category && category !== 'all') {
         query = query?.eq('category_key', category);
@@ -91,7 +109,7 @@ export const businessService = {
       const { data, error } = await supabase
         ?.from('businesses')
         ?.select(`
-          *,
+          ${PUBLIC_BUSINESS_COLUMNS},
           business_images(storage_path, alt_text, is_primary, sort_order),
           category:categories(id, name, name_key, parent_id)
         `)
@@ -114,7 +132,7 @@ export const businessService = {
 
   async getFeatured(limit = 6) {
     try {
-      const { data, error } = await supabase?.from('businesses')?.select('*, business_images(storage_path, alt_text, is_primary)')?.eq('featured', true)?.in('status', ['published', 'premium'])?.order('rating', { ascending: false })?.limit(limit);
+      const { data, error } = await supabase?.from('businesses')?.select(`${PUBLIC_BUSINESS_COLUMNS}, business_images(storage_path, alt_text, is_primary)`)?.eq('featured', true)?.in('status', ['published', 'premium'])?.order('rating', { ascending: false })?.limit(limit);
       if (error) throw error;
       return { data: data || [], error: null };
     } catch (error) {
@@ -134,7 +152,7 @@ export const businessService = {
 
   async create(payload) {
     try {
-      const safePayload = { ...sanitizeBusinessPayload(payload), claimed: payload.claimed ?? false };
+      const safePayload = buildOwnerBusinessInsert(payload);
       const { data, error } = await supabase?.from('businesses')?.insert(safePayload)?.select()?.single();
       if (error) throw error;
       return { data, error: null };
@@ -145,7 +163,7 @@ export const businessService = {
 
   async update(id, payload) {
     try {
-      const { data, error } = await supabase?.from('businesses')?.update({ ...sanitizeBusinessPayload(payload), updated_at: new Date()?.toISOString() })?.eq('id', id)?.select()?.single();
+      const { data, error } = await supabase?.from('businesses')?.update({ ...buildOwnerBusinessUpdate(payload), updated_at: new Date()?.toISOString() })?.eq('id', id)?.select()?.single();
       if (error) throw error;
       return { data, error: null };
     } catch (error) {

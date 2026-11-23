@@ -7,6 +7,7 @@ import ImageGallery from './components/ImageGallery';
 import BusinessInfo from './components/BusinessInfo';
 import OpeningHours from './components/OpeningHours';
 import ContactDetails from './components/ContactDetails';
+import WalinkaCatalogButton from './components/WalinkaCatalogButton';
 import BusinessMap from './components/BusinessMap';
 import ReviewsSection from './components/ReviewsSection';
 import ClaimBusiness from './components/ClaimBusiness';
@@ -285,6 +286,9 @@ export default function BusinessProfilePage() {
 
             {/* Right / Sidebar Column */}
             <div className="w-full lg:w-80 xl:w-96 space-y-5 shrink-0">
+              {/* Catálogo Walinka vinculado (solo si existe un vínculo activo) */}
+              {businessId && <WalinkaCatalogButton businessId={businessId} />}
+
               {/* Contact Details */}
               <ContactDetails
                 phone={DISPLAY?.phone}

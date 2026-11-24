@@ -3,16 +3,36 @@ import { supabase } from '../lib/supabase';
 // email y phone de user_profiles ya no son legibles con select/embed (permisos por
 // columna). Solo un admin puede obtenerlos, mediante la RPC admin_get_user_contacts.
 
+export const ADMIN_CONTACTS_ERROR_EVENT = 'koronel:admin-contacts-error';
+
+// Un fallo de la RPC no debe pasar en silencio: el panel admin perdería los emails sin
+// que nadie lo note. Se registra en consola con un prefijo fijo (fácil de buscar) y se
+// emite un evento que AdminDashboard muestra como aviso visible.
+function reportContactsError(error) {
+  const detail = {
+    code: error?.code || 'unknown',
+    message: error?.message || String(error),
+  };
+  console.error('[admin-contacts] admin_get_user_contacts falló', detail);
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent(ADMIN_CONTACTS_ERROR_EVENT, { detail }));
+  }
+}
+
 /**
  * Añade email y phone al perfil embebido en cada fila (row[key]), que debe incluir `id`.
- * Si la RPC falla (no admin, o migración aún no aplicada) devuelve las filas tal cual.
+ * Si la RPC falla devuelve las filas sin contactos (la lista sigue usable), pero lo
+ * informa con reportContactsError.
  */
 export async function attachUserContacts(rows, key) {
   const list = Array.isArray(rows) ? rows : [];
   const ids = [...new Set(list.map((r) => r?.[key]?.id).filter(Boolean))];
   if (ids.length === 0) return list;
   const { data, error } = await supabase.rpc('admin_get_user_contacts', { p_user_ids: ids });
-  if (error || !Array.isArray(data)) return list;
+  if (error || !Array.isArray(data)) {
+    reportContactsError(error || new Error('Respuesta inesperada de admin_get_user_contacts'));
+    return list;
+  }
   const byId = new Map(data.map((c) => [c.id, c]));
   return list.map((r) => {
     const profile = r?.[key];

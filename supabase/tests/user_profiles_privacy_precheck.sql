@@ -42,3 +42,15 @@ WHERE table_schema = 'public' AND table_name = 'user_profiles'
 -- 6. Columnas actuales (si hay columnas nuevas, decidir si son públicas o privadas).
 SELECT column_name, data_type FROM information_schema.columns
 WHERE table_schema = 'public' AND table_name = 'user_profiles' ORDER BY ordinal_position;
+
+-- 7. (Antes del paso 1) Funciones de las que dependen el panel admin y los reclamos.
+--    is_admin(): debe leer SOLO raw_app_meta_data (admin_get_user_contacts ya no depende de
+--    ella, pero las RPC de reclamos y las políticas sí). approve_/reject_business_claim deben
+--    existir, ser SECURITY DEFINER y no ejecutables por anon.
+SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args, p.prosecdef AS security_definer,
+       p.proconfig AS config,
+       has_function_privilege('anon', p.oid, 'execute') AS anon_exec,
+       pg_get_functiondef(p.oid) AS definicion
+FROM pg_proc p
+WHERE p.pronamespace = 'public'::regnamespace
+  AND p.proname IN ('is_admin', 'is_admin_user', 'approve_business_claim', 'reject_business_claim');

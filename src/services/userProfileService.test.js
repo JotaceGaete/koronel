@@ -9,7 +9,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-const { attachUserContacts, fetchOwnProfile } = await import('./userProfileService');
+const { attachUserContacts, fetchOwnProfile, ADMIN_CONTACTS_ERROR_EVENT } = await import('./userProfileService');
 
 beforeEach(() => { rpc.mockReset(); single.mockReset(); });
 
@@ -27,10 +27,18 @@ describe('attachUserContacts', () => {
     expect(await attachUserContacts([{ owner: null }], 'owner')).toEqual([{ owner: null }]);
     expect(rpc).not.toHaveBeenCalled();
   });
-  it('si la RPC falla (no admin) devuelve las filas sin cambios', async () => {
-    rpc.mockResolvedValue({ data: null, error: { code: '42501' } });
+  it('si la RPC falla devuelve las filas, pero lo registra y emite el aviso', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'no admin' } });
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const seen = [];
+    const onErr = (e) => seen.push(e.detail);
+    window.addEventListener(ADMIN_CONTACTS_ERROR_EVENT, onErr);
     const rows = [{ owner: { id: 'u1', full_name: 'A' } }];
     expect(await attachUserContacts(rows, 'owner')).toEqual(rows);
+    window.removeEventListener(ADMIN_CONTACTS_ERROR_EVENT, onErr);
+    expect(spy).toHaveBeenCalledWith('[admin-contacts] admin_get_user_contacts falló', { code: '42501', message: 'no admin' });
+    expect(seen).toEqual([{ code: '42501', message: 'no admin' }]);
+    spy.mockRestore();
   });
 });
 

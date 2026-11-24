@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pruebas de 20261125000000 + 20261125000100 contra un Postgres local AISLADO (nunca producción).
-# Uso: user_profiles_privacy_test.sh <db> <fase>   fase: before | step1 | step2 | rollback
+# Uso: user_profiles_privacy_test.sh <db> <fase>   fase: before | step1 | step2 | rollback | rollback2_with_pr2
 DB=$1; PHASE=$2
 PSQL="psql -h ${PGHOST:-localhost} -p ${PGPORT:-5432} -U ${PGUSER:-postgres} -d $DB -X -q -t -A"
 ADMIN=00000000-0000-0000-0000-00000000000a; OWNER=00000000-0000-0000-0000-00000000000b; FAKE=00000000-0000-0000-0000-00000000000c
@@ -22,10 +22,11 @@ SQL
   else fail=$((fail+1)); printf 'FAIL  %s\n      esperado /%s/ obtenido: %s\n' "$name" "$exp" "$out"; fi
 }
 DENIED="permission denied"
-case $PHASE in before|step1|rollback) LEAK=1;; *) LEAK=0;; esac
+case $PHASE in before|step1|rollback) LEAK=1;; rollback2_with_pr2) LEAK=2;; *) LEAK=0;; esac
 
 # --- Filtración (lo que se corrige)
-if [ $LEAK = 1 ]; then
+if [ $LEAK = 2 ]; then :
+elif [ $LEAK = 1 ]; then
   t "[$PHASE] anon lee emails (filtración presente)" anon "" "SELECT count(email) FROM user_profiles;" "^3 ?$"
   t "[$PHASE] authenticated se pone role=admin (hueco presente)" authenticated $OWNER "UPDATE user_profiles SET role='admin' WHERE id='$OWNER' RETURNING role;" "^admin ?$"
 else
@@ -56,14 +57,24 @@ t "anon contador de usuarios (StatsBar)" anon "" "SELECT count(*) FROM (SELECT i
 t "authenticated actualiza su perfil (sin RETURNING)" authenticated $OWNER "UPDATE user_profiles SET full_name='Nuevo', phone='+569', location='Lota', email_notifications=false WHERE id='$OWNER'; SELECT full_name FROM user_profiles WHERE id='$OWNER';" "^Nuevo ?$"
 t "authenticated no actualiza perfil ajeno" authenticated $OWNER "UPDATE user_profiles SET full_name='Hack' WHERE id='$ADMIN'; SELECT full_name FROM user_profiles WHERE id='$ADMIN';" "^admin ?$"
 
-if [ $PHASE != before ] && [ $PHASE != rollback ]; then
+if [ $PHASE = step1 ] || [ $PHASE = step2 ]; then
   t "get_my_profile devuelve solo mi fila completa" authenticated $OWNER "SELECT count(*), max(email), max(phone), max(location) FROM get_my_profile();" "^1\|owner@x\|\+56911111111\|Coronel ?$"
   t "get_my_profile anon: sin permiso"   anon "" "SELECT * FROM get_my_profile();" "$DENIED"
   t "admin_get_user_contacts admin"      authenticated $ADMIN "SELECT string_agg(email||'/'||coalesce(phone,'-'), ',' ORDER BY email) FROM admin_get_user_contacts(ARRAY['$OWNER','$FAKE']::uuid[]);" "^fake@x/-,owner@x/\+56911111111 ?$"
   t "admin_get_user_contacts no admin"   authenticated $OWNER "SELECT * FROM admin_get_user_contacts(ARRAY['$ADMIN']::uuid[]);" "Solo un administrador"
   t "admin_get_user_contacts user_metadata/perfil admin falso" authenticated $FAKE "SELECT * FROM admin_get_user_contacts(ARRAY['$ADMIN']::uuid[]);" "Solo un administrador"
+  t "admin_get_user_contacts no confía en is_admin() (aunque devuelva true)" authenticated $OWNER "RESET ROLE; CREATE OR REPLACE FUNCTION public.is_admin() RETURNS boolean LANGUAGE sql AS 'SELECT true'; SET LOCAL ROLE authenticated; SELECT * FROM admin_get_user_contacts(ARRAY['$ADMIN']::uuid[]);" "Solo un administrador"
   t "admin_get_user_contacts anon"       anon "" "SELECT * FROM admin_get_user_contacts(ARRAY['$ADMIN']::uuid[]);" "$DENIED"
   t "admin_get_user_contacts tope 1000"  authenticated $ADMIN "SELECT * FROM admin_get_user_contacts(array_fill('$OWNER'::uuid, ARRAY[1001]));" "máximo 1000"
+fi
+if [ $PHASE = rollback2_with_pr2 ]; then
+  # Rollback de emergencia con PR #2: vuelve la lectura pública (costo documentado), pero
+  # el trigger user_profiles_guard_role sigue impidiendo cambiar role.
+  t "rollback+PR2: anon vuelve a leer emails (costo)" anon "" "SELECT count(email) > 0 FROM user_profiles;" "^t ?$"
+  t "rollback+PR2: role sigue bloqueado por trigger" authenticated $OWNER "UPDATE user_profiles SET role='admin' WHERE id='$OWNER';" "USER_ROLE_ADMIN_ONLY"
+  t "rollback+PR2: anon sin TRUNCATE ni escritura" anon "" "UPDATE user_profiles SET full_name='x';" "permission denied"
+  t "rollback+PR2: authenticated sin TRUNCATE" authenticated $OWNER "TRUNCATE user_profiles CASCADE;" "permission denied"
+  t "rollback+PR2: perfil propio editable" authenticated $OWNER "UPDATE user_profiles SET full_name='R' WHERE id='$OWNER' RETURNING full_name;" "^R ?$"
 fi
 if [ $PHASE = rollback ]; then
   t "rollback: RPC eliminadas" authenticated $OWNER "SELECT * FROM get_my_profile();" "does not exist"

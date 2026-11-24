@@ -67,10 +67,15 @@ t "no admin no aprueba reclamo"       authenticated $CLAIMER "SELECT approve_bus
 t "reseña actualiza rating (definer)" authenticated $CLAIMER "INSERT INTO business_reviews (business_id,user_id,rating) VALUES ('$B_PUB','$CLAIMER',4); SELECT rating, review_count FROM businesses WHERE id='$B_PUB';" "^4\.0\|1 ?$"
 t "anon expira premium (definer)"     anon "" "SELECT check_premium_expiry(); SELECT count(*) FROM businesses WHERE status='premium';" "^ ?0 ?$"
 # --- Roles
-t "usuario no se hace admin en perfil" authenticated $OWNER "UPDATE user_profiles SET role='admin' WHERE id='$OWNER';" "USER_ROLE_ADMIN_ONLY"
+# Con 20261125000100 (PR #3) aplicada, authenticated no tiene permiso de columna sobre role:
+# Postgres corta con "permission denied" antes de llegar al trigger user_profiles_guard_role.
+# Exportar USER_PROFILES_COLUMN_PRIVACY=1 en ese caso.
+if [ "${USER_PROFILES_COLUMN_PRIVACY:-0}" = 1 ]; then ROLE_DENIED="permission denied for table user_profiles"; else ROLE_DENIED="USER_ROLE_ADMIN_ONLY"; fi
+t "usuario no se hace admin en perfil" authenticated $OWNER "UPDATE user_profiles SET role='admin' WHERE id='$OWNER';" "$ROLE_DENIED"
 t "usuario edita su perfil"           authenticated $OWNER "UPDATE user_profiles SET full_name='Juan P' WHERE id='$OWNER' RETURNING full_name;" "^Juan P ?$"
 t "alta de perfil fuerza role=user"   authenticated $CLAIMER "DELETE FROM user_profiles WHERE id='$CLAIMER'; INSERT INTO user_profiles (id,email,role) VALUES ('$CLAIMER','c2@x','admin') RETURNING role;" "user|permission denied|row-level"
-t "admin cambia rol"                  authenticated $ADMIN "UPDATE user_profiles SET role='admin' WHERE id='$OWNER' RETURNING role;" "^ ?$|admin"
+if [ "${USER_PROFILES_COLUMN_PRIVACY:-0}" = 1 ]; then ADMIN_ROLE_EXP="permission denied for table user_profiles"; else ADMIN_ROLE_EXP="^ ?$|admin"; fi
+t "admin cambia rol (sin política UPDATE de admin)" authenticated $ADMIN "UPDATE user_profiles SET role='admin' WHERE id='$OWNER' RETURNING role;" "$ADMIN_ROLE_EXP"
 t "registro auth crea perfil"         postgres "" "INSERT INTO auth.users (id,email) VALUES (gen_random_uuid(),'n@x'); SELECT role FROM user_profiles WHERE email='n@x';" "user"
 t "anon no puede TRUNCATE"            anon "" "TRUNCATE businesses CASCADE;" "permission denied"
 echo "== $pass ok, $fail fallos"

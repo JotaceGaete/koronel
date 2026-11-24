@@ -1,5 +1,5 @@
 -- Réplica mínima (solo pruebas locales, NUNCA en Supabase) del estado de producción de
--- coronel-portal al 2026-11-23 para user_profiles y tablas que lo embeben.
+-- coronel-portal al 2026-11-24 (políticas y columnas confirmadas por Juan con el precheck) para user_profiles y tablas que lo embeben.
 -- Tomada de supabase/tests/businesses_security_baseline.sql (PR de businesses).
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS; END IF; END $$;
 CREATE SCHEMA auth;
@@ -23,6 +23,7 @@ ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY public_read_user_profiles ON public.user_profiles FOR SELECT TO public USING (true);
 CREATE POLICY users_insert_own_user_profiles ON public.user_profiles FOR INSERT TO authenticated WITH CHECK (id = auth.uid());
 CREATE POLICY users_update_own_user_profiles ON public.user_profiles FOR UPDATE TO authenticated USING (id = auth.uid()) WITH CHECK (id = auth.uid());
+CREATE POLICY admin_read_user_profiles ON public.user_profiles FOR SELECT TO authenticated USING (is_admin());
 CREATE POLICY users_delete_own_user_profiles ON public.user_profiles FOR DELETE TO authenticated USING (id = auth.uid());
 ALTER TABLE public.business_reviews ENABLE ROW LEVEL SECURITY;
 CREATE POLICY public_read_business_reviews ON public.business_reviews FOR SELECT USING (true);

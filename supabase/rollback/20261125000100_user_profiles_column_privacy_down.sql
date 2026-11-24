@@ -6,6 +6,9 @@ DROP POLICY IF EXISTS public_read_user_profiles ON public.user_profiles;
 CREATE POLICY public_read_user_profiles ON public.user_profiles
   FOR SELECT TO public
   USING (true);
+REVOKE SELECT (id, full_name, avatar_url, created_at, updated_at) ON public.user_profiles FROM anon, authenticated;
+REVOKE UPDATE (full_name, phone, location, avatar_url, email_notifications) ON public.user_profiles FROM authenticated;
+REVOKE INSERT (id, full_name, phone, location, avatar_url, email_notifications) ON public.user_profiles FROM authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER, REFERENCES
   ON public.user_profiles TO anon, authenticated;
 COMMIT;

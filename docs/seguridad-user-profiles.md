@@ -20,7 +20,11 @@ Permisos por columna + dos RPC `SECURITY DEFINER`:
 | Admin (`is_admin()`, app_metadata) | `email, phone` de otros vía `admin_get_user_contacts(uuid[])` (máx. 1000) |
 | `service_role`, funciones `SECURITY DEFINER` | Todo, sin cambios |
 
-Las columnas que se agreguen en el futuro quedan **privadas por defecto**.
+Escritura de `authenticated` (solo su fila, por las políticas existentes): `full_name, phone,
+location, avatar_url, email_notifications`. `role` y `email` no se pueden escribir, ni con UPDATE
+ni borrando y recreando el perfil. Esto no depende del trigger del PR de businesses.
+
+Las columnas que se agreguen en el futuro quedan **privadas por defecto** (ni lectura ni escritura).
 
 Frontend:
 - `AuthContext`: el perfil propio se carga con `get_my_profile` (respaldo a `select('*')` si la
@@ -36,8 +40,28 @@ Frontend:
 - `supabase/tests/user_profiles_privacy_precheck.sql` (solo lectura, para producción)
 - `supabase/tests/user_profiles_privacy_baseline.sql` + `user_profiles_privacy_test.sh` (local)
 
+## Precheck en producción (corrido por Juan el 2026-11-24)
+- Políticas: `admin_read_user_profiles`, `public_read_user_profiles`, `users_delete/insert/update_own_user_profiles`.
+  Tras el paso 2 los admins ya no leen email/phone por tabla (el permiso de columna se aplica a
+  todos); los obtienen con `admin_get_user_contacts`.
+- Vistas, funciones SECURITY INVOKER y políticas de otras tablas que usen `user_profiles`: ninguna.
+- Permisos por columna previos: ninguno. Columnas: las 10 de la réplica de pruebas.
+
+## Walinka (`JotaceGaete/saas`, rama por defecto, commit 753ad4d)
+Ninguna consulta a `user_profiles`: ni `from('user_profiles')`, ni embeds por FK
+(`*_user_id_fkey`, `owner_id(...)`), ni llamadas REST directas, ni SQL/edge functions. Las únicas
+menciones están en `database.types.ts` (tipos generados). No usa tablas de Koronel. Solo se
+revisó la rama por defecto: si producción corre otra rama o código fuera del repo, no está cubierto.
+
+## Pruebas (Postgres 16 local aislado)
+`supabase/tests/user_profiles_privacy_test.sh <db> <fase>` sobre `user_profiles_privacy_baseline.sql`:
+antes 7/7 (muestra la filtración y la escalada de role), paso 1 14/14, paso 2 30/30,
+re-aplicar ambos 30/30, rollback paso 2 7/7 (vuelve al estado original), rollback paso 1 8/8.
+Con el PR de businesses aplicado: mis 30/30 pasan; en su script, `usuario no se hace admin en perfil`
+y `admin cambia rol` reciben `permission denied` antes que el trigger (sigue bloqueado; ajustar regex).
+
 ## Orden de despliegue
-1. Correr `user_profiles_privacy_precheck.sql` en producción (solo catálogo) y revisar.
+1. Precheck: hecho el 2026-11-24, sin bloqueos. Repetirlo si pasa tiempo antes del paso 2.
 2. Aplicar el paso 1 (no cambia nada visible).
 3. Desplegar el frontend de esta rama.
 4. Aplicar el paso 2.
@@ -47,11 +71,9 @@ Frontend:
 6. Si algo se rompe: `rollback/20261125000100_..._down.sql` (vuelve al estado anterior).
 
 ## Riesgos pendientes
-- **Walinka**: su código de producción no está en los repos. Si lee `user_profiles` con
-  `select=*`, `email`, `phone` o `role` usando la anon key o el token del usuario, fallará tras
-  el paso 2. El bloque 3 del precheck detecta funciones SQL que lo hagan, pero no código de cliente.
-- Vistas sin `security_invoker` que lean `user_profiles` seguirían exponiendo datos (precheck bloque 2).
+- Walinka: compatible según la rama por defecto de `saas` (ver arriba); no verificado contra
+  otras ramas o código desplegado fuera del repo.
+- No se probó contra PostgREST real (solo SQL equivalente a los embeds); probar en staging o
+  justo tras el paso 2 con la lista de verificación del paso 5.
 - `get_rescue_businesses()` (anon) sigue filtrando emails de dueños Walinka: no lo cubre este cambio.
-- Si PR #2 (businesses) se aplica junto con esto, su prueba `admin cambia rol` (usa `RETURNING role`)
-  pasa a dar `permission denied`: es el comportamiento esperado, hay que ajustar su regex.
 - `email` de `user_profiles` sigue siendo editable por el propio usuario (no es el email de Auth).

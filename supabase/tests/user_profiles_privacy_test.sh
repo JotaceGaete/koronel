@@ -27,6 +27,7 @@ case $PHASE in before|step1|rollback) LEAK=1;; *) LEAK=0;; esac
 # --- Filtración (lo que se corrige)
 if [ $LEAK = 1 ]; then
   t "[$PHASE] anon lee emails (filtración presente)" anon "" "SELECT count(email) FROM user_profiles;" "^3 ?$"
+  t "[$PHASE] authenticated se pone role=admin (hueco presente)" authenticated $OWNER "UPDATE user_profiles SET role='admin' WHERE id='$OWNER' RETURNING role;" "^admin ?$"
 else
   t "anon NO lee email"                    anon "" "SELECT email FROM user_profiles;" "$DENIED"
   t "anon NO lee phone"                    anon "" "SELECT phone FROM user_profiles;" "$DENIED"
@@ -36,6 +37,13 @@ else
   t "authenticated NO lee email ajeno"     authenticated $OWNER "SELECT email FROM user_profiles WHERE id='$ADMIN';" "$DENIED"
   t "authenticated NO lee ni su propio email por tabla" authenticated $OWNER "SELECT email FROM user_profiles WHERE id='$OWNER';" "$DENIED"
   t "admin tampoco lee email por tabla"    authenticated $ADMIN "SELECT email FROM user_profiles;" "$DENIED"
+  t "authenticated NO lee phone/location/role ajenos" authenticated $OWNER "SELECT phone, location, role FROM user_profiles WHERE id='$ADMIN';" "$DENIED"
+  t "authenticated NO deduce email ajeno filtrando" authenticated $OWNER "SELECT count(*) FROM user_profiles WHERE email LIKE 'admin%';" "$DENIED"
+  t "authenticated NO se pone role=admin (UPDATE)" authenticated $OWNER "UPDATE user_profiles SET role='admin' WHERE id='$OWNER';" "$DENIED"
+  t "authenticated NO cambia su email de perfil"   authenticated $OWNER "UPDATE user_profiles SET email='admin@x' WHERE id='$OWNER';" "$DENIED"
+  t "authenticated NO se recrea como admin (DELETE+INSERT)" authenticated $FAKE "DELETE FROM user_profiles WHERE id='$FAKE'; INSERT INTO user_profiles (id, full_name, role) VALUES ('$FAKE','x','admin');" "$DENIED"
+  t "authenticated se recrea sin role (queda 'user')" authenticated $FAKE "DELETE FROM user_profiles WHERE id='$FAKE'; INSERT INTO user_profiles (id, full_name) VALUES ('$FAKE','x'); SELECT role FROM get_my_profile();" "^user ?$"
+  t "role sigue intacto tras los intentos" postgres "" "SELECT role FROM user_profiles WHERE id='$OWNER';" "^user ?$"
   t "anon NO escribe"                      anon "" "UPDATE user_profiles SET full_name='x';" "$DENIED"
   t "service_role sigue leyendo todo"      service_role "" "SELECT count(email) FROM user_profiles;" "^3 ?$"
   t "SECURITY DEFINER no afectado (handle_new_user)" postgres "" "INSERT INTO auth.users (id,email) VALUES ('00000000-0000-0000-0000-0000000000ee','nuevo@x'); SELECT email FROM user_profiles WHERE id='00000000-0000-0000-0000-0000000000ee';" "^nuevo@x ?$"

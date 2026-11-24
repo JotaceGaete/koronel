@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { attachUserContacts } from './userProfileService';
 
 const BUSINESS_COLUMNS = new Set([
   'owner_id',
@@ -45,7 +46,7 @@ function withoutBusinessOnlyFields(payload = {}) {
 // ── Businesses ──────────────────────────────────────────────
 export const adminBusinessService = {
   async getAll({ search = '', category = '', status = '' } = {}) {
-    let query = supabase?.from('businesses')?.select('*, owner:user_profiles(full_name, email)')?.order('created_at', { ascending: false });
+    let query = supabase?.from('businesses')?.select('*, owner:user_profiles(id, full_name)')?.order('created_at', { ascending: false });
     if (search) query = query?.ilike('name', `%${search}%`);
     if (category) query = query?.eq('category_key', category);
     if (status === 'featured') query = query?.eq('featured', true);
@@ -53,7 +54,7 @@ export const adminBusinessService = {
     else if (status && ['pending', 'published', 'premium', 'rejected']?.includes(status)) query = query?.eq('status', status);
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return attachUserContacts(data || [], 'owner');
   },
 
   async create(payload) {
@@ -118,21 +119,23 @@ export const adminCategoryService = {
 // ── Claim Requests ──────────────────────────────────────────
 export const adminClaimService = {
   async getAll(status = '') {
-    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), claimant:user_profiles(full_name, email)')?.order('created_at', { ascending: false });
+    let query = supabase?.from('business_claims')?.select('*, business:businesses(name, category, address), claimant:user_profiles(id, full_name)')?.order('created_at', { ascending: false });
     if (status) query = query?.eq('claim_status', status);
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return attachUserContacts(data || [], 'claimant');
   },
 
-  async updateStatus(id, status) {
-    const { data: claim, error: fetchError } = await supabase?.from('business_claims')?.select('id, business_id, user_id')?.eq('id', id)?.single();
-    if (fetchError || !claim) throw fetchError || new Error('Solicitud no encontrada');
-    const { data, error } = await supabase?.from('business_claims')?.update({ claim_status: status })?.eq('id', id)?.select()?.single();
+  // Aprobar/rechazar pasa por las RPC del servidor: comprueban is_admin()
+  // (app_metadata), asignan owner_id/claimed/verified y dejan auditoría
+  // (reviewed_by, reviewed_at). business_claims no tiene política UPDATE.
+  async updateStatus(id, status, adminNotes = null) {
+    const fn = status === 'approved' ? 'approve_business_claim'
+      : status === 'rejected' ? 'reject_business_claim'
+        : null;
+    if (!fn) throw new Error(`Estado de reclamo no soportado: ${status}`);
+    const { data, error } = await supabase?.rpc(fn, { p_claim_id: id, p_admin_notes: adminNotes });
     if (error) throw error;
-    if (status === 'approved' && claim?.business_id && claim?.user_id) {
-      await supabase?.from('businesses')?.update({ owner_id: claim.user_id, claimed: true })?.eq('id', claim.business_id);
-    }
     return data;
   },
 };
@@ -140,12 +143,12 @@ export const adminClaimService = {
 // ── Classified Ads ──────────────────────────────────────────
 export const adminAdService = {
   async getAll({ search = '', status = '' } = {}) {
-    let query = supabase?.from('classified_ads')?.select('*, owner:user_profiles(full_name, email), ad_images(storage_path, alt_text, is_primary)')?.order('created_at', { ascending: false });
+    let query = supabase?.from('classified_ads')?.select('*, owner:user_profiles(id, full_name), ad_images(storage_path, alt_text, is_primary)')?.order('created_at', { ascending: false });
     if (search) query = query?.ilike('title', `%${search}%`);
     if (status) query = query?.eq('ad_status', status);
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return attachUserContacts(data || [], 'owner');
   },
 
   async update(id, payload) {

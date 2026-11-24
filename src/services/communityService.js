@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { attachUserContacts } from './userProfileService';
 
 export const communityService = {
   // ─── POSTS ───────────────────────────────────────────────────────────────
@@ -228,13 +229,13 @@ export const communityService = {
     try {
       let query = supabase
         ?.from('community_posts')
-        ?.select('*, author:user_profiles(id, full_name, email)')
+        ?.select('*, author:user_profiles(id, full_name)')
         ?.order('created_at', { ascending: false });
       if (status && status !== 'all') query = query?.eq('status', status);
       if (search?.trim()) query = query?.or(`title.ilike.%${search}%,body.ilike.%${search}%`);
       const { data, error } = await query;
       if (error) throw error;
-      return { data: data || [], error: null };
+      return { data: await attachUserContacts(data || [], 'author'), error: null };
     } catch (error) {
       return { data: [], error };
     }
@@ -264,13 +265,13 @@ export const communityService = {
     try {
       let query = supabase
         ?.from('suggested_businesses')
-        ?.select('*, suggester:user_profiles(id, full_name, email)')
+        ?.select('*, suggester:user_profiles(id, full_name)')
         ?.order('created_at', { ascending: false });
       if (status && status !== 'all') query = query?.eq('status', status);
       if (search?.trim()) query = query?.ilike('business_name', `%${search}%`);
       const { data, error } = await query;
       if (error) throw error;
-      return { data: data || [], error: null };
+      return { data: await attachUserContacts(data || [], 'suggester'), error: null };
     } catch (error) {
       return { data: [], error };
     }

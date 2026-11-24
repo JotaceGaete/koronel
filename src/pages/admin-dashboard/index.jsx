@@ -14,6 +14,8 @@ import AdminCommunity from './components/AdminCommunity';
 import AdminEmpleos from './components/AdminEmpleos';
 import AdminIncompleteBusinesses from './components/AdminIncompleteBusinesses';
 import AdminNotificationsPanel from 'components/admin/AdminNotificationsPanel';
+import { isAdminUser } from '../../utils/adminAuth';
+import { ADMIN_CONTACTS_ERROR_EVENT } from '../../services/userProfileService';
 
 const NAV_ITEMS = [
   { id: 'businesses', label: 'Negocios', icon: 'Building2' },
@@ -43,19 +45,17 @@ const SECTION_MAP = {
   empleos: AdminEmpleos,
 };
 
-function isAdminUser(user, userProfile) {
-  if (!user) return false;
-  const meta = user?.user_metadata || {};
-  const appMeta = user?.app_metadata || {};
-  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
-  const profileAdmin = userProfile?.role === 'admin';
-  return authAdmin || profileAdmin;
-}
-
 export default function AdminDashboard() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const [activeSection, setActiveSection] = useState('businesses');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [contactsError, setContactsError] = useState(null);
+
+  useEffect(() => {
+    const onError = (e) => setContactsError(e?.detail || { code: 'unknown' });
+    window.addEventListener(ADMIN_CONTACTS_ERROR_EVENT, onError);
+    return () => window.removeEventListener(ADMIN_CONTACTS_ERROR_EVENT, onError);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location?.search || '');
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!user || !isAdminUser(user, userProfile)) {
+  if (!user || !isAdminUser(user)) {
     return <Navigate to="/login" replace />;
   }
 
@@ -158,6 +158,13 @@ export default function AdminDashboard() {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           <div className="p-6 max-w-6xl mx-auto">
+            {contactsError && (
+              <div role="alert" data-testid="admin-contacts-error" className="mb-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                No se pudieron cargar los emails y teléfonos de los usuarios
+                (admin_get_user_contacts: {contactsError?.code}). Las listas se muestran sin datos de
+                contacto. Revisa que la migración 20261125000000 esté aplicada.
+              </div>
+            )}
             <ActiveComponent />
           </div>
         </main>

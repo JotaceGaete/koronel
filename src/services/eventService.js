@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { attachUserContacts } from './userProfileService';
 import { uploadFile } from './uploadService';
 
 export const eventService = {
@@ -154,7 +155,7 @@ export const eventService = {
     try {
       let query = supabase
         ?.from('events')
-        ?.select('*, user:user_profiles(id, full_name, email), organizer:businesses(id, name)', { count: 'exact' });
+        ?.select('*, user:user_profiles(id, full_name), organizer:businesses(id, name)', { count: 'exact' });
 
       if (status && status !== 'all') {
         query = query?.eq('status', status);
@@ -174,7 +175,7 @@ export const eventService = {
 
       const { data, error, count } = await query;
       if (error) throw error;
-      return { data: data || [], count: count || 0, error: null };
+      return { data: await attachUserContacts(data || [], 'user'), count: count || 0, error: null };
     } catch (error) {
       return { data: [], count: 0, error };
     }

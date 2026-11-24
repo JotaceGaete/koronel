@@ -95,16 +95,9 @@ async function requireAdmin(req) {
     throw authError;
   }
 
-  const meta = user.user_metadata || {};
-  const appMeta = user.app_metadata || {};
-  if (meta.role === 'admin' || appMeta.role === 'admin') return { supabase, user, token };
-
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-  if (profile?.role !== 'admin') {
+  // Solo app_metadata: user_metadata y user_profiles.role los puede escribir el
+  // propio usuario, y este endpoint usa luego la service role key.
+  if (user.app_metadata?.role !== 'admin') {
     const forbidden = new Error('Forbidden');
     forbidden.statusCode = 403;
     throw forbidden;

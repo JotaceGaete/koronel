@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { fetchOwnProfile } from '../services/userProfileService';
+
+
 
 const AuthContext = createContext({})
 
@@ -22,7 +25,7 @@ export const AuthProvider = ({ children }) => {
       if (!userId) return
       setProfileLoading(true)
       try {
-        const { data, error } = await supabase?.from('user_profiles')?.select('*')?.eq('id', userId)?.single()
+        const { data, error } = await fetchOwnProfile(userId)
         if (!error) setUserProfile(data)
       } catch (error) {
         console.error('Profile load error:', error)
@@ -113,7 +116,10 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (updates) => {
     if (!user) return { error: { message: 'No hay usuario autenticado' } }
     try {
-      const { data, error } = await supabase?.from('user_profiles')?.update(updates)?.eq('id', user?.id)?.select()?.single()
+      // Sin .select(): RETURNING * exigiría permiso de lectura sobre email/phone.
+      const { error: updateError } = await supabase?.from('user_profiles')?.update(updates)?.eq('id', user?.id)
+      if (updateError) return { data: null, error: updateError }
+      const { data, error } = await fetchOwnProfile(user?.id)
       if (!error) setUserProfile(data)
       return { data, error }
     } catch (error) {

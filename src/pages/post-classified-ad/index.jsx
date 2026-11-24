@@ -10,6 +10,7 @@ import SuccessModal from './components/SuccessModal';
 import GuestInfoModal from './components/GuestInfoModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { adService } from '../../services/adService';
+import { isAdminUser } from '../../utils/adminAuth';
 
 const INITIAL_FORM = {
   title: '',
@@ -45,18 +46,9 @@ async function getClientIP() {
   }
 }
 
-function isAdminUser(user, userProfile) {
-  if (!user) return false;
-  const meta = user?.user_metadata || {};
-  const appMeta = user?.app_metadata || {};
-  const authAdmin = meta?.role === 'admin' || appMeta?.role === 'admin';
-  const profileAdmin = userProfile?.role === 'admin';
-  return authAdmin || profileAdmin;
-}
-
 export default function PostClassifiedAd() {
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
@@ -113,7 +105,7 @@ export default function PostClassifiedAd() {
     }
 
     // Administradores sin límite por usuario
-    const isAdmin = isAdminUser(user, userProfile);
+    const isAdmin = isAdminUser(user);
     if (!isAdmin) {
       const withinLimit = await adService?.checkDailyLimit(user?.id, 'user_id', user?.id);
       if (!withinLimit) {
@@ -144,8 +136,8 @@ export default function PostClassifiedAd() {
     try {
       const ipAddress = await getClientIP();
 
-      // Administradores sin límite por IP (comprobar también userProfile por si el rol está solo ahí)
-      const isAdmin = isAdminUser(user, userProfile);
+      // Administradores sin límite por IP
+      const isAdmin = isAdminUser(user);
       if (!isAdmin) {
         const ipLimit = await adService?.checkDailyLimit(ipAddress, 'ip');
         if (!ipLimit) {
@@ -182,7 +174,7 @@ export default function PostClassifiedAd() {
         setSubmitError('Error al publicar el aviso. Por favor intenta de nuevo.');
       } else {
         // Increment daily counters (administradores no suman a los límites)
-        const isAdmin = isAdminUser(user, userProfile);
+        const isAdmin = isAdminUser(user);
         if (!isAdmin) {
           if (user?.id) {
             await adService?.incrementDailyCount(user?.id, 'user_id');
